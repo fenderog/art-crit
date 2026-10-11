@@ -19,6 +19,7 @@
   --good-soft: color-mix(in srgb, var(--good) 12%, transparent);
   --bad: #c0392b;
   --bad-soft: color-mix(in srgb, var(--bad) 10%, transparent);
+  --heart: #d6336c;
   --overlay: rgba(14, 14, 12, 0.5);
   --shadow: 0 1px 2px rgba(28, 27, 24, 0.05), 0 2px 8px rgba(28, 27, 24, 0.04);
   --shadow-lift: 0 2px 4px rgba(28, 27, 24, 0.06), 0 10px 24px rgba(28, 27, 24, 0.08);
@@ -53,6 +54,7 @@
     --good-soft: color-mix(in srgb, var(--good) 14%, transparent);
     --bad: #ff7b6b;
     --bad-soft: color-mix(in srgb, var(--bad) 13%, transparent);
+    --heart: #ff7aa8;
     --overlay: rgba(0, 0, 0, 0.55);
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.3), 0 10px 24px rgba(0, 0, 0, 0.35);
@@ -493,6 +495,7 @@ table.metrics .hint { color: var(--ink-3); margin-left: 8px; }
   box-shadow: var(--shadow);
 }
 .compare-body { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.compare-meta { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .compare-col[data-vendor] { background: color-mix(in srgb, var(--vendor) 4%, var(--surface)); box-shadow: inset 0 3px 0 color-mix(in srgb, var(--vendor) 50%, transparent), var(--shadow); }
 .compare-col.is-failed { border-color: color-mix(in srgb, var(--bad) 40%, var(--line)); }
 .compare-col h3 { margin: 0; font-size: 1rem; display: flex; align-items: flex-start; gap: 6px 12px; flex-wrap: wrap; justify-content: space-between; }
@@ -595,6 +598,32 @@ td.rank-cell .rank { font-size: 1.35rem; font-variant-numeric: tabular-nums; fon
 .rank-status { font-size: 12.5px; color: var(--ink-3); }
 .rank-status.is-error { color: var(--bad); }
 .rank-chip { font-size: 1rem; line-height: 1; }
+
+/* ---- community votes (votes.js): ♥ and 🥇🥈🥉 totals per result; pressed = yours. Separate from the owner's rank chip ---- */
+.votes { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; margin: 2px 0; font-size: 13px; }
+.votes-label { margin-right: 2px; font-size: 11.5px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-3); }
+.vote {
+  display: inline-flex; align-items: center; gap: 4px; min-height: 26px; padding: 1px 9px;
+  border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink-2);
+  font: inherit; font-variant-numeric: tabular-nums; cursor: pointer;
+}
+.vote:hover { border-color: var(--line-strong); color: var(--ink); }
+.vote:disabled { opacity: 0.5; cursor: progress; }
+.vote[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); }
+.vote-heart[aria-pressed="true"] { border-color: var(--heart); background: color-mix(in srgb, var(--heart) 12%, transparent); }
+.vote-heart[aria-pressed="true"] .vote-icon { color: var(--heart); }
+.vote-heart .vote-icon { font-size: 1.1em; }
+.vote-medal:not(.has):not([aria-pressed="true"]) .vote-icon { opacity: 0.45; }
+.vote-n:empty { display: none; }
+.vote-note { color: var(--bad); font-size: 12.5px; }
+/* the narrow grid cards (~270px) must fit the label, the heart and all three medals on one line */
+.is-dense .votes { gap: 4px; }
+.is-dense .votes-label { margin-right: 0; font-size: 10.5px; letter-spacing: 0.03em; }
+.is-dense .vote { gap: 3px; padding: 1px 7px; }
+.auth { margin-left: auto; display: inline-flex; align-items: center; gap: 10px; color: var(--ink-2); }
+.auth a { color: var(--ink-2); }
+.auth a:hover { color: var(--ink); }
+.link-button { background: none; border: 0; padding: 0; font: inherit; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 
 /* Runs table below the full 1240px page: hide columns by priority (least important first) so it never scrolls.
    Model, effort, verified, duration and cost always stay; the rest is on the run page and in compare. */

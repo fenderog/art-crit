@@ -66,7 +66,8 @@ assert.equal(urls.pop(), 'https://art-crit.pages.dev/page.html?p=horse');
 response = await request('/art-crit');
 assert.equal(response.status, 308);
 assert.equal(response.headers.get('location'), 'https://fenderog.com/art-crit/');
-assert.equal((await request('/art-crit/api/rank', 'PUT')).status, 405);
+assert.equal((await request('/art-crit/page.html', 'PUT')).status, 405); // static files stay read-only
+assert.equal((await request('/art-crit/api/rank', 'PUT')).status, 404); // the owner's ranking API is local-only
 response = await router.fetch(new Request('https://fenderog.com/art-crit/video.mp4', {
   headers: { Range: 'bytes=2-4', Cookie: 'private=yes' },
 }));
@@ -87,3 +88,15 @@ assert.equal(response.status, 200);
 assert.equal((await request('/art-crit-other/')).status, 404);
 """
     subprocess.run(["node", "--input-type=module", "-e", script], check=True, cwd=Path(__file__).resolve().parents[1])
+
+
+def _has_node_sqlite():
+    node = shutil.which("node")
+    return bool(node) and subprocess.run([node, "-e", "require('node:sqlite')"], capture_output=True).returncode == 0
+
+
+@pytest.mark.skipif(not _has_node_sqlite(), reason="needs node with node:sqlite (22.13+)")
+def test_votes_api():
+    """Sign-in, hearts and medals (cloudflare/votes.mjs) against a real SQLite with a faked GitHub and Pages."""
+    result = subprocess.run(["node", "--test", "tests/js/votes.test.mjs"], cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True)
+    assert result.returncode == 0, result.stdout + result.stderr

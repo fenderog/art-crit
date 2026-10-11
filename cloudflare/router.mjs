@@ -1,16 +1,20 @@
+import { handleApi } from "./votes.mjs";
+
 // Only /art-crit is routed here. The Pages project holds the static files;
 // large Godot engines are stored there as .wasm.gz (Pages caps assets at 25 MiB).
+// /art-crit/api/* is the votes API (votes.mjs), the only part of the site that isn't static.
 const PAGES = "https://art-crit.pages.dev";
 const ENGINE = /^\/engines\/[a-f0-9]{12}\/godot\.wasm$/;
 
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === "/art-crit") {
       url.pathname += "/";
       return Response.redirect(url.toString(), 308);
     }
     if (!url.pathname.startsWith("/art-crit/")) return new Response("Not found", { status: 404 });
+    if (url.pathname.startsWith("/art-crit/api/")) return handleApi(request, env, PAGES);
     if (request.method !== "GET" && request.method !== "HEAD") {
       return new Response("Method not allowed", { status: 405 });
     }

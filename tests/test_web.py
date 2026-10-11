@@ -13,7 +13,7 @@ import threading
 from pathlib import Path
 
 import pytest
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import expect, sync_playwright
 
 REPO = Path(__file__).resolve().parents[1]
 FIXTURE_DATA = REPO / "tests/fixtures/site/data"
@@ -915,6 +915,185 @@ def test_ranking_can_be_edited_through_bench_serve(bench_served, page):
     page.wait_for_selector(".rank-select")
     efforts = page.locator("table.runs tbody tr td[data-col='effort']").all_inner_texts()
     assert efforts == ["medium", "high", "low"]
+    assert_no_errors(page)
+
+
+# ---------------------------------------------------------------- community votes
+class VoteApi:
+    """In-memory stand-in for the Worker's /api (cloudflare/votes.mjs): the same JSON, plus a sign-in that just flips a flag."""
+
+    def __init__(self, runs, signed_in=False, others=None):
+        self.runs, self.signed_in = runs, signed_in
+        self.others = others or {}  # other people's votes: {run id: {"hearts": 2, "gold": 1}}
+        self.hearts, self.medals = set(), {}
+        self.fail = None  # an error message to answer every write with
+
+    def state(self):
+        totals = {r: {"hearts": 0, "gold": 0, "silver": 0, "bronze": 0, **self.others.get(r, {})} for r in self.runs}
+        for run in self.hearts:
+            totals[run]["hearts"] += 1
+        for medal, run in self.medals.items():
+            totals[run][medal] += 1
+        mine = {"hearts": sorted(self.hearts), **{m: self.medals.get(m) for m in ("gold", "silver", "bronze")}}
+        return {"user": {"login": "alice"} if self.signed_in else None, "totals": totals, "mine": mine if self.signed_in else None}
+
+    def handle(self, route):
+        import json
+        from urllib.parse import parse_qs, urlsplit
+
+        request = route.request
+        url = urlsplit(request.url)
+        name = url.path.rsplit("/api/", 1)[1]
+        if name not in ("login", "logout", "votes", "heart", "medal"):
+            return route.fallback()  # e.g. the ranking probe api/local
+        if name == "login":  # GitHub and back, in one hop
+            self.signed_in = True
+            return route.fulfill(status=302, headers={"Location": parse_qs(url.query)["return"][0]})
+        if name == "logout":
+            self.signed_in = False
+            return route.fulfill(status=200, content_type="application/json", body="{}")
+        if name == "votes":
+            return route.fulfill(status=200, content_type="application/json", body=json.dumps(self.state()))
+        body = json.loads(request.post_data)
+        if self.fail:
+            return route.fulfill(status=400, content_type="application/json", body=json.dumps({"error": self.fail}))
+        if not self.signed_in:
+            return route.fulfill(status=401, content_type="application/json", body=json.dumps({"error": "sign in with GitHub first"}))
+        if name == "heart":
+            (self.hearts.add if body["on"] else self.hearts.discard)(body["run"])
+        else:  # a medal frees its old result and any other medal on the new one
+            self.medals = {m: r for m, r in self.medals.items() if m != body["medal"] and r != body["run"]}
+            if body["run"] is not None:
+                self.medals[body["medal"]] = body["run"]
+        route.fulfill(status=200, content_type="application/json", body=json.dumps(self.state()))
+
+
+def vote_api(page, **kwargs):
+    api = VoteApi([LOW_ID, MEDIUM_ID, HIGH_ID], **kwargs)
+    page.route("**/api/**", api.handle)
+    return api
+
+
+def card(page, run_id):
+    return page.locator(".compare-col").filter(has=page.locator(f'h3 a[href$="r={run_id}"]'))
+
+
+def heart(page, run_id):
+    return card(page, run_id).locator(".vote-heart")
+
+
+def medal(page, run_id, name):
+    return card(page, run_id).locator(".vote-medal").nth(["gold", "silver", "bronze"].index(name))
+
+
+def test_no_vote_controls_where_there_is_no_vote_api(site, page):
+    for view in ("page.html?p=demo", "page.html?p=demo&view=table", "compare.html?p=demo", f"run.html?p=demo&r={HIGH_ID}"):
+        page.goto(site + view)
+        page.wait_for_selector("h1")
+        page.wait_for_load_state("networkidle")
+        assert page.locator(".votes").count() == 0 and page.locator(".auth").count() == 0, view
+    assert_no_errors(page)
+
+
+def test_signed_out_visitors_see_totals_and_sign_in_to_vote(site, page):
+    vote_api(page, others={HIGH_ID: {"hearts": 7, "gold": 2}})
+    page.goto(f"{site}page.html?p=demo")
+    expect(card(page, HIGH_ID).locator(".votes-label")).to_have_text("Community")
+    expect(heart(page, HIGH_ID).locator(".vote-n")).to_have_text("7")
+    expect(medal(page, HIGH_ID, "gold").locator(".vote-n")).to_have_text("2")
+    expect(page.locator(".auth")).to_have_text("Sign in with GitHub")
+    expect(heart(page, HIGH_ID)).to_have_attribute("title", "Sign in with GitHub to vote")
+
+    heart(page, HIGH_ID).click()  # goes to GitHub and comes back to this very page, signed in
+    expect(page.locator(".auth")).to_contain_text("@alice")
+    assert page.url == f"{site}page.html?p=demo"
+    expect(heart(page, HIGH_ID)).to_have_attribute("aria-pressed", "false")  # that click only signed in
+    heart(page, HIGH_ID).click()
+    expect(heart(page, HIGH_ID)).to_have_attribute("aria-pressed", "true")
+    expect(heart(page, HIGH_ID).locator(".vote-n")).to_have_text("8")
+    expect(heart(page, LOW_ID).locator(".vote-n")).to_have_text("")  # other results are untouched
+    assert_no_errors(page)
+
+
+def test_hearts_toggle_and_a_user_can_heart_several_results(site, page):
+    vote_api(page, signed_in=True)
+    page.goto(f"{site}page.html?p=demo")
+    for run_id in (LOW_ID, HIGH_ID):
+        heart(page, run_id).click()
+        expect(heart(page, run_id)).to_have_attribute("aria-pressed", "true")
+    expect(heart(page, MEDIUM_ID)).to_have_attribute("aria-pressed", "false")
+    heart(page, LOW_ID).click()
+    expect(heart(page, LOW_ID)).to_have_attribute("aria-pressed", "false")
+    expect(heart(page, LOW_ID).locator(".vote-n")).to_have_text("")
+    expect(heart(page, HIGH_ID)).to_have_attribute("aria-pressed", "true")
+    assert_no_errors(page)
+
+
+def test_medals_move_between_results_and_can_be_taken_back(site, page):
+    vote_api(page, signed_in=True)
+    page.goto(f"{site}page.html?p=demo")
+    medal(page, LOW_ID, "gold").click()
+    expect(medal(page, LOW_ID, "gold")).to_have_attribute("aria-pressed", "true")
+    medal(page, HIGH_ID, "gold").click()  # gold moves: a user has only one
+    expect(medal(page, HIGH_ID, "gold")).to_have_attribute("aria-pressed", "true")
+    expect(medal(page, LOW_ID, "gold")).to_have_attribute("aria-pressed", "false")
+    expect(medal(page, LOW_ID, "gold").locator(".vote-n")).to_have_text("")
+    expect(medal(page, LOW_ID, "gold")).to_have_attribute("title", "Move your gold medal here")
+    expect(medal(page, HIGH_ID, "gold")).to_have_attribute("title", "Take back your gold medal")
+
+    medal(page, HIGH_ID, "silver").click()  # a result holds one medal per user, so silver replaces its gold
+    expect(medal(page, HIGH_ID, "silver")).to_have_attribute("aria-pressed", "true")
+    expect(medal(page, HIGH_ID, "gold")).to_have_attribute("aria-pressed", "false")
+
+    medal(page, HIGH_ID, "silver").click()  # click again to take it back
+    expect(medal(page, HIGH_ID, "silver")).to_have_attribute("aria-pressed", "false")
+    assert_no_errors(page)
+
+
+def test_votes_are_on_every_view_and_leave_the_owners_rank_alone(site, page):
+    vote_api(page, signed_in=True)
+    page.goto(f"{site}compare.html?p=demo")
+    expect(page.locator(".votes")).to_have_count(3)
+    expect(page.locator(".auth")).to_have_count(1)
+    page.goto(f"{site}run.html?p=demo&r={HIGH_ID}")
+    expect(page.locator("#metric-strip .votes")).to_have_count(1)
+    page.goto(f"{site}page.html?p=demo&view=table")
+    page.wait_for_selector("tr.run-row")
+    expect(page.locator(".votes")).to_have_count(0)  # the table keeps its columns; each row's bar is in its expanded detail
+    row = page.locator("tr.run-row").first
+    row.locator('td[data-col="effort"]').click()
+    expect(page.locator("tr.run-detail .votes")).to_have_count(1)
+    page.locator("tr.run-detail .vote-heart").click()
+    expect(page.locator("tr.run-detail .vote-heart")).to_have_attribute("aria-pressed", "true")
+    expect(row).to_have_attribute("aria-expanded", "true")  # voting didn't collapse the row
+    # the owner's ranking is a different thing and keeps its own chip
+    page.goto(f"{site}page.html?p=art")
+    expect(page.locator(".compare-col .votes").first).to_be_visible()
+    assert page.locator(".compare-col").first.locator(".rank-chip").inner_text() == "🥇"
+    assert_no_errors(page)
+
+
+def test_a_failed_vote_says_why_and_an_ended_session_is_noticed(site, page):
+    api = vote_api(page, signed_in=True)
+    page.goto(f"{site}page.html?p=demo")
+    api.fail = "no such run"
+    heart(page, LOW_ID).click()
+    expect(card(page, LOW_ID).locator(".vote-note")).to_have_text("not saved: no such run")
+    expect(heart(page, LOW_ID)).to_have_attribute("aria-pressed", "false")
+    api.fail, api.signed_in = None, False  # the session ended in another tab
+    heart(page, MEDIUM_ID).click()
+    expect(page.locator(".auth")).to_have_text("Sign in with GitHub")
+    assert_no_errors(page)
+
+
+def test_signing_out(site, page):
+    api = vote_api(page, signed_in=True)
+    page.goto(f"{site}page.html?p=demo")
+    expect(page.locator(".auth")).to_contain_text("@alice")
+    page.locator(".auth button", has_text="Sign out").click()
+    expect(page.locator(".auth")).to_have_text("Sign in with GitHub")
+    assert not api.signed_in
+    expect(heart(page, HIGH_ID)).to_have_attribute("aria-pressed", "false")
     assert_no_errors(page)
 
 

@@ -1,4 +1,5 @@
 import { qsList, qs, loadPage, showMessage } from "./dom.js";
+import { loadVotes, renderAuth } from "./votes.js";
 import { byRankThenModel } from "./runs.js";
 import { renderRunGrid, setupPlayAll } from "./card.js";
 
@@ -9,7 +10,8 @@ const slug = qs("p");
 const ids = qsList("r");
 const columnsEl = document.getElementById("columns");
 
-const page = await loadPage(slug);
+const [page, votes] = await Promise.all([loadPage(slug), loadVotes(slug)]);
+renderAuth(votes);
 if (page) {
   const link = document.getElementById("page-link");
   link.textContent = page.title;
@@ -24,6 +26,6 @@ if (page) {
   const shown = (ids.length ? page.runs.filter((r) => ids.includes(r.id)) : page.runs).sort(byRankThenModel); // your ranking first, when there is one
   document.getElementById("compare-count").textContent = `${shown.length} run${shown.length === 1 ? "" : "s"} side by side · ★ best among them`;
   if (!shown.length) showMessage(columnsEl, "No matching runs to compare.", "error");
-  else renderRunGrid(columnsEl, slug, shown, { groupFrom: GROUP_FROM, fillFew: true });
+  else renderRunGrid(columnsEl, slug, shown, { groupFrom: GROUP_FROM, fillFew: true, votes });
   setupPlayAll(document.getElementById("play-all"), columnsEl);
 }

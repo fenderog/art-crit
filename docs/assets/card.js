@@ -6,17 +6,18 @@ import { fmtDuration, fmtCost, fmtNum } from "./fmt.js";
 import { runDir, harnessLabel, stateBadge, effortPill, modelLabel, runUrl, LOWER_IS_BETTER, isComplete, byRankThenModel, rankChip, vendorOptions, groupByVendor, bestSets, playUrl } from "./runs.js";
 import { outputBadge, outputOk, renderOutput } from "./output.js";
 import { selectBox } from "./selection.js";
+import { voteBar } from "./votes.js";
 
 const FEW = 4; // with `fillFew`, up to this many runs are equal columns filling the page
 
 // Draws `runs` into `container`: ranked runs first, then by model. From `groupFrom` runs up, and when they span
 // several vendors, there is one labelled grid per vendor; fewer are one flat grid. The ★ best values compare all
 // of `runs`. `selection` adds a checkbox to every card, `dense` makes narrower cards, `fillFew` stretches 2-4 runs
-// across the page.
-export function renderRunGrid(container, slug, runs, { groupFrom, selection = null, dense = false, fillFew = false }) {
+// across the page, `votes` (votes.js) adds the community hearts and medals.
+export function renderRunGrid(container, slug, runs, { groupFrom, selection = null, dense = false, fillFew = false, votes = null }) {
   const sorted = [...runs].sort(byRankThenModel);
   const best = bestSets(sorted);
-  const grid = (list, extra) => el("div", { class: `compare-columns${dense ? " is-dense" : ""}${extra ? " is-few" : ""}`, style: extra }, list.map((r) => runCard(slug, r, best, selection)));
+  const grid = (list, extra) => el("div", { class: `compare-columns${dense ? " is-dense" : ""}${extra ? " is-few" : ""}`, style: extra }, list.map((r) => runCard(slug, r, best, selection, votes)));
   const groups = groupByVendor(sorted);
   if (sorted.length < groupFrom || groups.length < 2) {
     const few = fillFew && sorted.length > 1 && sorted.length <= FEW;
@@ -68,7 +69,7 @@ function metricsLine(r, best) {
   return line;
 }
 
-export function runCard(slug, r, best, selection = null) {
+export function runCard(slug, r, best, selection = null, votes = null) {
   const base = runDir(slug, r.id);
   const sb = stateBadge(r) || outputBadge(r);
   // ↗ opens the run alone in a popup window, through the sandboxed play.html (never the raw entry URL)
@@ -82,8 +83,10 @@ export function runCard(slug, r, best, selection = null) {
     el("span", { class: "card-title" }, [selection ? selectBox(r, selection) : null, el("a", { attrs: { href: runUrl(slug, r.id) } }, [modelLabel(r.model)])]),
     el("span", { class: "card-tags" }, [rankChip(r.rank), r.rank != null ? " " : null, effortPill(r.effort), sb ? " " : null, sb, pop ? " " : null, pop]),
   ];
+  // The vote row shares the metrics row: a card is exactly three grid rows (heading, metrics, output), see .compare-col.
+  const meta = votes ? el("div", { class: "compare-meta" }, [metricsLine(r, best), voteBar(votes, r.id)]) : metricsLine(r, best);
   const body = el("div", { class: "compare-body" });
   if (r.error) body.append(el("p", { class: "run-error", text: r.error }));
   body.append(...renderOutput(r, base, { compact: true, href: runUrl(slug, r.id) }));
-  return el("div", { class: isComplete(r) ? "compare-col" : "compare-col is-failed", ...vendorOptions(r.model) }, [el("h3", {}, heading), metricsLine(r, best), body]);
+  return el("div", { class: isComplete(r) ? "compare-col" : "compare-col is-failed", ...vendorOptions(r.model) }, [el("h3", {}, heading), meta, body]);
 }

@@ -2,6 +2,8 @@
 
 - Status: Accepted
 - Amendment: results.json aggregation superseded by [0016](0016-page-json-includes-runs.md).
+- Amendment: "the published site never gets a way to write data" is superseded by [0022](0022-community-votes.md) for
+  community votes only. The owner's ranking stays local-only.
 - Recorded: 2026-09-28 (written after the fact from SPEC.md, DESIGN.md and AGENTS.md)
 
 ## Context

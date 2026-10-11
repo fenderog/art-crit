@@ -5,5 +5,10 @@
   "routes": [
     { "pattern": "fenderog.com/art-crit", "zone_name": "fenderog.com" },
     { "pattern": "fenderog.com/art-crit/*", "zone_name": "fenderog.com" }
+  ],
+  // Community votes (adr/0022). Setup is in README.md: create the database, put its id here, apply schema.sql,
+  // then `wrangler secret put` GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET and SESSION_SECRET.
+  "d1_databases": [
+    { "binding": "DB", "database_name": "art-crit-votes", "database_id": "REPLACE-WITH-ID-FROM-wrangler-d1-create" }
   ]
 }

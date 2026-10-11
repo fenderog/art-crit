@@ -444,6 +444,42 @@ The page owner ranks runs in the browser; there is no CLI command for it. Only `
   for runs that no longer exist (e.g. after `art-crit rm`).
 - The viewer only asks `api/local` when served from localhost; when it answers, the page shows a rank picker per row.
 
+## Community votes
+
+Visitors signed in with GitHub can give each result a heart and hand out one gold, one silver and one bronze medal per
+page (ADR-0022). This is the only thing the published site writes; the owner's ranking above stays local. The API is
+`cloudflare/votes.mjs`, served by the Worker at `/art-crit/api/*`, storing in D1 (`cloudflare/schema.sql`).
+
+Tables: `hearts(page, run, user_id)`, primary key all three. `medals(page, user_id, medal, run)` with `medal` in
+`gold|silver|bronze`, primary key `(page, user_id, medal)` and `UNIQUE (page, user_id, run)`: one of each medal per user
+per page, each on a different result. `user_id` is the GitHub numeric id; logins and tokens are never stored.
+
+| Request | Answer |
+|---|---|
+| `GET api/login?return=<path>` | 302 to GitHub's authorize URL (no scopes; `redirect_uri` = `api/callback`). Sets the login-state cookie. `return` is kept only if it is a page of this site, else `/art-crit/`. |
+| `GET api/callback?code&state` | Checks `state` against the login-state cookie, exchanges the code, reads the GitHub profile, drops the token, sets the session cookie, 302 to the saved page. A declined sign-in returns there with no session; a bad or expired state is 400, GitHub failing 502. |
+| `POST api/logout` | Clears the session cookie. |
+| `GET api/votes?p=<slug>` | `{"user": {"login"}\|null, "totals": {"<run id>": {"hearts", "gold", "silver", "bronze"}}, "mine": {"hearts": ["<run id>"], "gold": "<run id>"\|null, "silver", "bronze"}\|null}`. `totals` has an entry for every run of the page, `mine` is `null` signed out. Public, `Cache-Control: no-store`. |
+| `PUT api/heart` `{"p", "run", "on": true\|false}` | Adds or removes the user's heart; idempotent. Answers like `GET api/votes`. |
+| `PUT api/medal` `{"p", "medal", "run": "<id>"\|null}` | Puts the user's medal on `run` (`null` takes it back). In one transaction it removes that medal's old result and any other medal the user had on `run`. Answers like `GET api/votes`. |
+
+Cookies are `__Secure-` prefixed, `HttpOnly; Secure; SameSite=Lax`, `Path=/art-crit/api/`: the session (30 days) and the
+login state (10 minutes) are JSON payloads signed with HMAC-SHA-256 (`SESSION_SECRET`) and typed so one can't stand in for
+the other. Writes (`PUT`, `POST`) need a valid session (401), an `Origin` header equal to the request's own origin (403;
+sandboxed game frames send `null`), `Content-Type: application/json` (415), a body under 2 KiB (413), and a page and run
+that exist in the published `page.json` (404 for the page, 400 for the run or a bad slug/medal/flag). Errors are
+`{"error": ...}`; no response sets CORS headers. Without D1 and the three secrets (`GITHUB_CLIENT_ID`,
+`GITHUB_CLIENT_SECRET`, `SESSION_SECRET`) every route but 404 answers 503.
+
+Viewer (`docs/assets/votes.js`): `loadVotes(slug)` fetches `api/votes` alongside `page.json` (4 s timeout) and returns a
+store, or `null` when the API doesn't answer (static hosts, `art-crit serve`), in which case no vote UI is drawn. The
+header shows `@login · Sign out` or `Sign in with GitHub` (`renderAuth`). `voteBar(store, runId)` is a labelled
+"Community" row of `♡/♥ n` and `🥇 n 🥈 n 🥉 n` buttons (`aria-pressed` = yours, a count only when above 0). Signed out, a
+click goes to `api/login` and comes back to the same URL; signed in, it writes and every bar of the page redraws from the
+answer, since a medal moves between results. A failed write shows `not saved: <reason>`. The bar is on grid and compare
+cards (inside the metrics row, so a card stays three grid rows), on the run page under the stat tiles, and in a table
+row's expanded detail. It is separate from the owner's `rank-chip`.
+
 ## Deployment
 
 The `art-crit` Pages project follows GitHub `fenderog/art-crit`'s `main` branch. Build command:
@@ -460,7 +496,8 @@ and fetches static files from `art-crit.pages.dev` with `/art-crit` removed. For
 URLs it fetches the `.wasm.gz` Pages asset and streams the decompressed bytes with
 `Content-Type: application/wasm` and `Access-Control-Allow-Origin: *` (the iframe's origin is
 opaque). Pages ignores MP4 `Range` requests, so the Worker synthesizes HTTP 206 responses for
-normalized videos (≤2 MiB) to support Safari. No other path is routed and no visitors' credentials are forwarded. The apex has a
+normalized videos (≤2 MiB) to support Safari. No other path is routed; static requests forward no visitor credentials. `/art-crit/api/*` is the
+votes API (see Community votes). The apex has a
 proxied DNS record to make Worker routes active, but no site at `/`. GitHub Pages can stay online
 at its old URL during migration; the Pages subdomain isn't the supported URL for playing games.
 

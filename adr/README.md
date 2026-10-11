@@ -48,3 +48,4 @@ Copy `template.md` to `NNNN-short-title.md` using the next number, and add it to
 | [0019](0019-publish-each-run-as-it-finishes.md) | `art-crit run --publish` publishes each run as it finishes | Accepted |
 | [0020](0020-renamed-to-art-crit.md) | Renamed from llm-bench to art-crit | Accepted |
 | [0021](0021-cloudflare-pages-subpath.md) | Cloudflare Pages on a domain subpath with compressed engine | Accepted |
+| [0022](0022-community-votes.md) | Community votes: GitHub sign-in, hearts and medals in D1 behind the Worker | Accepted |

@@ -241,6 +241,28 @@ engine decompressed; it also supports video range requests for Safari. Its confi
 has proxied DNS for the routes but no website at `/`. The Pages subdomain isn't meant for playing
 Godot games. See [ADR-0021](adr/0021-cloudflare-pages-subpath.md) for the rationale.
 
+### Community votes (one-time setup)
+
+Visitors can sign in with GitHub and give results a heart and one gold, silver and bronze medal per page
+([ADR-0022](adr/0022-community-votes.md)). Votes live in a Cloudflare D1 database behind the same Worker. Until this
+is set up the Worker answers 503 on `/art-crit/api/*` and the site simply shows no vote controls.
+
+1. **GitHub OAuth App** (GitHub → Settings → Developer settings → OAuth Apps → New): homepage
+   `https://fenderog.com/art-crit/`, callback URL `https://fenderog.com/art-crit/api/callback`. Generate a client secret.
+2. **Database**: `npx wrangler d1 create art-crit-votes`, then paste the printed `database_id` into
+   `cloudflare/wrangler.jsonc`.
+3. **Tables**: `npx wrangler d1 execute art-crit-votes --remote --config cloudflare/wrangler.jsonc --file cloudflare/schema.sql`
+4. **Secrets** (each prompts for the value): `npx wrangler secret put GITHUB_CLIENT_ID --config cloudflare/wrangler.jsonc`,
+   then the same for `GITHUB_CLIENT_SECRET` (from step 1) and `SESSION_SECRET` (any long random string, for example
+   `openssl rand -base64 48`; changing it signs everyone out).
+5. **Deploy**: `npx wrangler deploy --config cloudflare/wrangler.jsonc`.
+
+Check it with `curl 'https://fenderog.com/art-crit/api/votes?p=<slug>'` (JSON totals, not 503). Only GitHub ids are
+stored. Look at votes with `npx wrangler d1 execute art-crit-votes --remote --command 'SELECT * FROM medals'`, and back
+them up with `npx wrangler d1 export art-crit-votes --remote --output votes.sql`: they are not in git. GitHub accounts
+are free, so if votes are ever stuffed, add a Cloudflare rate-limiting rule for `/art-crit/api/*`. Votes appear only on
+`fenderog.com/art-crit/`, not under `art-crit serve` or the old GitHub Pages URL.
+
 ## Requirements
 
 - [uv](https://docs.astral.sh/uv/) — run everything as `uv run art-crit ...`. For a bare `art-crit`,

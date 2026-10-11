@@ -6,6 +6,7 @@ import { outputBadge, outputVerified, isPlayable, renderOutput, kindUi, mediaCou
 import { renderRunGrid, setupPlayAll } from "./card.js";
 import { createSelection, selectBox } from "./selection.js";
 import { readFilters, renderFilterBar } from "./filters.js";
+import { loadVotes, renderAuth, voteBar } from "./votes.js";
 
 const slug = qs("p");
 const main = document.getElementById("main");
@@ -38,7 +39,8 @@ const COLUMNS = [
   { key: "tool_calls", label: "Tool calls", get: (r) => r.metrics.tool_calls, num: true, fmt: fmtNum },
 ];
 
-const page = await loadPage(slug);
+const [page, votes] = await Promise.all([loadPage(slug), loadVotes(slug)]);
+renderAuth(votes);
 if (page) render(page, page.runs, await canEditRanks());
 
 function render(page, runs, editable) {
@@ -87,7 +89,7 @@ function render(page, runs, editable) {
     grid.hidden = view !== "grid" && !empty;
     tableWrap.hidden = view !== "table" || empty;
     if (empty) showMessage(grid, "No runs match the filters.");
-    else if (view === "grid") renderRunGrid(grid, slug, shown, { groupFrom: GROUP_FROM, selection, dense: true });
+    else if (view === "grid") renderRunGrid(grid, slug, shown, { groupFrom: GROUP_FROM, selection, dense: true, votes });
     else drawTable();
     updatePlayAll();
   }
@@ -254,7 +256,7 @@ function render(page, runs, editable) {
     ]);
     const errorLine = r.error ? [el("p", { class: "run-error", text: r.error })] : [];
     if (isPlayable(r)) links.append(el("a", { text: "Open full screen ↗", attrs: { href: playUrl(slug, r.id), target: "_blank", rel: "noopener noreferrer" } }));
-    const body = [...errorLine, ...renderOutput(r, runDir(slug, r.id), { autoplay: true }), links];
+    const body = [...errorLine, ...renderOutput(r, runDir(slug, r.id), { autoplay: true }), votes ? voteBar(votes, r.id) : null, links];
     return el("tr", { class: "run-detail" }, [el("td", { attrs: { colspan: String(COLUMNS.length + 2) } }, [el("div", { class: "detail-inner" }, body)])]);
   }
   draw();

@@ -2,12 +2,14 @@ import { qs, el, loadPage, getJSON, getText, showMessage, badge } from "./dom.js
 import { fmtNum, fmtDuration, fmtCost, fmtDate } from "./fmt.js";
 import { runDir, harnessLabel, stateBadge, effortPill, modelParts, rankBy, ordinal, LOWER_IS_BETTER, isComplete, rankChip, playUrl } from "./runs.js";
 import { outputBadge, outputVerified, isPlayable, renderOutput, kindUi } from "./output.js";
+import { loadVotes, renderAuth, voteBar } from "./votes.js";
 
 const slug = qs("p");
 const runId = qs("r");
 const main = document.getElementById("main");
 
-const page = await loadPage(slug);
+const [page, votes] = await Promise.all([loadPage(slug), loadVotes(slug)]);
+renderAuth(votes);
 if (page) {
   const run = page.runs.find((r) => r.id === runId);
   if (!runId) showMessage(main, "Missing ?r=<run_id> in the URL.", "error");
@@ -68,6 +70,7 @@ function render(run, base, siblings) {
     el("span", {}, [el("span", { class: "k", text: "started" }), el("span", { text: fmtDate(run.started_at) })]),
   ]);
   strip.append(tiles, meta);
+  if (votes) strip.append(voteBar(votes, run.id));
   if (run.error) strip.after(el("p", { class: "run-error", text: run.error }));
 
   // Counts on the tabs (never on the Game/Output tab, whose label is its whole text).

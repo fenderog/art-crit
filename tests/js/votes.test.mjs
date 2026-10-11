@@ -1,0 +1,216 @@
+// The votes API (cloudflare/votes.mjs) behind the router, against a real SQLite and a faked GitHub + Pages.
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import router from "../../cloudflare/router.mjs";
+import { memoryD1 } from "./d1.mjs";
+
+const ORIGIN = "https://fenderog.com";
+const RUNS = ["run-a", "run-b", "run-c"];
+const USERS = { alice: { id: 101, login: "alice" }, bob: { id: 202, login: "bob" } };
+const env = () => ({ DB: memoryD1(), GITHUB_CLIENT_ID: "client-id", GITHUB_CLIENT_SECRET: "client-secret", SESSION_SECRET: "test-secret" });
+
+globalThis.fetch = async (url, options = {}) => {
+  url = String(url);
+  if (url === "https://art-crit.pages.dev/data/demo/page.json") return Response.json({ runs: RUNS.map((id) => ({ id })) });
+  if (url.startsWith("https://art-crit.pages.dev/data/")) return new Response("missing", { status: 404 });
+  if (url === "https://github.com/login/oauth/access_token") {
+    const body = JSON.parse(options.body);
+    assert.equal(body.client_secret, "client-secret");
+    return Response.json(body.code.startsWith("code-") ? { access_token: `token-${body.code.slice(5)}` } : { error: "bad_verification_code" });
+  }
+  if (url === "https://api.github.com/user") return Response.json(USERS[options.headers.Authorization.slice("Bearer token-".length)]);
+  throw new Error(`unexpected fetch ${url}`);
+};
+
+const call = (e, path, { method = "GET", cookie, body, origin = ORIGIN, type = "application/json" } = {}) =>
+  router.fetch(new Request(ORIGIN + "/art-crit/api" + path, {
+    method,
+    headers: { ...(cookie && { Cookie: cookie }), ...(origin && { Origin: origin }), ...(body && { "Content-Type": type }) },
+    body: body && JSON.stringify(body),
+  }), e);
+
+const cookieFrom = (response, name) => response.headers.getSetCookie().find((c) => c.startsWith(`${name}=`));
+const pair = (setCookie) => setCookie.split(";")[0];
+
+// Signs in through the real login + callback pair and returns the session cookie.
+async function signIn(e, who, ret = "/art-crit/page.html?p=demo") {
+  const start = await call(e, `/login?return=${encodeURIComponent(ret)}`);
+  const state = new URL(start.headers.get("location")).searchParams.get("state");
+  const done = await call(e, `/callback?code=code-${who}&state=${state}`, { cookie: pair(cookieFrom(start, "__Secure-ac_oauth")) });
+  assert.equal(done.status, 302);
+  assert.equal(done.headers.get("location"), ret);
+  return pair(cookieFrom(done, "__Secure-ac_session"));
+}
+
+const heart = (e, cookie, run, on) => call(e, "/heart", { method: "PUT", cookie, body: { p: "demo", run, on } });
+const medal = (e, cookie, name, run) => call(e, "/medal", { method: "PUT", cookie, body: { p: "demo", medal: name, run } });
+
+test("login sends visitors to GitHub with no scopes and a state they must bring back", async () => {
+  const e = env();
+  const res = await call(e, "/login?return=/art-crit/compare.html?p=demo");
+  assert.equal(res.status, 302);
+  const to = new URL(res.headers.get("location"));
+  assert.equal(to.origin + to.pathname, "https://github.com/login/oauth/authorize");
+  assert.equal(to.searchParams.get("client_id"), "client-id");
+  assert.equal(to.searchParams.get("redirect_uri"), `${ORIGIN}/art-crit/api/callback`);
+  assert.equal(to.searchParams.get("scope"), null);
+  const cookie = cookieFrom(res, "__Secure-ac_oauth");
+  assert.match(cookie, /HttpOnly; Secure; SameSite=Lax/);
+  assert.match(cookie, /Path=\/art-crit\/api\//);
+});
+
+test("login only returns to pages of this site", async () => {
+  const e = env();
+  for (const evil of ["https://evil.example/art-crit/", "//evil.example/art-crit/", "/\\evil.example", "/other/", "/art-crit/api/votes"]) {
+    const start = await call(e, `/login?return=${encodeURIComponent(evil)}`);
+    const state = new URL(start.headers.get("location")).searchParams.get("state");
+    const done = await call(e, `/callback?code=code-alice&state=${state}`, { cookie: pair(cookieFrom(start, "__Secure-ac_oauth")) });
+    assert.equal(done.headers.get("location"), "/art-crit/", evil);
+  }
+});
+
+test("callback rejects a missing, foreign or tampered state; a declined sign-in sets no session", async () => {
+  const e = env();
+  const start = await call(e, "/login");
+  const oauth = pair(cookieFrom(start, "__Secure-ac_oauth"));
+  const state = new URL(start.headers.get("location")).searchParams.get("state");
+  assert.equal((await call(e, `/callback?code=code-alice&state=${state}`)).status, 400); // no cookie
+  assert.equal((await call(e, `/callback?code=code-alice&state=other`, { cookie: oauth })).status, 400);
+  const tampered = oauth.slice(0, -2) + (oauth.endsWith("AA") ? "BB" : "AA");
+  assert.equal((await call(e, `/callback?code=code-alice&state=${state}`, { cookie: tampered })).status, 400);
+  assert.equal((await call(e, `/callback?code=nope&state=${state}`, { cookie: oauth })).status, 502); // GitHub refuses the code
+  const declined = await call(e, `/callback?error=access_denied&state=${state}`, { cookie: oauth });
+  assert.equal(declined.status, 302);
+  assert.equal(cookieFrom(declined, "__Secure-ac_session"), undefined);
+});
+
+test("votes are public to read and zeroed for every run of the page", async () => {
+  const e = env();
+  const res = await call(e, "/votes?p=demo");
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get("cache-control"), "no-store");
+  const body = await res.json();
+  assert.equal(body.user, null);
+  assert.equal(body.mine, null);
+  assert.deepEqual(Object.keys(body.totals), RUNS);
+  assert.deepEqual(body.totals["run-a"], { hearts: 0, gold: 0, silver: 0, bronze: 0 });
+  assert.equal((await call(e, "/votes?p=missing")).status, 404);
+  assert.equal((await call(e, "/votes?p=Bad_Slug")).status, 400);
+  assert.equal((await call(e, "/votes")).status, 400);
+});
+
+test("hearts: one per user per run, any number of runs, undone by turning off", async () => {
+  const e = env();
+  const alice = await signIn(e, "alice");
+  const bob = await signIn(e, "bob");
+  await heart(e, alice, "run-a", true);
+  await heart(e, alice, "run-a", true); // twice is still one
+  await heart(e, alice, "run-b", true);
+  let res = await (await heart(e, bob, "run-a", true)).json();
+  assert.equal(res.totals["run-a"].hearts, 2);
+  assert.equal(res.totals["run-b"].hearts, 1);
+  assert.deepEqual(res.mine.hearts, ["run-a"]);
+  assert.equal(res.user.login, "bob");
+  res = await (await heart(e, alice, "run-a", false)).json();
+  assert.equal(res.totals["run-a"].hearts, 1);
+  assert.deepEqual(res.mine.hearts, ["run-b"]);
+  const anonymous = await (await call(e, "/votes?p=demo")).json(); // anyone sees the totals, but not whose
+  assert.equal(anonymous.totals["run-b"].hearts, 1);
+  assert.equal(anonymous.mine, null);
+});
+
+test("medals: one gold, one silver, one bronze per user, each on a different run", async () => {
+  const e = env();
+  const alice = await signIn(e, "alice");
+  const bob = await signIn(e, "bob");
+  await medal(e, alice, "gold", "run-a");
+  await medal(e, alice, "silver", "run-b");
+  let res = await (await medal(e, alice, "bronze", "run-c")).json();
+  assert.deepEqual([res.mine.gold, res.mine.silver, res.mine.bronze], ["run-a", "run-b", "run-c"]);
+
+  res = await (await medal(e, alice, "gold", "run-b")).json(); // moving gold onto run-b displaces run-b's silver too
+  assert.deepEqual([res.mine.gold, res.mine.silver, res.mine.bronze], ["run-b", null, "run-c"]);
+  assert.deepEqual(res.totals["run-a"], { hearts: 0, gold: 0, silver: 0, bronze: 0 });
+  assert.deepEqual(res.totals["run-b"], { hearts: 0, gold: 1, silver: 0, bronze: 0 });
+
+  await medal(e, bob, "gold", "run-b"); // another user's medals are independent and add up
+  res = await (await medal(e, alice, "gold", null)).json(); // and a medal can be taken back
+  assert.equal(res.mine.gold, null);
+  assert.equal(res.totals["run-b"].gold, 1);
+  assert.equal(res.totals["run-c"].bronze, 1);
+});
+
+test("writes need a session, the site's own origin, JSON, and a real page and run", async () => {
+  const e = env();
+  const alice = await signIn(e, "alice");
+  assert.equal((await heart(e, undefined, "run-a", true)).status, 401);
+  assert.equal((await medal(e, undefined, "gold", "run-a")).status, 401);
+  const put = (extra) => call(e, "/heart", { method: "PUT", cookie: alice, body: { p: "demo", run: "run-a", on: true }, ...extra });
+  assert.equal((await put({ origin: "https://evil.example" })).status, 403);
+  assert.equal((await put({ origin: "null" })).status, 403); // a sandboxed game frame
+  assert.equal((await put({ origin: null })).status, 403);
+  assert.equal((await put({ type: "text/plain" })).status, 415);
+  assert.equal((await call(e, "/heart", { method: "PUT", cookie: alice, body: { p: "demo", run: "nope", on: true } })).status, 400);
+  assert.equal((await call(e, "/heart", { method: "PUT", cookie: alice, body: { p: "demo", run: "run-a", on: "yes" } })).status, 400);
+  assert.equal((await call(e, "/heart", { method: "PUT", cookie: alice, body: { p: "ghost", run: "run-a", on: true } })).status, 404);
+  assert.equal((await call(e, "/medal", { method: "PUT", cookie: alice, body: { p: "demo", medal: "platinum", run: "run-a" } })).status, 400);
+  assert.equal((await call(e, "/medal", { method: "PUT", cookie: alice, body: { p: "demo", medal: "gold" } })).status, 400); // undefined run isn't null
+  assert.equal((await call(e, "/heart", { method: "PUT", cookie: alice, body: { p: "demo", run: "run-a", on: true, pad: "x".repeat(3000) } })).status, 413);
+  assert.equal((await call(e, "/heart", { method: "POST", cookie: alice })).status, 405);
+  assert.equal((await put({})).status, 200);
+});
+
+test("a malformed page, or a failing database, is a clean JSON error", async () => {
+  const e = env();
+  const alice = await signIn(e, "alice");
+  const put = (body) => call(e, "/heart", { method: "PUT", cookie: alice, body });
+  assert.equal((await put({ p: ["demo"], run: "run-a", on: true })).status, 400); // coerces to "demo" in a regex test
+  assert.equal((await put({ p: { toString: "demo" }, run: "run-a", on: true })).status, 400);
+  assert.equal((await put({ run: "run-a", on: true })).status, 400);
+  const empty = await router.fetch(new Request(ORIGIN + "/art-crit/api/heart", { method: "PUT", headers: { Cookie: alice, Origin: ORIGIN, "Content-Type": "application/json" } }), e);
+  assert.equal(empty.status, 400); // an empty body isn't JSON
+
+  const broken = { ...e, DB: { prepare: e.DB.prepare, batch: async () => { throw new Error("D1 exploded: secret detail"); } } };
+  const log = console.error;
+  console.error = () => {};
+  try {
+    const res = await call(broken, "/votes?p=demo");
+    assert.equal(res.status, 500);
+    assert.deepEqual(await res.json(), { error: "internal error" });
+  } finally {
+    console.error = log;
+  }
+});
+
+test("only an intact, unexpired session cookie counts, and a login-state cookie is not one", async () => {
+  const e = env();
+  const alice = await signIn(e, "alice");
+  assert.equal((await (await call(e, "/votes?p=demo", { cookie: alice })).json()).user.login, "alice");
+  const forged = alice.slice(0, -3) + "AAA";
+  assert.equal((await heart(e, forged, "run-a", true)).status, 401);
+  const start = await call(e, "/login");
+  const wrongKind = pair(cookieFrom(start, "__Secure-ac_oauth")).replace("__Secure-ac_oauth", "__Secure-ac_session");
+  assert.equal((await heart(e, wrongKind, "run-a", true)).status, 401);
+  const realNow = Date.now;
+  Date.now = () => realNow() + 31 * 24 * 3600 * 1000;
+  try {
+    assert.equal((await heart(e, alice, "run-a", true)).status, 401);
+  } finally {
+    Date.now = realNow;
+  }
+});
+
+test("logout clears the session and needs the same origin", async () => {
+  const e = env();
+  const alice = await signIn(e, "alice");
+  assert.equal((await call(e, "/logout", { method: "POST", cookie: alice, origin: "https://evil.example" })).status, 403);
+  const res = await call(e, "/logout", { method: "POST", cookie: alice });
+  assert.equal(res.status, 200);
+  assert.match(cookieFrom(res, "__Secure-ac_session"), /Max-Age=0/);
+});
+
+test("voting is off until it is configured, and unknown routes are 404", async () => {
+  assert.equal((await call({}, "/votes?p=demo")).status, 503);
+  assert.equal((await call(env(), "/constructor")).status, 404);
+  assert.equal((await call(env(), "/rank", { method: "PUT", body: {} })).status, 404);
+});
