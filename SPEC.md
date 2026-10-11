@@ -1,8 +1,10 @@
 # art-crit spec
 
-This repo is both the CLI (`src/art_crit/`) and the GitHub Pages site (`docs/`, served from `main:/docs`).
-The site is static and has no build step. The CLI writes JSON and files into `docs/data/` and `docs/engines/`,
-and the viewer pages fetch that JSON in the browser.
+This repo is both the CLI (`src/art_crit/`) and the static site (`docs/`, published on Cloudflare Pages
+at `https://fenderog.com/art-crit/`). The CLI writes JSON and files into `docs/data/` and `docs/engines/`,
+and the viewer pages fetch that JSON in the browser. Cloudflare's build copies `docs/` to
+`cloudflare-dist/` and compresses Godot WASM files to fit Pages' 25 MiB asset limit; the viewer itself
+has no build step. See Deployment below.
 
 Guiding rule: **simple and lean.** The CLI is standard-library Python only (argparse, json, hashlib,
 tomllib, http.server, subprocess). The site is vanilla JS ES modules, with one pinned, vendored dependency
@@ -21,7 +23,7 @@ tomllib, http.server, subprocess). The site is vanilla JS ES modules, with one p
 
 ```
 docs/
-  .nojekyll
+  .nojekyll                     # still used by the old GitHub Pages URL
   index.html                      # home: list of pages            (reads data/pages.json)
   page.html?p=<slug>              # one page: runs table + gallery (reads data/<slug>/page.json)
   run.html?p=<slug>&r=<run_id>    # one run: tabs Game | Transcript | Source | Metrics
@@ -193,9 +195,9 @@ art-crit list                      # pages and their runs
 art-crit rm <slug> [<run_id>]      # remove a run (or a whole page), then rebuild
 art-crit rename <slug> <new> [-t/--title TEXT]   # move a page to a new slug (rewrites each run.json `page`), then rebuild
 art-crit rebuild                   # regenerate page.json + pages.json from runs/*/run.json; delete engines no run references
-art-crit serve [-p/--port 8000]    # serve docs/ like GitHub Pages: Access-Control-Allow-Origin: *, .wasm as application/wasm, NO COOP/COEP headers
+art-crit serve [-p/--port 8000]    # serve docs/ locally: Access-Control-Allow-Origin: *, .wasm as application/wasm, NO COOP/COEP headers
                                 #   plus the local-only ranking API (see Ranking); accept queue 64 for concurrent ES modules
-art-crit publish [-m MSG]          # git add docs && git commit && git push
+art-crit publish [-m MSG]          # git add docs && git commit && git push (Cloudflare Pages builds main)
 art-crit run ...                   # run agents locally, then import (see "Running benchmarks")
 art-crit models [SEARCH] [-H/--harness pi|claude-code|agy|grok-build]   # models the harness can run; with SEARCH also their effort levels
 ```
@@ -441,6 +443,25 @@ The page owner ranks runs in the browser; there is no CLI command for it. Only `
 - `rebuild` copies each run's rank into `page.json.runs` (`rank`, `null` when unranked) and drops `ranking.json` entries
   for runs that no longer exist (e.g. after `art-crit rm`).
 - The viewer only asks `api/local` when served from localhost; when it answers, the page shows a rank picker per row.
+
+## Deployment
+
+The `art-crit` Pages project follows GitHub `fenderog/art-crit`'s `main` branch. Build command:
+`python3 cloudflare/prepare.py`; output directory: `cloudflare-dist` (project root: repo root).
+`art-crit publish` commits and pushes `docs/`; that push triggers Pages. Run the build locally to
+check upload limits before publishing. `docs/` remains the source of truth and the local server uses
+it directly; `cloudflare-dist/` is gitignored. Each `engines/<sha12>/godot.wasm` is gzip-compressed
+as `godot.wasm.gz` with a deterministic header. Files over 25 MiB after staging abort the build.
+
+Pages custom domains cannot mount at a path. A separate `art-crit-router` Worker (configured in
+`cloudflare/wrangler.jsonc`, code in `cloudflare/router.mjs`) handles only
+`fenderog.com/art-crit` and `fenderog.com/art-crit/*`. It redirects the bare path to the slash
+and fetches static files from `art-crit.pages.dev` with `/art-crit` removed. For engine `.wasm`
+URLs it fetches the `.wasm.gz` Pages asset and streams the decompressed bytes with
+`Content-Type: application/wasm` and `Access-Control-Allow-Origin: *` (the iframe's origin is
+opaque). No other path is routed and no visitors' credentials are forwarded. The apex has a
+proxied DNS record to make Worker routes active, but no site at `/`. GitHub Pages can stay online
+at its old URL during migration; the Pages subdomain isn't the supported URL for playing games.
 
 ## Viewer (docs/)
 

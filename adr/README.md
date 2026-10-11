@@ -27,7 +27,7 @@ Copy `template.md` to `NNNN-short-title.md` using the next number, and add it to
 
 | # | Decision | Status |
 |---|---|---|
-| [0001](0001-static-site-on-github-pages.md) | Static site on GitHub Pages, no backend | Accepted |
+| [0001](0001-static-site-on-github-pages.md) | Static site on GitHub Pages, no backend | Superseded by 0021 |
 | [0002](0002-lean-stack.md) | Lean stack: stdlib-only CLI, vanilla JS, no build step | Accepted |
 | [0003](0003-repo-is-the-database.md) | The repo is the database; `docs/data` is generated | Accepted |
 | [0004](0004-sandbox-untrusted-output.md) | Untrusted model output is always sandboxed | Accepted |
@@ -47,3 +47,4 @@ Copy `template.md` to `NNNN-short-title.md` using the next number, and add it to
 | [0018](0018-one-kind-interface-and-an-output-record.md) | One Kind interface; `state` is the agent's, `output` is the kind step's | Accepted |
 | [0019](0019-publish-each-run-as-it-finishes.md) | `art-crit run --publish` publishes each run as it finishes | Accepted |
 | [0020](0020-renamed-to-art-crit.md) | Renamed from llm-bench to art-crit | Accepted |
+| [0021](0021-cloudflare-pages-subpath.md) | Cloudflare Pages on a domain subpath with compressed engine | Accepted |

@@ -1,0 +1,72 @@
+"""Pages staging and the /art-crit router (no live Cloudflare calls)."""
+
+import gzip
+import shutil
+import subprocess
+from pathlib import Path
+
+import pytest
+
+from cloudflare.prepare import LIMIT, prepare
+
+
+def test_pages_build_compresses_large_engine_without_changing_source(tmp_path):
+    source = tmp_path / "docs"
+    engine = source / "engines" / "abcdef012345"
+    engine.mkdir(parents=True)
+    # A sparse, compressible file above the per-asset cap.
+    original = b"\0" * (LIMIT + 1)
+    (engine / "godot.wasm").write_bytes(original)
+    (source / "index.html").write_text("<a href='page.html'>page</a>")
+    destination = tmp_path / "dist"
+    prepare(source, destination)
+    assert gzip.decompress((destination / "engines/abcdef012345/godot.wasm.gz").read_bytes()) == original
+    assert not (destination / "engines/abcdef012345/godot.wasm").exists()
+    assert (engine / "godot.wasm").read_bytes() == original
+    assert (destination / "index.html").read_text() == (source / "index.html").read_text()
+    prepare(source, destination)  # can be rerun after imports change docs/
+
+
+def test_pages_build_rejects_other_oversized_files(tmp_path):
+    source = tmp_path / "docs"
+    source.mkdir()
+    (source / "too-big.bin").write_bytes(b"x" * (LIMIT + 1))
+    with pytest.raises(ValueError, match="too-big.bin"):
+        prepare(source, tmp_path / "dist")
+
+
+@pytest.mark.skipif(not shutil.which("node"), reason="node unavailable")
+def test_router_strips_prefix_and_decompresses_wasm():
+    script = r"""
+import { gzipSync } from 'node:zlib';
+import assert from 'node:assert/strict';
+import router from './cloudflare/router.mjs';
+let urls = [];
+let forwarded = [];
+globalThis.fetch = async (url, options) => {
+  urls.push(url);
+  forwarded.push(options.headers);
+  return url.endsWith('.gz')
+    ? new Response(gzipSync(Buffer.from('wasm bytes')))
+    : new Response('ok', { headers: { 'access-control-allow-origin': '*' } });
+};
+const request = (path, method = 'GET') => router.fetch(new Request('https://fenderog.com' + path, { method }));
+let response = await request('/art-crit/engines/abcdef012345/godot.wasm');
+assert.equal(await response.text(), 'wasm bytes');
+assert.equal(response.headers.get('content-type'), 'application/wasm');
+assert.equal(response.headers.get('access-control-allow-origin'), '*');
+assert.equal(urls.pop(), 'https://art-crit.pages.dev/engines/abcdef012345/godot.wasm.gz');
+assert.equal((await request('/art-crit/page.html?p=horse')).status, 200);
+assert.equal(urls.pop(), 'https://art-crit.pages.dev/page.html?p=horse');
+response = await request('/art-crit');
+assert.equal(response.status, 308);
+assert.equal(response.headers.get('location'), 'https://fenderog.com/art-crit/');
+assert.equal((await request('/art-crit/api/rank', 'PUT')).status, 405);
+await router.fetch(new Request('https://fenderog.com/art-crit/video.mp4', {
+  headers: { Range: 'bytes=0-100', Cookie: 'private=yes' },
+}));
+assert.equal(forwarded.pop().get('Range'), 'bytes=0-100');
+assert.equal(forwarded.at(-1).get('Cookie'), null);
+assert.equal((await request('/art-crit-other/')).status, 404);
+"""
+    subprocess.run(["node", "--input-type=module", "-e", script], check=True, cwd=Path(__file__).resolve().parents[1])

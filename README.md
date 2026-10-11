@@ -6,11 +6,12 @@ horse, which game feels right, which pelican can actually ride a bike.
 For every run you get the thing the model made — a playable Godot game, images or video,
 or a packaged web page — plus the full transcript, the source files, and what it cost.
 
-**Live site:** https://fenderog.github.io/art-crit/
+**Live site:** https://fenderog.com/art-crit/ (old GitHub Pages URL: https://fenderog.github.io/art-crit/)
 
 This repo is two things: the `art-crit` CLI in `src/art_crit/` (plain Python, stdlib only) and the
-site in `docs/` (plain JS, no build step, hosted from `main:/docs` on GitHub Pages). The CLI
-writes files to `docs/`; the site renders them. [SPEC.md](SPEC.md) is the full contract.
+site in `docs/` (plain JS, no viewer build step, hosted on Cloudflare Pages). The CLI
+writes files to `docs/`; the site renders them. A small deploy build compresses the shared Godot
+engine to fit Pages' file-size limit. [SPEC.md](SPEC.md) is the full contract.
 [AGENTS.md](AGENTS.md) is where coding agents should start.
 
 ## What you'll see on the site
@@ -39,7 +40,8 @@ uv run art-crit run "a spinning low-poly windmill in a small field" -m openai-co
 That spins up one agent per model × effort level, in parallel, on your machine. When they finish,
 their work is packaged and checked where a check exists. Failures and timeouts are kept too —
 they're part of the comparison. Preview with `art-crit serve`; nothing goes public until
-`art-crit publish` (or pass `--publish` to publish each run as it lands, handy for long batches).
+`art-crit publish` pushes to `main` (Cloudflare Pages builds on each push), or pass `--publish`
+to publish each run as it lands, handy for long batches.
 
 A few things worth knowing:
 
@@ -219,10 +221,25 @@ before anything is written.
 - `art-crit rename <page> <new-slug> [-t TITLE]` — move a page. The title follows only if it came
   from the old slug, unless you pass `-t`.
 - `art-crit rebuild` — regenerate indexes, drop unused engines.
-- `art-crit publish [-m MSG]` — commit `docs/` and push. Pages goes live about a minute later.
+- `art-crit publish [-m MSG]` — commit `docs/` and push. Cloudflare Pages builds from `main`.
 
 Publishing to this site needs write access — otherwise you'll get a permission error. Without it,
 fork and open a pull request.
+
+## Cloudflare deployment
+
+Cloudflare Pages follows `main` of `fenderog/art-crit` (project `art-crit`). Set its build command
+to `python3 cloudflare/prepare.py`, output directory to `cloudflare-dist`, and root to the repo root.
+The build copies `docs/` and compresses the shared Godot WASM for Pages' 25 MiB/file limit.
+To validate locally: `python3 cloudflare/prepare.py` (output is gitignored). `art-crit publish`
+then pushes new data to GitHub, which triggers a Pages deployment automatically.
+
+Pages doesn't support a custom-domain **path**, so `cloudflare/router.mjs` runs as a Worker on
+only `fenderog.com/art-crit` and `fenderog.com/art-crit/*`, stripping the prefix and streaming the
+engine decompressed. Its config is `cloudflare/wrangler.jsonc`; redeploy the router after edits with
+`npx wrangler deploy --config cloudflare/wrangler.jsonc` (Wrangler login required). The apex
+has proxied DNS for the routes but no website at `/`. The Pages subdomain isn't meant for playing
+Godot games. See [ADR-0021](adr/0021-cloudflare-pages-subpath.md) for the rationale.
 
 ## Requirements
 

@@ -1,0 +1,9 @@
+{
+  "name": "art-crit-router",
+  "main": "router.mjs",
+  "compatibility_date": "2026-10-11",
+  "routes": [
+    { "pattern": "fenderog.com/art-crit", "zone_name": "fenderog.com" },
+    { "pattern": "fenderog.com/art-crit/*", "zone_name": "fenderog.com" }
+  ]
+}

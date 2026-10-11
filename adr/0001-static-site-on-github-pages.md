@@ -1,6 +1,6 @@
 # 0001. Static site on GitHub Pages, no backend
 
-- Status: Accepted
+- Status: Superseded by 0021
 - Recorded: 2026-09-28 (written after the fact from SPEC.md, DESIGN.md and AGENTS.md)
 
 ## Context
