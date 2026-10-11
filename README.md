@@ -236,7 +236,7 @@ then pushes new data to GitHub, which triggers a Pages deployment automatically.
 
 Pages doesn't support a custom-domain **path**, so `cloudflare/router.mjs` runs as a Worker on
 only `fenderog.com/art-crit` and `fenderog.com/art-crit/*`, stripping the prefix and streaming the
-engine decompressed. Its config is `cloudflare/wrangler.jsonc`; redeploy the router after edits with
+engine decompressed; it also supports video range requests for Safari. Its config is `cloudflare/wrangler.jsonc`; redeploy the router after edits with
 `npx wrangler deploy --config cloudflare/wrangler.jsonc` (Wrangler login required). The apex
 has proxied DNS for the routes but no website at `/`. The Pages subdomain isn't meant for playing
 Godot games. See [ADR-0021](adr/0021-cloudflare-pages-subpath.md) for the rationale.

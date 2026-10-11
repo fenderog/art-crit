@@ -27,7 +27,34 @@ export default {
       }
     }
     const response = await fetch(upstream.toString(), { headers });
-    if (!ENGINE.test(path) || response.status !== 200) return response;
+    if (!ENGINE.test(path)) {
+      // Pages currently ignores Range on MP4s. Our normalized videos are ≤2 MiB;
+      // synthesize a partial response for Safari without buffering larger assets.
+      const range = request.headers.get("Range");
+      if (request.method === "GET" && range && response.status === 200 &&
+          response.headers.get("Content-Type")?.startsWith("video/")) {
+        const length = Number(response.headers.get("Content-Length"));
+        if (length > 0 && length <= 2 * 1024 * 1024 &&
+            (!request.headers.has("If-Range") || request.headers.get("If-Range") === response.headers.get("ETag"))) {
+          const match = /^bytes=(\d*)-(\d*)$/.exec(range);
+          if (match && (match[1] || match[2])) {
+            const start = match[1] ? Number(match[1]) : Math.max(0, length - Number(match[2]));
+            const end = match[1] ? (match[2] ? Math.min(Number(match[2]), length - 1) : length - 1) : length - 1;
+            if (start >= length || end < start) {
+              return new Response(null, { status: 416, headers: { "Content-Range": `bytes */${length}` } });
+            }
+            const bytes = await response.arrayBuffer();
+            const partialHeaders = new Headers(response.headers);
+            partialHeaders.set("Content-Range", `bytes ${start}-${end}/${length}`);
+            partialHeaders.set("Content-Length", String(end - start + 1));
+            partialHeaders.set("Accept-Ranges", "bytes");
+            return new Response(bytes.slice(start, end + 1), { status: 206, headers: partialHeaders });
+          }
+        }
+      }
+      return response;
+    }
+    if (response.status !== 200) return response;
     const wasmHeaders = new Headers({
       "Content-Type": "application/wasm",
       "Access-Control-Allow-Origin": "*", // sandboxed game frames have opaque origins

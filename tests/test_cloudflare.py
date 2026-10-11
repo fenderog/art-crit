@@ -48,7 +48,12 @@ globalThis.fetch = async (url, options) => {
   forwarded.push(options.headers);
   return url.endsWith('.gz')
     ? new Response(gzipSync(Buffer.from('wasm bytes')))
-    : new Response('ok', { headers: { 'access-control-allow-origin': '*' } });
+    : url.endsWith('.mp4')
+      ? new Response('0123456789', { headers: {
+          'content-type': 'video/mp4', 'content-length': '10',
+          'access-control-allow-origin': '*', etag: 'video-tag',
+        } })
+      : new Response('ok', { headers: { 'access-control-allow-origin': '*' } });
 };
 const request = (path, method = 'GET') => router.fetch(new Request('https://fenderog.com' + path, { method }));
 let response = await request('/art-crit/engines/abcdef012345/godot.wasm');
@@ -62,11 +67,23 @@ response = await request('/art-crit');
 assert.equal(response.status, 308);
 assert.equal(response.headers.get('location'), 'https://fenderog.com/art-crit/');
 assert.equal((await request('/art-crit/api/rank', 'PUT')).status, 405);
-await router.fetch(new Request('https://fenderog.com/art-crit/video.mp4', {
-  headers: { Range: 'bytes=0-100', Cookie: 'private=yes' },
+response = await router.fetch(new Request('https://fenderog.com/art-crit/video.mp4', {
+  headers: { Range: 'bytes=2-4', Cookie: 'private=yes' },
 }));
-assert.equal(forwarded.pop().get('Range'), 'bytes=0-100');
+assert.equal(response.status, 206);
+assert.equal(response.headers.get('content-range'), 'bytes 2-4/10');
+assert.equal(response.headers.get('accept-ranges'), 'bytes');
+assert.equal(await response.text(), '234');
+assert.equal(forwarded.pop().get('Range'), 'bytes=2-4');
 assert.equal(forwarded.at(-1).get('Cookie'), null);
+response = await router.fetch(new Request('https://fenderog.com/art-crit/video.mp4', {
+  headers: { Range: 'bytes=12-' },
+}));
+assert.equal(response.status, 416);
+response = await router.fetch(new Request('https://fenderog.com/art-crit/video.mp4', {
+  headers: { Range: 'bytes=2-4', 'If-Range': 'other-tag' },
+}));
+assert.equal(response.status, 200);
 assert.equal((await request('/art-crit-other/')).status, 404);
 """
     subprocess.run(["node", "--input-type=module", "-e", script], check=True, cwd=Path(__file__).resolve().parents[1])

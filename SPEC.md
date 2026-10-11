@@ -459,7 +459,8 @@ Pages custom domains cannot mount at a path. A separate `art-crit-router` Worker
 and fetches static files from `art-crit.pages.dev` with `/art-crit` removed. For engine `.wasm`
 URLs it fetches the `.wasm.gz` Pages asset and streams the decompressed bytes with
 `Content-Type: application/wasm` and `Access-Control-Allow-Origin: *` (the iframe's origin is
-opaque). No other path is routed and no visitors' credentials are forwarded. The apex has a
+opaque). Pages ignores MP4 `Range` requests, so the Worker synthesizes HTTP 206 responses for
+normalized videos (≤2 MiB) to support Safari. No other path is routed and no visitors' credentials are forwarded. The apex has a
 proxied DNS record to make Worker routes active, but no site at `/`. GitHub Pages can stay online
 at its old URL during migration; the Pages subdomain isn't the supported URL for playing games.
 

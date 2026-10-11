@@ -22,7 +22,9 @@ on this account, and a Git-connected Pages project needs GitHub app authorizatio
   for local preview and GitHub Pages. No new runtime or Python dependencies.
 - A small Worker runs only on `fenderog.com/art-crit` and `fenderog.com/art-crit/*`, removes the
   prefix when fetching `art-crit.pages.dev`, and streams the decompressed engine as
-  `application/wasm` with CORS for sandboxed game frames. It forwards no visitor credentials.
+  `application/wasm` with CORS for sandboxed game frames. Pages ignored Range requests for MP4s
+  in the live deployment, so the Worker also serves partial (206) responses for the normalized
+  videos (≤2 MiB), needed by Safari. It forwards no visitor credentials.
   `/art-crit` redirects to `/art-crit/`; other domain paths aren't routed to the site. A proxied
   DNS record for the apex is required for Worker routes even though the root remains unused.
 

@@ -83,7 +83,7 @@ uv run art-crit import <run-dir|batch-dir> --page <slug>   # publish runs writte
 uv run art-crit run --publish "prompt" -m MODEL:LEVEL      # import + push each run as it finishes (ADR-0019)
 uv run art-crit publish -m "msg"         # git add docs && commit && push (Pages deploys in ~1 min)
 python3 cloudflare/prepare.py          # validate the Pages upload (<25 MiB per asset) locally
-cf pages deployments list art-crit     # Git-triggered deployment status
+cf pages deployments list --project-name art-crit   # Git-triggered deployment status
 ```
 
 ## Rules (don't break these)
@@ -211,13 +211,15 @@ cf pages deployments list art-crit     # Git-triggered deployment status
   not Homebrew's. The user also has `art-crit` installed as an editable uv tool (`uv tool install --editable '.[verify]'`),
   which doesn't do that: a batch started with plain `art-crit run` sees the system python3. Agents working in this repo
   should keep using `uv run art-crit`.
-- **Safari needs HTTP Range requests to play mp4.** Cloudflare Pages supports them; `art-crit serve` (Python's
-  http.server) doesn't, so preview videos in Chrome.
+- **Safari needs HTTP Range requests to play mp4.** Cloudflare Pages returned 200 (not 206) for a live MP4 Range
+  request. The subpath Worker synthesizes 206 for our ≤2 MiB normalized videos; `art-crit serve` (Python's
+  http.server) still doesn't support ranges, so preview videos in Chrome.
 - **Cloudflare Pages limits files to 25 MiB:** `cloudflare/prepare.py` stages all Godot engines as deterministic
   `.wasm.gz`; `cloudflare/router.mjs` streams them decompressed at `.wasm` URLs. Pages `_headers` cannot be relied on
   to force `Content-Encoding: gzip` (confirmed by a live probe). The `cf` CLI manages Pages projects but `cf pages deploy`
   rejects legacy Pages uploads; use Git integration for Pages and Wrangler only for the Worker. The Cloudflare GitHub
-  app must be authorized for this repo before creating a Git-linked Pages project. (ADR-0021)
+  app must be authorized for this repo before creating a Git-linked Pages project. `.python-version` makes the first
+  Cloudflare build compile Python 3.12 (can take a few minutes). (ADR-0021)
 
 ## Open ideas (not built)
 
