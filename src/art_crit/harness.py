@@ -1,4 +1,4 @@
-"""The agent-program interface (`art-crit run` drives one of these): Pi, ClaudeCode, Agy and GrokBuild. Also the
+"""The agent-program interface (`art-crit run` drives one of these): Pi, ClaudeCode, Agy, GrokBuild and MuseCode. Also the
 pure session parsers: metrics + state (see SPEC.md "Metrics" and "Harness interface").
 
 Every harness hands the runner the same things: a command line, a session in pi's format
@@ -12,7 +12,8 @@ import os
 import re
 import subprocess
 import threading
-from datetime import datetime
+import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 from .kinds.media import thumbnail
@@ -770,6 +771,214 @@ class GrokBuild(Harness):
         return metrics
 
 
+class MuseCode(Harness):
+    """Meta's Muse Code (`muse exec`). Its `--json` stdout is a thin live event stream (no tool calls
+    or usage), so each run exports its durable session log when the agent exits and that export is
+    the session (`export.json`). Cost is not reported (0 = unreported)."""
+
+    name = "muse-code"
+    tag = "mc"
+    # `muse` has no command that lists models, but it caches the provider's catalog (with each model's effort
+    # tiers) in CATALOG_DIR whenever its TUI fetches it (opening /model), and that is the source. MODELS is the
+    # fallback when there is no cache yet; update it when the CLI changes.
+    CATALOG_DIR = Path.home() / ".local" / "share" / "muse" / "model-catalog"
+    MODELS = {"muse-wonder-1.0": ["minimal", "low", "medium", "high", "xhigh", "max"],
+              "muse-wonder-1.0-contributor": ["minimal", "low", "medium", "high", "xhigh", "max"],
+              "muse-wonder-full-1.0": ["minimal", "low", "medium", "high", "xhigh", "max"],
+              "muse-wonder-full-1.0-contributor": ["minimal", "low", "medium", "high", "xhigh", "max"],
+              "muse-spark-1.3": ["minimal", "low", "medium", "high", "xhigh", "max"],
+              "muse-spark-1.3-contributor": ["minimal", "low", "medium", "high", "xhigh", "max"],
+              "muse-spark-1.2": ["minimal", "low", "medium", "high", "xhigh"]}
+    # Export even when the agent failed. $1 = muse, $2 = session id, $3 = export path, then `exec` args.
+    WRAPPER = '"$1" exec "${@:4}"; code=$?; "$1" export --session "$2" --out "$3" >/dev/null 2>&1; exit $code'
+
+    def __init__(self, binary="muse"):
+        self.binary = binary
+
+    def version(self):
+        try:
+            r = subprocess.run([self.binary, "--version"], capture_output=True, text=True, timeout=15)
+        except (OSError, subprocess.TimeoutExpired) as e:
+            raise CritError(f"cannot run {self.binary} --version: {e}")
+        if r.returncode:
+            raise CritError(f"{self.binary} --version failed: {r.stderr.strip()}")
+        return r.stdout.split()[2]  # Muse Code 1.4.6 (1.4.6-R6000.1)
+
+    def catalog(self):
+        """{model id: effort levels in LEVEL_ORDER} from muse's cached catalog (text models only, hidden
+        ones such as the -contributor builds included), or MODELS when there's no usable cache."""
+        found = {}
+        for path in sorted(Path(self.CATALOG_DIR).glob("*.json")):
+            try:
+                rows = json.loads(path.read_text(encoding="utf-8")).get("rows") or []
+            except (OSError, ValueError, AttributeError):
+                continue
+            for row in rows:
+                tiers = {v.get("tier") for v in row.get("reasoning_effort_variants") or []}
+                if row.get("model_id") and tiers:
+                    found[row["model_id"]] = [level for level in LEVEL_ORDER if level in tiers]
+        return found or self.MODELS
+
+    def models(self):
+        return list(self.catalog())
+
+    def levels(self, model):
+        return self.catalog()[model]
+
+    def display_model(self, model):
+        return f"meta/{model}"
+
+    def command(self, model, level, brief, session_dir):
+        # No approval prompts or sandbox (like the other harnesses); the workspace stays untrusted, which
+        # also leaves delegation off. No web, reminder agents or other tools' rules/skills.
+        session_id = str(uuid.uuid4())
+        return ["bash", "-c", self.WRAPPER, "muse-code", self.binary, session_id, str(Path(session_dir) / "export.json"),
+                "--json", "--session-id", session_id, "--model", model, "--reasoning-effort", level, "--disable-approval", "--disable-sandbox",
+                "--disable-web-tools", "--disable-reminders", "--no-foreign-personal-context", "--", brief]
+
+    def session_file(self, session_dir):
+        path = Path(session_dir) / "export.json"
+        return path if path.is_file() else None
+
+    def session_entries(self, session_dir, brief, level):
+        path = self.session_file(session_dir)
+        return convert_muse_export(_read_muse_export(path), brief, level) if path else None
+
+    def metrics(self, session_dir, level=None):
+        path = self.session_file(session_dir)
+        return muse_metrics(_read_muse_export(path), level) if path else None
+
+
+def _read_muse_export(path):
+    try:
+        return json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+def _muse_events(doc):
+    """(record, event) for the top-level run's events in a `muse export`, in order. Reminder and other
+    background runs are left out: only runs marked `top_level_turn.run_origin` count, or all when none is."""
+    records = [e["envelope"] for e in doc.get("events") or [] if e.get("kind") == "record" and e.get("envelope")]
+    top = {r["payload"].get("run_id") for r in records if r.get("payload_type") == "runtime.retained_fact"
+           and (r["payload"].get("record") or {}).get("payload_type") == "top_level_turn.run_origin"}
+    return [(r, r["payload"]["event"]) for r in records if r.get("payload_type") == "runtime.session"
+            and r["payload"].get("kind") == "run" and (not top or r["payload"].get("run_id") in top)]
+
+
+def _muse_usage(u):
+    """Muse's input_tokens includes cached ones; pi's `input` doesn't."""
+    cache_read, cache_write = u.get("cache_read_tokens") or 0, u.get("cache_write_tokens") or 0
+    usage = {"input": max(0, (u.get("input_tokens") or 0) - cache_read - cache_write), "output": u.get("output_tokens") or 0,
+             "cacheRead": cache_read, "cacheWrite": cache_write}
+    usage["totalTokens"] = sum(usage.values())
+    return usage
+
+
+def muse_metrics(doc, level=None):
+    """Metrics from a `muse export` (parse_session()'s shape): turns = model calls, tokens summed over
+    their usage, cost unreported (0). Failed = the run's terminal event is missing or not `completed`."""
+    events = [ev for _, ev in _muse_events(doc)]
+    calls = [ev for ev in events if ev.get("kind") == "model_completed"]
+    usage = [_muse_usage(ev.get("usage") or {}) for ev in calls]
+    tokens = {k: sum(u[k] for u in usage) for k in ("input", "output", "cacheRead", "cacheWrite")}
+    tokens["reasoning"] = sum((ev.get("usage") or {}).get("reasoning_tokens") or 0 for ev in calls)
+    tokens["total"] = tokens["input"] + tokens["output"]
+    terminal = next((ev for ev in reversed(events) if ev.get("kind") == "terminal"), None)
+    failed = terminal is None or terminal.get("terminal") != "completed"
+    return {
+        "thinking_level": level,
+        "turns": len(calls),
+        "tool_calls": sum(len(ev.get("tool_calls") or []) for ev in events if ev.get("kind") == "assistant_tool_calls_committed"),
+        "tokens": tokens,
+        "cost_usd": 0.0,
+        "ended_in_error": failed,
+        "error_message": (str((terminal or {}).get("reason") or (terminal or {}).get("terminal") or "no final result from muse"))[:200] if failed else None,
+    }
+
+
+def _muse_tool_call(call, cwd):
+    """A muse tool call -> a pi toolCall (bash, write, edit, read get pi's names and argument shapes)."""
+    try:
+        args = json.loads(call.get("args") or "{}")
+    except ValueError:
+        args = {}
+    name = call.get("name", "")
+
+    def rel(path):
+        return path[len(cwd) + 1:] if cwd and isinstance(path, str) and path.startswith(cwd + "/") else path
+
+    if name == "bash":
+        name, args = "bash", {"command": args.get("command", "")}
+    elif name == "write_file":
+        name, args = "write", {"path": rel(args.get("path")), "content": args.get("content", "")}
+    elif name == "edit_file":
+        name, args = "edit", {"path": rel(args.get("path")), "edits": [{"oldText": args.get("find", ""), "newText": args.get("replace", "")}]}
+    elif name == "read_file":
+        name, args = "read", {"path": rel(args.get("path")), **{k: v for k, v in args.items() if k in ("offset", "limit")}}
+    return {"type": "toolCall", "id": call.get("call_id") or call.get("id"), "name": name, "arguments": args}
+
+
+def _iso(microseconds):
+    return datetime.fromtimestamp(microseconds / 1e6, timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def convert_muse_export(doc, brief, level):
+    """A `muse export` -> pi-format session entries (see SPEC.md "Harness interface"). One assistant message
+    per model call (thinking, text and tool calls, with the call's usage), flushed when its tool results
+    arrive or the run ends; tool durations are exact (the tool effect's start and end)."""
+    records = [e["envelope"] for e in doc.get("events") or [] if e.get("kind") == "record" and e.get("envelope")]
+    cwd = next(((r["payload"].get("record") or {}).get("workspace_root", "") for r in records if r.get("payload_type") == "runtime.session.metadata"), "")
+    effects = {}  # call id -> [start, end] (microseconds)
+    for r in records:
+        rec = r.get("payload", {}).get("record") or {}
+        if r.get("payload_type") in ("tool_batch.effect.started", "tool_batch.effect.terminal") and rec.get("call_id"):
+            effects.setdefault(rec["call_id"], {})["start" if rec["kind"] == "started" else "end"] = r["recorded_at"]
+    events = _muse_events(doc)
+    model = next((ev.get("model") for _, ev in events if ev.get("kind") == "model_completed"), None)
+    start = {"timestamp": _iso(events[0][0]["recorded_at"])} if events else {}
+    entries = [{"type": "session", "cwd": cwd, **start}, {"type": "model_change", "provider": "meta", "modelId": model},
+               {"type": "thinking_level_change", "thinkingLevel": level},
+               {"type": "message", "message": {"role": "user", "content": [{"type": "text", "text": brief}]}, **start}]
+    pending = {"content": [], "usage": None}
+    stamp = [None]
+
+    def flush():
+        if pending["content"]:
+            message = {"role": "assistant", "content": pending["content"], "usage": pending["usage"] or _muse_usage({}),
+                       "stopReason": "toolUse" if any(b["type"] == "toolCall" for b in pending["content"]) else "stop"}
+            entries.append(_stamp({"type": "message", "message": message}, stamp[0]))
+        pending.update(content=[], usage=None)
+
+    for record, ev in events:
+        kind, when = ev.get("kind"), _iso(record["recorded_at"])
+        if kind == "reasoning_committed" and ev.get("text"):
+            pending["content"].append({"type": "thinking", "thinking": ev["text"]})
+        elif kind == "assistant_message_committed":
+            pending["content"].append({"type": "text", "text": ev.get("text", "")})
+        elif kind == "assistant_tool_calls_committed":
+            pending["content"] += [_muse_tool_call(c, cwd) for c in ev.get("tool_calls") or []]
+        elif kind == "model_completed":
+            pending["usage"] = _muse_usage(ev.get("usage") or {})
+        elif kind == "tool_result_batch_committed":
+            flush()
+            for result in ev.get("results") or []:
+                message = {"role": "toolResult", "toolCallId": result.get("tool_call_id"),
+                           "content": [{"type": "text", "text": result.get("text", "")}], "isError": False}
+                span = effects.get(result.get("tool_call_id")) or {}
+                if "start" in span and "end" in span:
+                    message["durationMs"] = max(0, round((span["end"] - span["start"]) / 1000))
+                entries.append(_stamp({"type": "message", "message": message}, when))
+        elif kind == "terminal":
+            flush()
+            if ev.get("terminal") != "completed":
+                entries.append(_stamp({"type": "message", "message": {"role": "assistant", "content": [
+                    {"type": "text", "text": str(ev.get("reason") or ev.get("terminal"))}], "stopReason": "error"}}, when))
+        stamp[0] = when
+    flush()
+    return entries
+
+
 def _agy_result(events):
     return next((e.get("result") or {} for e in reversed(events) if e.get("event") == "result"), {})
 
@@ -836,7 +1045,7 @@ def convert_agy_stream(events, brief, level):
     return entries
 
 
-HARNESSES = {"pi": Pi, "claude-code": ClaudeCode, "agy": Agy, "grok-build": GrokBuild}
+HARNESSES = {"pi": Pi, "claude-code": ClaudeCode, "agy": Agy, "grok-build": GrokBuild, "muse-code": MuseCode}
 
 
 def split_harness(spec):
