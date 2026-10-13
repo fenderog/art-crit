@@ -3,13 +3,14 @@
     "slug": "ceate-an-svg-of-an-awkward",
     "title": "Ceate an svg of an awkward",
     "kind": "godot",
-    "n_runs": 4,
+    "n_runs": 5,
     "models": [
       "anthropic/claude-opus-5-5",
-      "anthropic/claude-sonnet-5-5"
+      "anthropic/claude-sonnet-5-5",
+      "openai-codex/gpt-6.1-sol"
     ],
-    "updated": "2026-10-13T22:35:29Z",
-    "thumb": "data/ceate-an-svg-of-an-awkward/runs/claude-opus-5-5-cc-medium-20261013-153112/thumb.png"
+    "updated": "2026-10-13T22:35:47Z",
+    "thumb": "data/ceate-an-svg-of-an-awkward/runs/gpt-6.1-sol-low-20261013-153112/thumb.png"
   },
   {
     "slug": "16bit-eiffel-tower",
