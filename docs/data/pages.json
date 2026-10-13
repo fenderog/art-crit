@@ -3,14 +3,15 @@
     "slug": "ceate-an-svg-of-an-awkward",
     "title": "Awkward Robot Family",
     "kind": "media",
-    "n_runs": 7,
+    "n_runs": 8,
     "models": [
       "anthropic/claude-opus-5-5",
       "anthropic/claude-sonnet-5-5",
+      "openai-codex/gpt-6-astra",
       "openai-codex/gpt-6.1-sol"
     ],
-    "updated": "2026-10-13T22:42:39Z",
-    "thumb": "data/ceate-an-svg-of-an-awkward/runs/gpt-6.1-sol-medium-20261013-153749/media/awkward-family.svg"
+    "updated": "2026-10-13T22:43:46Z",
+    "thumb": "data/ceate-an-svg-of-an-awkward/runs/gpt-6-astra-low-20261013-153749/media/family-portrait.svg"
   },
   {
     "slug": "16bit-eiffel-tower",
