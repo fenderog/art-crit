@@ -226,7 +226,8 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   its top-level `var`s (globals other scripts use) into locals. Only module scripts are bundled.
 - **Local server backlog:** the stdlib HTTP server's default accept queue is only 5. Chrome fetches many
   ES modules in parallel; overflow resets a module request (`net::ERR_CONNECTION_RESET`) and leaves the page
-  on Loading… with no JS error. `serve._Server.request_queue_size` is 64; keep it above the module fanout.
+  on Loading… with no JS error. `serve._Server.request_queue_size` is 64; keep it above the module fanout. The `site`
+  fixture in test_web.py needs the same (it was the source of flaky 30s "waiting for selector" timeouts).
   Published `docs/data/` is not a fixed test fixture; avoid tests asserting its run count or requiring
   live published games to remain unchanged.
 - **Sync Playwright can't nest:** `test_web.py` keeps a session-wide browser open, so other tests that start Playwright

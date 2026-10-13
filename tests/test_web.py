@@ -28,7 +28,10 @@ def site(tmp_path_factory):
     shutil.copytree(FIXTURE_DATA, root / "data")
 
     handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(root))
-    httpd = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    # a deep accept queue, like `art-crit serve`: Chrome fetches the viewer's ES modules in parallel, and the default (5)
+    # resets some of them, leaving a page on Loading… (the flaky timeouts this used to cause)
+    server = type("Server", (http.server.ThreadingHTTPServer,), {"request_queue_size": 64})
+    httpd = server(("127.0.0.1", 0), handler)
     port = httpd.server_address[1]
     thread = threading.Thread(target=httpd.serve_forever, daemon=True)
     thread.start()
@@ -153,6 +156,7 @@ def test_clicking_a_row_expands_the_game_inline(site, page):
 
 
 def test_page_harness_column_and_failed_badge(site, page):
+    page.set_viewport_size({"width": 1440, "height": 900})  # wide enough for every column beside the details sidebar
     page.goto(f"{site}page.html?p=demo&view=table")
     page.wait_for_selector("table.runs tbody tr")
     rows = page.locator("tr.run-row")
@@ -188,6 +192,7 @@ def test_page_shows_labeled_prompt(site, page):
 
 
 def test_every_column_header_has_hover_help(site, page):
+    page.set_viewport_size({"width": 1440, "height": 900})  # wide enough for every column beside the details sidebar
     page.goto(f"{site}page.html?p=demo&view=table")
     page.wait_for_selector("table.runs tbody tr")
     headers = page.locator("table.runs thead th")
@@ -233,7 +238,7 @@ def test_runs_table_never_scrolls_horizontally(site, browser, width):
     assert m["table"] <= m["wrap"], (width, m)
     for col in ("model", "effort", "verified", "duration_ms", "cost_usd"):
         assert pg.locator(f'tr.run-row:first-child td[data-col="{col}"]').is_visible(), (width, col)
-    if width >= 1240:
+    if m["wrap"] >= 1168:  # the table's own width decides (the details sidebar may sit beside it)
         assert pg.locator('th[data-key="tokens_reasoning"]').is_visible()
     ctx.close()
 
