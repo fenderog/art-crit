@@ -10,6 +10,7 @@ import { loadVotes, renderAuth, voteBar } from "./votes.js";
 
 const slug = qs("p");
 const main = document.getElementById("main");
+const ASIDE_KEY = "art-crit.aside"; // "closed" once the viewer hides the details sidebar on a wide screen
 const VIEW_KEY = "art-crit.view"; // "grid" (default) or "table", remembered in localStorage; ?view= wins
 const GROUP_FROM = 15; // fewer runs than this are one flat grid; more are grouped by vendor
 
@@ -39,6 +40,7 @@ const COLUMNS = [
   { key: "tool_calls", label: "Tool calls", get: (r) => r.metrics.tool_calls, num: true, fmt: fmtNum },
 ];
 
+setupAside();
 const [page, votes] = await Promise.all([loadPage(slug), loadVotes(slug)]);
 renderAuth(votes);
 if (page) render(page, page.runs, await canEditRanks());
@@ -263,13 +265,44 @@ function render(page, runs, editable) {
   syncSelection();
 }
 
+// The details sidebar (meta, prompt, highlights). Wide screens: beside the runs, open unless the viewer closed it
+// (remembered in localStorage). Narrow screens: a drawer over the page, closed until opened.
+function setupAside() {
+  const layout = document.getElementById("page-layout");
+  const btn = document.getElementById("aside-toggle");
+  const narrow = matchMedia("(max-width: 1023px)");
+  let closed = false;
+  try { closed = localStorage.getItem(ASIDE_KEY) === "closed"; } catch {}
+  let drawer = false;
+  const update = () => {
+    const open = narrow.matches ? drawer : !closed;
+    layout.dataset.aside = open ? "open" : "closed";
+    btn.setAttribute("aria-expanded", String(open));
+    btn.title = open ? "Hide details" : "Show details";
+  };
+  const toggle = (open) => {
+    if (narrow.matches) drawer = open;
+    else {
+      closed = !open;
+      try { localStorage.setItem(ASIDE_KEY, closed ? "closed" : "open"); } catch {}
+    }
+    update();
+  };
+  btn.addEventListener("click", () => toggle(layout.dataset.aside !== "open"));
+  document.getElementById("aside-close").addEventListener("click", () => { toggle(false); btn.focus(); });
+  document.getElementById("aside-backdrop").addEventListener("click", () => toggle(false));
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && narrow.matches && drawer) toggle(false); });
+  narrow.addEventListener("change", () => { drawer = false; update(); });
+  update();
+}
+
 // "Game · 11 runs · 3 models · updated Sep 27, 2026"
 function renderMeta(page, runs) {
   const models = new Set(runs.map((r) => r.model));
   const latest = runs.map((r) => r.started_at).filter(Boolean).sort().pop();
   const meta = document.getElementById("page-meta");
   meta.append(
-    el("span", { class: "kind-chip", text: kindUi(page.kind).label }),
+    el("span", { class: "kind-chip", text: kindUi(page.kind).label, attrs: { "data-kind": page.kind } }),
     el("span", { text: `${runs.length} run${runs.length === 1 ? "" : "s"}` }),
     el("span", { text: `${models.size} model${models.size === 1 ? "" : "s"}` }),
   );

@@ -1,5 +1,5 @@
 import { el, getJSON, showMessage } from "./dom.js";
-import { modelParts } from "./runs.js";
+import { modelParts, vendorOf, vendorName, vendorOptions } from "./runs.js";
 import { kindUi } from "./output.js";
 
 const cards = document.getElementById("cards");
@@ -25,14 +25,30 @@ function renderCard(p) {
     ? el("span", { text: updated.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }), attrs: { title: `updated ${updated.toLocaleString()}` } })
     : null;
   return el("a", { class: "card", attrs: { href: `page.html?p=${encodeURIComponent(p.slug)}` } }, [
-    el("div", { class: "card-media" }, [thumb, el("span", { class: "kind-chip", text: kindUi(p.kind).label })]),
+    el("div", { class: "card-media" }, [thumb, el("span", { class: "kind-chip", text: kindUi(p.kind).label, attrs: { "data-kind": p.kind } })]),
     el("div", { class: "card-body" }, [
       el("div", { class: "card-title", text: p.title }),
-      el("div", { class: "model-chips" }, models.map((m) => el("span", { class: "model-chip", text: modelParts(m).short, attrs: { title: m } }))),
+      vendorIcons(models),
       el("div", { class: "card-foot card-meta" }, [
         el("span", { text: `${p.n_runs} run${p.n_runs === 1 ? "" : "s"}` }),
         date,
       ]),
     ]),
   ]);
+}
+
+// One small ring per vendor (in its hue, with its initial); hovering names the vendor and its models on this page.
+function vendorIcons(models) {
+  const byVendor = new Map();
+  for (const m of models) {
+    const v = vendorOf(m);
+    if (!byVendor.has(v)) byVendor.set(v, { model: m, names: [] });
+    byVendor.get(v).names.push(modelParts(m).short);
+  }
+  return el("div", { class: "vendor-icons" }, [...byVendor].map(([v, { model, names }]) => {
+    const name = vendorName(v);
+    const opts = vendorOptions(model);
+    const label = `${name}: ${names.join(", ")}`;
+    return el("span", { class: "vendor-icon", text: name[0], ...opts, attrs: { ...opts.attrs, title: label, "aria-label": label, role: "img" } });
+  }));
 }
