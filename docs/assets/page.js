@@ -1,6 +1,6 @@
 import { qs, el, loadPage, showMessage, badge, setQuery } from "./dom.js";
 import { fmtNum, fmtDuration, fmtCost, fmtDate, fmtDateShort } from "./fmt.js";
-import { runDir, harnessLabel, stateBadge, effortPill, effortIndex, modelLabel, modelParts, prettyModelName, runUrl, byModelThenEffort, rankBy, bestSets, filterRuns, LOWER_IS_BETTER, isComplete, rankLabel, canEditRanks, saveRanks, vendorOptions, playUrl } from "./runs.js";
+import { runDir, harnessLabel, stateBadge, effortPill, effortIndex, prettyModelLabel, modelParts, prettyModelName, runUrl, byModelThenEffort, rankBy, bestSets, filterRuns, LOWER_IS_BETTER, isComplete, rankLabel, canEditRanks, saveRanks, vendorOptions, playUrl } from "./runs.js";
 import { COLUMN_HELP, rowHelp } from "./help.js";
 import { outputBadge, outputVerified, isPlayable, renderOutput, kindUi, mediaCount } from "./output.js";
 import { renderRunGrid, setupPlayAll } from "./card.js";
@@ -172,7 +172,7 @@ function render(page, runs, editable) {
         if (c.key === "rank") {
           tds.push(el("td", { class: "rank-cell", attrs }, [editable ? rankPicker(r) : el("span", { class: v == null ? "muted" : "rank", text: rankLabel(v) ?? "–" })]));
         } else if (c.key === "model") {
-          tds.push(el("td", { attrs }, [el("a", { attrs: { href: url } }, [modelLabel(v)])]));
+          tds.push(el("td", { attrs }, [el("a", { attrs: { href: url } }, [prettyModelLabel(v)])]));
         } else if (c.key === "effort") {
           tds.push(el("td", { attrs }, [effortPill(v)]));
         } else if (c.key === "harness") {

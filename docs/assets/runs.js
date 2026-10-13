@@ -125,6 +125,19 @@ export function vendorMark(model, label) {
     icon ? [el("img", { attrs: { src: icon, alt: "" } })] : []);
 }
 
+// The model as the table and cards show it: the vendor icon, then the formatted name ("Haiku 5.5"), plus
+// "via deepinfra" for a pinned OpenRouter upstream. The full id is the tooltip.
+export function prettyModelLabel(model) {
+  const { name, via } = modelParts(model);
+  return el("span", { class: "model model-pretty", attrs: { title: model } }, [
+    vendorMark(model, null),
+    el("span", { class: "model-text" }, [
+      el("span", { class: "model-name", text: prettyModelName(name) }),
+      via ? el("span", { class: "model-via", text: `via ${via}` }) : null,
+    ]),
+  ]);
+}
+
 export function runUrl(slug, id) {
   return `run.html?p=${encodeURIComponent(slug)}&r=${encodeURIComponent(id)}`;
 }

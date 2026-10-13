@@ -551,11 +551,12 @@ table.metrics .hint { color: var(--ink-3); margin-left: 8px; }
 .card-title { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
 .card-title > a { min-width: 0; }
 /* the card's model: the vendor icon, then the model as people say it (the full id is its tooltip) */
-.card-model { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 2px 8px; color: var(--ink); text-decoration: none; }
+.model.model-pretty { flex-direction: row; align-items: center; gap: 8px; }
+.model-pretty .model-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.model-pretty .vendor-icon { width: 24px; height: 24px; font-size: 11px; }
+.model-pretty .vendor-icon img { width: 16px; height: 16px; }
+.card-model { display: inline-flex; min-width: 0; color: var(--ink); text-decoration: none; }
 .card-model .model-name { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; }
-.card-model .vendor-icon { width: 24px; height: 24px; font-size: 11px; }
-.card-model .vendor-icon img { width: 16px; height: 16px; }
-.card-model .model-via { flex-basis: 100%; padding-left: 32px; }
 a.card-model:hover { text-decoration: none; }
 a.card-model:hover .model-name { text-decoration: underline; text-underline-offset: 3px; }
 .card-tags { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
