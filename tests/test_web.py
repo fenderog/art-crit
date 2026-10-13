@@ -63,6 +63,20 @@ def page(browser):
     pg.close()
 
 
+def medium_exported(pg, cost=None):
+    """Routes demo's page.json so the medium run's export worked (in the fixture it failed), optionally with `cost`."""
+    def fulfill(route):
+        body = route.fetch().json()
+        for r in body["runs"]:
+            if r["id"] == MEDIUM_ID:
+                r["output"] = {"kind": "godot", "ok": True, "verified": None}
+                if cost is not None:
+                    r["metrics"]["cost_usd"] = cost
+        route.fulfill(json=body)
+
+    pg.route("**/data/demo/page.json*", fulfill)
+
+
 def assert_no_errors(pg):
     """No uncaught exceptions, and no console errors other than resource 404s
     that a test deliberately provoked (those are checked separately)."""
@@ -85,6 +99,8 @@ def test_home_lists_page(site, page):
     assert cards.count() == 2
     assert "Demo" in cards.filter(has_text="Demo").inner_text()
     assert page.locator(".card .thumb").count() == 2  # demo: high run's thumb; art: its SVG, no games loaded
+    icons = cards.filter(has_text="Demo").locator(".vendor-icon")  # one ring per vendor, its models in the tooltip
+    assert icons.count() >= 1 and ":" in icons.first.get_attribute("title")
     assert page.locator("iframe").count() == 0
     assert_no_errors(page)
 
@@ -243,6 +259,50 @@ def test_runs_table_never_scrolls_horizontally(site, browser, width):
     ctx.close()
 
 
+def test_unreported_zero_cost_is_never_the_cheapest(site, page):
+    medium_exported(page, cost=0)  # medium reports no cost, as Agy and Muse do: only high has one, nothing to compare
+    page.goto(f"{site}page.html?p=demo&view=table")
+    page.wait_for_selector("table.runs tbody tr")
+    hl = page.locator("#highlights")
+    assert hl.locator(".hl", has_text="Cheapest").count() == 0
+    assert hl.locator(".hl", has_text="Fastest").count() == 1  # its other metrics still compete
+    assert page.locator('td.is-best[data-col="cost_usd"]').count() == 0
+    assert_no_errors(page)
+
+
+def test_page_details_sidebar_collapses_and_remembers(site, browser):
+    """Wide: the prompt and highlights sit in a sidebar beside the runs; closing it gives the runs the full width
+    (more table columns) and is remembered. Narrow: it is a drawer, closed until opened."""
+    ctx = browser.new_context(viewport={"width": 1440, "height": 900})
+    pg = ctx.new_page()
+    pg.goto(f"{site}page.html?p=demo&view=table")
+    pg.wait_for_selector("table.runs tbody tr")
+    aside, toggle = pg.locator("#page-aside"), pg.locator("#aside-toggle")
+    assert aside.is_visible() and aside.locator("#prompt").is_visible() and aside.locator("#highlights").is_visible()
+    assert toggle.get_attribute("aria-expanded") == "true"
+    assert not pg.locator('th[data-key="tokens_reasoning"]').is_visible()  # the sidebar takes room from the table
+    pg.locator("#aside-close").click()
+    assert aside.is_hidden() and toggle.get_attribute("aria-expanded") == "false"
+    assert pg.locator('th[data-key="tokens_reasoning"]').is_visible()
+    pg.reload()
+    pg.wait_for_selector("table.runs tbody tr")
+    assert aside.is_hidden()  # remembered
+    toggle.click()
+    assert aside.is_visible()
+
+    pg.set_viewport_size({"width": 800, "height": 900})  # narrow: a drawer, closed at first
+    pg.wait_for_timeout(300)
+    assert not aside.is_visible() and toggle.get_attribute("aria-expanded") == "false"
+    toggle.click()
+    pg.wait_for_timeout(300)
+    assert aside.is_visible() and pg.locator("#aside-backdrop").is_visible()
+    pg.keyboard.press("Escape")
+    pg.wait_for_timeout(300)
+    assert not aside.is_visible()
+    assert pg.evaluate("document.documentElement.scrollWidth <= innerWidth")
+    ctx.close()
+
+
 def test_runs_table_has_run_time_and_no_output_tokens_column(site, page):
     page.goto(f"{site}page.html?p=demo&view=table")
     page.wait_for_selector("table.runs tbody tr")
@@ -274,6 +334,7 @@ def test_runs_table_shows_each_runs_image(site, page):
 
 
 def test_page_orders_by_effort_and_highlights_best_completed_run(site, page):
+    medium_exported(page)
     page.goto(f"{site}page.html?p=demo&view=table")
     page.wait_for_selector("table.runs tbody tr")
     efforts = lambda: page.locator("table.runs tbody tr td[data-col='effort']").all_inner_texts()
@@ -307,9 +368,11 @@ def test_runs_are_tinted_by_vendor(site, page):
 
 
 def test_run_page_ranks_and_tabs(site, page):
+    medium_exported(page)
     page.goto(f"{site}run.html?p=demo&r={MEDIUM_ID}")
     page.wait_for_selector("#metric-strip .stat")
     assert "cheapest of 2" in page.locator("#metric-strip").inner_text()  # the failed run isn't ranked
+    page.unroute("**/data/demo/page.json*")
     page.goto(f"{site}run.html?p=demo&r={HIGH_ID}#source")  # the tab is linkable
     page.wait_for_selector("#panel-source:not([hidden]) .source-view pre")
     assert page.locator(".source-files button.active").count() == 1  # first file opens right away
@@ -498,14 +561,14 @@ def test_run_whose_export_failed_is_a_finished_agent_run_without_a_build(site, p
     assert_no_errors(page)
 
 
-def test_page_shows_export_failed_as_a_badge_and_counts_the_run_as_completed(site, page):
+def test_page_shows_export_failed_as_a_badge_and_keeps_it_out_of_the_highlights(site, page):
     page.goto(f"{site}page.html?p=demo&view=table")
     page.wait_for_selector("table.runs tbody tr")
     row = page.locator("tr.run-row").filter(has=page.locator("td", has_text="medium")).first
     assert row.locator('td[data-col="verified"] .badge-bad').inner_text() == "export failed"
     hl = page.locator("#highlights")
-    assert "medium" in hl.locator(".hl", has_text="Fastest").inner_text()  # it still competes: the agent completed
-    assert "1 failed" in hl.locator(".hl", has_text="Verified").inner_text()  # only the agent that failed counts as failed
+    assert "medium" not in hl.inner_text()  # no output: it never wins a highlight, though the agent completed
+    assert not row.locator("td.is-best").count()
     row.locator('td[data-col="effort"]').click()
     detail = page.locator("tr.run-detail")
     assert "no index.html produced" in detail.locator(".run-error").inner_text()
