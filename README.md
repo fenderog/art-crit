@@ -39,9 +39,9 @@ uv run art-crit run "a spinning low-poly windmill in a small field" -m openai-co
 
 That spins up one agent per model × effort level, in parallel, on your machine. When they finish,
 their work is packaged and checked where a check exists. Failures and timeouts are kept too —
-they're part of the comparison. Preview with `art-crit serve`; nothing goes public until
-`art-crit publish` pushes to `main` (Cloudflare Pages builds on each push), or pass `--publish`
-to publish each run as it lands, handy for long batches.
+they're part of the comparison. Each run is published as it lands: imported, committed and pushed to
+`main` (Cloudflare Pages builds on each push), so a long batch fills up the live site while it runs.
+Pass `--no-publish` to import locally only and push later with `art-crit publish`.
 
 A few things worth knowing:
 
@@ -54,7 +54,7 @@ A few things worth knowing:
   `-y/--yes` skips the prompt for scripts.
 - Useful flags: `-p/--page`, `-t/--title`, `-j N` (how many agents at once),
   `-T/--timeout 30m`, `-b/--brief FILE` (your own brief template, `{prompt}` is your prompt),
-  `-P/--publish`. `art-crit run -h` has the full list.
+  `--no-publish` (publishing each run is the default). `art-crit run -h` has the full list.
 - Ctrl-C stops everything. `art-crit run --resume <batch dir>` picks up a batch without
   redoing finished agents.
 

@@ -119,7 +119,8 @@ def test_web_run_end_to_end_in_the_viewer(tmp_path, monkeypatch):
         shutil.copy(f, root / "docs")
     shutil.copytree(repo / "docs/assets", root / "docs/assets")
     (root / "art-crit.toml").write_text(f'[run]\ndir = "{tmp_path / "runs"}"\n')
-    assert in_thread(main, ["run", "--yes", "--kind", "web", "a spinning horse", "-m", "openai-codex/gpt-6-sol:low", "--root", str(root)]) == 0
+    # --no-publish: this root isn't a git repo, and the test is about the viewer, not the push
+    assert in_thread(main, ["run", "--yes", "--no-publish", "--kind", "web", "a spinning horse", "-m", "openai-codex/gpt-6-sol:low", "--root", str(root)]) == 0
     [run] = json.loads((root / "docs/data/a-spinning-horse/page.json").read_text())["runs"]
     assert run["output"]["verified"] is True and run["thumb"] == "thumb.png"
 

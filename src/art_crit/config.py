@@ -85,7 +85,7 @@ class RunRequest:
     brief: str | None = None  # brief template text; None = the built-in brief for the kind
     parallel: int | None = None
     timeout: str | None = None
-    publish: bool = False
+    publish: bool = True  # publish (import + push) each run as it finishes; --no-publish opts out
     change_prompt: bool = False
 
     def __post_init__(self):

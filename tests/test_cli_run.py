@@ -70,9 +70,10 @@ def fake_build(monkeypatch):
 
 
 @pytest.fixture
-def run_root(bench_root, tmp_path):
+def run_root(bench_root, tmp_path, git_repo):
     runs_dir = tmp_path / "art-crit-runs"
     (bench_root / "art-crit.toml").write_text(f'[run]\ndir = "{runs_dir}"\nparallel = 8\ntimeout = "30m"\n')
+    git_repo(bench_root)  # `art-crit run` publishes by default; these tests are a git repo already
     return bench_root
 
 
@@ -551,34 +552,16 @@ def test_kind_must_match_the_existing_page(run_root):
 # --- publishing as runs finish ---------------------------------------------------------------------
 
 
-def git_repo(root, tmp_path):
-    """`root` as a git repo with an empty bare origin, so publish's add/commit/push succeed here."""
-
-    def run(*args):
-        subprocess.run(args, check=True, capture_output=True)
-
-    origin = tmp_path / "origin.git"
-    run("git", "init", "--bare", "-q", "-b", "main", str(origin))
-    run("git", "init", "-q", "-b", "main", str(root))
-    for key, value in (("user.email", "bench@test"), ("user.name", "bench"), ("commit.gpgsign", "false")):
-        run("git", "-C", str(root), "config", key, value)
-    run("git", "-C", str(root), "remote", "add", "origin", str(origin))
-    run("git", "-C", str(root), "add", "-A")
-    run("git", "-C", str(root), "commit", "-q", "-m", "init")
-    run("git", "-C", str(root), "push", "-q", "-u", "origin", "main")
-    return origin
-
-
 def git_subjects(root):
     out = subprocess.run(["git", "-C", str(root), "log", "--format=%s"], check=True, capture_output=True, text=True)
     return out.stdout.splitlines()
 
 
-def test_run_publish_pushes_each_run_as_it_finishes(run_root, tmp_path, capsys):
-    """-P/--publish imports, commits and pushes every run on its own, and leaves nothing to the batch's
-    own import at the end (which would print the preview hint)."""
-    origin = git_repo(run_root, tmp_path)
-    rc = main(["run", "--yes", "--publish", "a horse as we go", "-m", "openai-codex/gpt-6-sol:low..high",
+def test_run_publishes_each_run_as_it_finishes_by_default(run_root, git_repo, capsys):
+    """Publishing is the default: every run is imported, committed and pushed on its own, and nothing is
+    left to the batch's own import at the end (which would print the preview hint)."""
+    origin = git_repo(run_root)
+    rc = main(["run", "--yes", "a horse as we go", "-m", "openai-codex/gpt-6-sol:low..high",
                "--root", str(run_root)])
     assert rc == 0
     out = capsys.readouterr().out
@@ -593,12 +576,24 @@ def test_run_publish_pushes_each_run_as_it_finishes(run_root, tmp_path, capsys):
     assert not status.stdout.strip(), "every published file is committed"
 
 
-def test_run_publish_falls_back_to_the_batch_import_for_a_missed_run(run_root, tmp_path, monkeypatch, capsys):
+def test_run_no_publish_imports_only(run_root, capsys):
+    """--no-publish imports the batch at the end and leaves the push to `art-crit publish`, so nothing is
+    committed on its own."""
+    rc = main(["run", "--yes", "--no-publish", "a quiet horse", "-m", "openai-codex/gpt-6-sol:low",
+               "--root", str(run_root)])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "Preview with: art-crit serve" in out and "publish with: art-crit publish" in out
+    assert "as they finished" not in out
+    assert git_subjects(run_root) == ["init"]  # nothing published
+    assert len(json.loads((run_root / "docs/data/a-quiet-horse/page.json").read_text())["runs"]) == 1
+
+
+def test_run_publish_falls_back_to_the_batch_import_for_a_missed_run(run_root, monkeypatch, capsys):
     """A run that couldn't be published is picked up by the batch's own import at the end (the path that
     also reports the failure and exits non-zero when it fails again)."""
     monkeypatch.setattr("art_crit.runner.Publisher.publish", lambda self, run_id: None)
-    git_repo(run_root, tmp_path)
-    rc = main(["run", "--yes", "--publish", "a missed horse", "-m", "openai-codex/gpt-6-sol:low", "--root", str(run_root)])
+    rc = main(["run", "--yes", "a missed horse", "-m", "openai-codex/gpt-6-sol:low", "--root", str(run_root)])
     assert rc == 0
     out = capsys.readouterr().out
     assert "Preview with: art-crit serve" in out
@@ -936,10 +931,12 @@ def test_every_long_option_has_a_short_form():
         for action in parser._actions:
             longs = [o for o in action.option_strings if o.startswith("--")]
             shorts = [o for o in action.option_strings if not o.startswith("--")]
-            assert not longs or shorts, f"art-crit {name} {longs[0]} has no short form"
-    args = build_parser().parse_args(["run", "-n", "-y", "-k", "web", "-p", "pg", "-t", "T", "-T", "5m", "-b", "b.md", "-c", "-P", "-C", "/tmp", "x"])
+            # a --no-... option is the negation of one that already has a short form
+            assert not longs or shorts or longs[0].startswith("--no-"), f"art-crit {name} {longs[0]} has no short form"
+    args = build_parser().parse_args(["run", "-n", "-y", "-k", "web", "-p", "pg", "-t", "T", "-T", "5m", "-b", "b.md", "-c", "-C", "/tmp", "x"])
     assert (args.dry_run, args.yes, args.kind, args.page, args.title, args.timeout, str(args.brief), args.change_prompt, args.publish) == \
-        (True, True, "web", "pg", "T", "5m", "b.md", True, True)
+        (True, True, "web", "pg", "T", "5m", "b.md", True, True)  # publish defaults to on
+    assert build_parser().parse_args(["run", "--no-publish", "x"]).publish is False
 
 
 def test_bad_run_inputs_fail_before_a_batch_dir_exists(run_root, tmp_path, capsys):

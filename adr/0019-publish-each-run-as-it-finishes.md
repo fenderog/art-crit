@@ -1,8 +1,9 @@
-# 0019. `art-crit run --publish` publishes each run as it finishes
+# 0019. `art-crit run` publishes each run as it finishes
 
 - Status: Accepted
 - Date: 2026-10-10
-- Amends: [0011](0011-publish-pushes-to-main.md) (what `art-crit run --publish` does, not where it pushes).
+- Amends: [0011](0011-publish-pushes-to-main.md) (what `art-crit run` does, not where it pushes).
+- Amendment: publishing each run is now the default; `--no-publish` opts out (see below).
 
 ## Context
 
@@ -13,8 +14,10 @@ hand from the batch directory while it ran (`art-crit import <batch>/<run id>` p
 
 ## Decision
 
-- With `-P/--publish`, a run is imported and pushed on its own, right after its output step (step 6 of `art-crit run`) —
+- A run is imported and pushed on its own, right after its output step (step 6 of `art-crit run`) —
   the same import the batch would do, just per run, with the message `art-crit run: <page> (<run id>)`.
+  This is the default; `-P/--publish` says it explicitly and `--no-publish` turns it off, importing the batch once
+  at the end and leaving the push to `art-crit publish`.
 - One run at a time (`Publisher` in runner.py, one lock): an import rewrites `page.json`/`pages.json` and may write
   `docs/engines/`, git needs the index to itself, and a push must never see a half-written run directory.
 - The batch's own import at the end is skipped when every run was published. A run that couldn't be published — a
@@ -41,5 +44,6 @@ hand from the batch directory while it ran (`art-crit import <batch>/<run id>` p
   minute; Pages coalesces when runs finish together).
 - A secret hit in one run no longer blocks the others (that run simply isn't published), and the batch still exits
   non-zero so the hit can't go unnoticed.
-- `art-crit run --resume <batch> --publish` re-imports and re-pushes runs that were already published: a "nothing to
-  commit" plus a no-op push, which is idempotent and cheap.
+- `art-crit run --resume <batch>` re-imports and re-pushes runs that were already published: a "nothing to
+  commit" plus a no-op push, which is idempotent and cheap. A resumed batch keeps its recorded choice, and
+  `--no-publish` on the resume always wins over it.

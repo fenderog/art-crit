@@ -64,7 +64,8 @@ def build_parser():
     run.add_argument("-T", "--timeout", help='per agent, e.g. "30m" (default [run].timeout or 30m)')
     run.add_argument("-y", "--yes", action="store_true", help="don't ask for confirmation")
     run.add_argument("-n", "--dry-run", action="store_true", help="print the plan and exit")
-    run.add_argument("-P", "--publish", action="store_true", help="import and `art-crit publish` each run as it finishes")
+    run.add_argument("-P", "--publish", dest="publish", action="store_true", default=True, help="import and `art-crit publish` each run as it finishes (the default)")
+    run.add_argument("--no-publish", dest="publish", action="store_false", help="import at the end only; push later with `art-crit publish`")
     run.add_argument("-r", "--resume", type=Path, help="finish an interrupted batch dir")
 
     models_p = sub.add_parser("models", parents=[common], help="models the harness can run")

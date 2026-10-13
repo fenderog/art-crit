@@ -235,7 +235,8 @@ art-crit run PROMPT | -f/--prompt-file FILE
     -T, --timeout DUR   per agent, "30m" / "90s" / "1h" (default [run].timeout or 30m)
     -y, --yes           don't ask for confirmation
     -n, --dry-run       print the plan and exit
-    -P, --publish       import and `art-crit publish` each run as it finishes
+    -P, --publish       import and `art-crit publish` each run as it finishes (the default)
+    --no-publish        only import at the end; push later with `art-crit publish`
 art-crit run -r/--resume DIR  finish an interrupted batch (see Resume)
 ```
 `LEVEL_ORDER = off, minimal, low, medium, high, xhigh, max`. Every requested level is checked against the harness's
@@ -283,11 +284,12 @@ plain error for every command.
    `finalize(work, output/)` makes the publishable output, `verify(output/)` checks it (when `finalize` succeeded), and
    `run.json`'s `output` becomes `{kind, ok, error, verified}`. A step that fails leaves `state` alone. See Kinds.
 7. **Import**: `art-crit import` the batch directory with `--page` (and `--title` for a new page), then print where to
-   preview (`art-crit serve`) and publish, or run `art-crit publish` with `--publish`. With `--publish` each run is
-   imported and pushed on its own, right after its step 6 (`Publisher`, one run at a time: an import rewrites
-   page.json, and a push must never see a half-written run directory), so the live site fills up while the batch
-   still runs; the batch's own import at the end is then skipped. Only runs that couldn't be published (a secret
-   hit, a failed push — reported as a `note:`) fall back to it: it retries them and exits non-zero.
+   preview (`art-crit serve`). Publishing each run is the default: right after its step 6 it is imported and pushed
+   on its own (`Publisher`, one run at a time: an import rewrites page.json, and a push must never see a half-written
+   run directory), so the live site fills up while the batch still runs; the batch's own import at the end is then
+   skipped. `--no-publish` imports the batch once at the end and prints `art-crit publish` instead of pushing.
+   Only runs that couldn't be published (a secret hit, a failed push — reported as a `note:`) fall back to it:
+   it retries them and exits non-zero.
 
 Progress: on a tty a table (model, effort, state, elapsed, turns, tokens, cost) redrawn every 2s, read from each
 session file as it grows; otherwise one line per state change. The states are the agent's (queued, running, complete,

@@ -51,9 +51,10 @@ def fake_build(monkeypatch):
 
 
 @pytest.fixture
-def run_root(bench_root, tmp_path):
+def run_root(bench_root, tmp_path, git_repo):
     runs_dir = tmp_path / "art-crit-runs"
     (bench_root / "art-crit.toml").write_text(f'[run]\ndir = "{runs_dir}"\nparallel = 8\ntimeout = "30m"\n')
+    git_repo(bench_root)  # `art-crit run` publishes by default; these tests need a repo to push to
     return bench_root
 
 

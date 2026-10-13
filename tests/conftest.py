@@ -6,6 +6,7 @@ ends up in this public repo.
 """
 
 import json
+import subprocess
 from datetime import datetime
 from pathlib import Path
 
@@ -157,3 +158,32 @@ def bench_root(tmp_path):
     (root / "docs").mkdir(parents=True)
     (root / "docs" / ".nojekyll").touch()
     return root
+
+
+@pytest.fixture
+def git_repo(tmp_path):
+    """Make `root` a git repo with an empty bare origin, so publish's add/commit/push succeed here:
+    `art-crit run` publishes by default, and every full-run test goes through it. Idempotent, so a test can
+    call it again to get the origin path."""
+
+    def make(root):
+        def run(*args, check=True):
+            return subprocess.run(args, check=check, capture_output=True)
+
+        origin = tmp_path / "origin.git"
+        if not origin.exists():
+            run("git", "init", "--bare", "-q", "-b", "main", str(origin))
+        if subprocess.run(["git", "-C", str(root), "rev-parse", "--verify", "HEAD"], capture_output=True).returncode == 0:
+            return origin  # already set up (run_root did it); don't add a second commit
+        run("git", "-C", str(root), "init", "-q", "-b", "main")
+        for key, value in (("user.email", "bench@test"), ("user.name", "bench"), ("commit.gpgsign", "false")):
+            run("git", "-C", str(root), "config", key, value)
+        remotes = subprocess.run(["git", "-C", str(root), "remote"], capture_output=True, text=True).stdout.split()
+        if "origin" not in remotes:
+            run("git", "-C", str(root), "remote", "add", "origin", str(origin))
+        run("git", "-C", str(root), "add", "-A")
+        run("git", "-C", str(root), "commit", "-q", "-m", "init")
+        run("git", "-C", str(root), "push", "-q", "-u", "origin", "main")
+        return origin
+
+    return make

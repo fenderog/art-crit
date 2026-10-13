@@ -83,7 +83,7 @@ uv run art-crit models --harness agy           # live agy models (effort is part
 uv run art-crit models --harness grok-build    # live grok models, effort menu from harness.py
 uv run art-crit run --dry-run "prompt" -m claude-code:opus:high -m openai-codex/gpt-6-sol:high   # mixed harnesses
 uv run art-crit import <run-dir|batch-dir> --page <slug>   # publish runs written by `art-crit run`
-uv run art-crit run --publish "prompt" -m MODEL:LEVEL      # import + push each run as it finishes (ADR-0019)
+uv run art-crit run --no-publish "prompt" -m MODEL:LEVEL   # import locally only; run publishes each run by default (ADR-0019)
 uv run art-crit publish -m "msg"         # git add docs && commit && push (Pages deploys in ~1 min)
 python3 cloudflare/prepare.py          # validate the Pages upload (<25 MiB per asset) locally
 node --test tests/js/votes.test.mjs    # the votes API alone (needs node:sqlite, Node 22.13+)

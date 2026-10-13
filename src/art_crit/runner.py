@@ -1,8 +1,9 @@
 """`art-crit run`: plan, launch, collect, finalize, verify and import a batch of agent runs.
 See SPEC.md "Running benchmarks (art-crit run)". A fresh batch and a `--resume`d one both end in
 `execute()`: for each run, either run its agent (if unfinished) or reuse its run.json, then the kind's
-output step if it hasn't succeeded yet, then import — with `--publish`, each run is imported and pushed
-as soon as its own output step is done, so the live site fills up while the batch still runs.
+output step if it hasn't succeeded yet, then import — each run is imported and pushed as soon as its own
+output step is done (the default; `--no-publish` imports the whole batch at the end instead), so the live
+site fills up while the batch still runs.
 
 A run's state (batch.json and run.json) says only what the agent did: queued | running | complete | failed
 | timeout. What the kind made of its work is `output` in run.json: {kind, ok, error, verified}. The progress
@@ -467,8 +468,9 @@ def read_batch(batch_dir):
 
 
 class Publisher:
-    """`art-crit run --publish`: import and push each run as it finishes, so the live site fills up while the
-    batch is still running (nothing is left for the batch's own import at the end; see `execute`).
+    """`art-crit run` (the default): import and push each run as it finishes, so the live site fills up while
+    the batch is still running (nothing is left for the batch's own import at the end; see `execute`).
+    `--no-publish` turns this off.
     One run at a time: importing rewrites page.json, git needs the index to itself, and a push must never
     see a half-written run directory. A run that can't be published — a secret hit, a failed push — is
     reported and left to the batch's import at the end, which retries it and exits non-zero."""
@@ -537,7 +539,7 @@ def execute(config, request, batch_dir, harnesses, verify=True):
             return
         if record["state"] == "complete" and not (record["output"] and record["output"]["ok"]):
             finish_output(kind, rd, record, finalize_lock, verify, progress)
-        if publisher and not interrupted.is_set():  # --publish: this run is live from here on
+        if publisher and not interrupted.is_set():  # publishing: this run is live from here on
             publisher.publish(run["id"])
 
     pool = ThreadPoolExecutor(max_workers=parallel)
@@ -577,7 +579,7 @@ def cmd_run(config, request, *, yes=False, dry_run=False, resume=None, verify=Tr
             merged = RunRequest.from_dict(stored)
             merged.parallel = request.parallel or merged.parallel
             merged.timeout = request.timeout or merged.timeout
-            merged.publish = request.publish or merged.publish
+            merged.publish = merged.publish and request.publish  # --no-publish always wins
             request = merged
         return execute(config, request, batch_dir, harnesses, verify)
 

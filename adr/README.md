@@ -45,7 +45,7 @@ Copy `template.md` to `NNNN-short-title.md` using the next number, and add it to
 | [0016](0016-page-json-includes-runs.md) | One page.json includes ranked runs | Accepted |
 | [0017](0017-run-directory-is-the-unit-of-work.md) | The run directory is the unit of work; the effort-run format is retired | Accepted |
 | [0018](0018-one-kind-interface-and-an-output-record.md) | One Kind interface; `state` is the agent's, `output` is the kind step's | Accepted |
-| [0019](0019-publish-each-run-as-it-finishes.md) | `art-crit run --publish` publishes each run as it finishes | Accepted |
+| [0019](0019-publish-each-run-as-it-finishes.md) | `art-crit run` publishes each run as it finishes (default) | Accepted |
 | [0020](0020-renamed-to-art-crit.md) | Renamed from llm-bench to art-crit | Accepted |
 | [0021](0021-cloudflare-pages-subpath.md) | Cloudflare Pages on a domain subpath with compressed engine | Accepted |
 | [0022](0022-community-votes.md) | Community votes: GitHub sign-in, hearts and medals in D1 behind the Worker | Accepted |
