@@ -821,7 +821,7 @@ body:has(.page-container) { --page: 1440px; } /* the header lines up with the wi
   table.runs tr.run-row.is-failed { box-shadow: inset 3px 0 0 var(--bad); }
   table.runs td { display: block; padding: 0; border: 0; min-width: 0; white-space: normal; text-align: left !important; }
   table.runs tr.run-row { position: relative; }
-  table.runs td.select-cell { position: absolute; top: 12px; right: 12px; padding: 0; }
+  table.runs td.select-cell { position: absolute; top: 12px; right: 12px; padding: 0; width: auto; }
   td.select-cell input.run-select { width: 20px; height: 20px; margin: 0; }
   td.select-cell .caret { display: none; }
   table.runs td[data-col="model"] { padding-right: 28px; }
