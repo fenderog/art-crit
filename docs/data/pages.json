@@ -3,7 +3,7 @@
     "slug": "ceate-an-svg-of-an-awkward",
     "title": "Awkward Robot Family",
     "kind": "media",
-    "n_runs": 10,
+    "n_runs": 11,
     "models": [
       "anthropic/claude-haiku-5-5",
       "anthropic/claude-opus-5-5",
@@ -11,7 +11,7 @@
       "openai-codex/gpt-6-astra",
       "openai-codex/gpt-6.1-sol"
     ],
-    "updated": "2026-10-13T22:44:54Z",
+    "updated": "2026-10-13T22:45:01Z",
     "thumb": "data/ceate-an-svg-of-an-awkward/runs/claude-haiku-5-5-cc-low-20261013-153749/media/awkward_robot_family.svg"
   },
   {
