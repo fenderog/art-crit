@@ -1,0 +1,39 @@
+{
+  "id": "muse-wonder-1.0-max-20261012-204657",
+  "page": "16bit-eiffel-tower",
+  "model": "meta/muse-wonder-1.0",
+  "effort": "max",
+  "kind": "media",
+  "started_at": "2026-10-13T03:46:59Z",
+  "batch": "2026-10-12-204657-16bit-eiffel-tower",
+  "harness": {
+    "name": "pi",
+    "version": "1.2.0"
+  },
+  "state": "failed",
+  "error": "meta API error (429): {\"code\":\"rate_limit_exceeded\",\"message\":\"Subscription quota exhausted. Your usage window resets at 2026-10-13T08:41:16Z.\",\"param\":null,\"resets_at\":1791880876,\"type\":\"rate_limit_e",
+  "route": null,
+  "metrics": {
+    "duration_ms": 138078,
+    "cost_usd": 0.0,
+    "tool_calls": 4,
+    "turns": 11,
+    "tokens_total": 22025,
+    "tokens_input": 8960,
+    "tokens_output": 13065,
+    "tokens_reasoning": 6032,
+    "tokens_cache_read": 7260
+  },
+  "thumb": null,
+  "output": null,
+  "session": {
+    "conversation": "session/conversation.json",
+    "stderr": "session/stderr.txt"
+  },
+  "source": {
+    "root": "source/",
+    "files": [
+      "src/make_eiffel.py"
+    ]
+  }
+}
