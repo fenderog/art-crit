@@ -120,7 +120,7 @@ All paths inside JSON are **relative to the run directory** (for Run) or to `doc
   off first and appended as `-via-<route>`, e.g. `…flash@deepinfra/fp8` → `deepseek-v4.1-flash-via-deepinfra-fp8-low-20261001-101500`;
   anything else outside `[a-z0-9.-]` becomes `-`. It is also the run directory's name; two runs of a batch with one id
   are refused before anything starts.
-- `harness` = the agent program and its version; `metrics` as in "Metrics".
+- `harness` = the agent program and its version; `metrics` as in "Metrics". `metrics.cost_estimated: true` is present for Muse Code API-equivalent estimates (not subscription charges); `metrics.cost_estimate_proxy: "meta/muse-wonder-1.0"` also appears when Wonder Standard's API rate is used as a proxy for an unpriced Wonder variant.
 - `route` = what the harness reports about routing, for a pi `openrouter/` run, else `null`:
   `{"requested": {"only": [...], "allow_fallbacks": false}, "served": [...], "cost_usd": 0.00085, "pi_cost_usd": 0.00038}`.
   `requested` is `null` for an unpinned run (OpenRouter chose the upstream); the rest is recorded either way.
@@ -192,18 +192,19 @@ The page's prompt is the batch directory's `prompt.md`. Effort-run folders (`fe-
 ```
 art-crit import <run-dir | batch-dir> [-p/--page SLUG] [-t/--title TEXT] [-r/--redact] [-a/--allow-threads] [-n/--dry-run]
 art-crit list                      # pages and their runs
-art-crit rm <slug> [<run_id>]      # remove a run (or a whole page), then rebuild
+art-crit rm <slug> [<run_id>] [-f/--failed] [-y/--yes]   # remove a run (or a whole page); --failed removes every failed run instead, then rebuild
 art-crit rename <slug> <new> [-t/--title TEXT]   # move a page to a new slug (rewrites each run.json `page`), then rebuild
 art-crit rebuild                   # regenerate page.json + pages.json from runs/*/run.json; delete engines no run references
 art-crit serve [-p/--port 8000]    # serve docs/ locally: Access-Control-Allow-Origin: *, .wasm as application/wasm, NO COOP/COEP headers
                                 #   plus the local-only ranking API (see Ranking); accept queue 64 for concurrent ES modules
 art-crit publish [-m MSG]          # git add docs && git commit && git push (Cloudflare Pages builds main)
 art-crit run ...                   # run agents locally, then import (see "Running benchmarks")
-art-crit models [SEARCH] [-H/--harness pi|claude-code|agy|grok-build]   # models the harness can run; with SEARCH also their effort levels
+art-crit models [SEARCH] [-H/--harness pi|claude-code|agy|grok-build|muse-code]   # models the harness can run; with SEARCH also their effort levels
 ```
 Every long option has a single-dash short form (shown as `-p/--page`); the short forms are listed with each command.
 - `import` is idempotent. Re-importing the same directory replaces runs with the same id.
 - `import` prints a short summary per run: id, engine stored or reused, bytes written, paths rewritten, secret hits.
+- `--failed` removes runs where the agent didn't finish (`state`), the kind step failed (`output.ok`) or the check failed (`output.verified`); it lists them with the reason and asks first unless `-y/--yes`.
 - `--dry-run` does all the work, including the secret scan, in a temp dir and writes nothing to docs/.
 - Errors go to stderr with a non-zero exit code, and there are no tracebacks for expected errors.
 
@@ -352,13 +353,13 @@ session file, or the last assistant message has `stopReason: "error"`; `error` =
 non-empty stderr line (the first 200 characters).
 
 ### Harness interface (`src/art_crit/harness.py`)
-Harnesses: `pi` (the default), `claude-code`, `agy` (Antigravity CLI) and `grok-build`. A `-m` spec picks one with a prefix: `HARNESS:MODEL[:LEVELS]`
+Harnesses: `pi` (the default), `claude-code`, `agy` (Antigravity CLI), `grok-build` and `muse-code`. A `-m` spec picks one with a prefix: `HARNESS:MODEL[:LEVELS]`
 (no prefix, or `pi:`, = pi), in `-m`, `--set` entries and set files alike, so one batch can mix harnesses. Each run
 records its harness; batch.json has `harnesses: {name: version}`. The run ids of non-pi harnesses put the harness tag after
 the model (`claude-opus-5-5-cc-high-20260928-154152`), so one model under two harnesses never collides.
 ```python
 class Harness:           # one per agent program
-    name: str; tag: str                                 # tag: "" for pi, "cc"/"agy"/"gb" for the others
+    name: str; tag: str                                 # tag: "" for pi, "cc"/"agy"/"gb"/"mc" for the others
     def version(self) -> str | None
     def models(self) -> list[str]
     def resolve(self, model) -> str                     # alias -> id (identity by default)
@@ -416,6 +417,8 @@ prices, also on a subscription); failed = `result.is_error` (error = `result.res
 Agy (`agy`): models come from `agy models`, grouping the effort-suffixed slugs (`gemini-3.8-flash-high` → `gemini-3.8-flash:high`). The selected slug is passed with `--model`, **not** separately overridden with `--effort`. Runs use the underlying model vendor prefix (`google/`, `anthropic/`, `openai/` where recognizable), rather than grouping all models as Antigravity. Command uses `-p BRIEF --output-format stream-json --dangerously-skip-permissions --disable-slash-commands`. Stateless headless mode produces `init`, `step_update`, and `result` NDJSON. Tool steps are emitted once on `DONE` (not again on `ACTIVE`); agent response deltas are concatenated in order. The final result's usage supplies tokens (including `thinking_tokens`); cost is unavailable and recorded as 0, not a measured price. Non-success results fail the run. Agy currently has no documented equivalent of Claude Code's `--safe-mode` or tool allowlist: the headless session may load user configuration/tools. Runs should use an isolated CLI profile for reproducibility.
 
 Grok Build (`grok`): models are intersected with `grok models`; effort menus for known models are in `GrokBuild.MODELS` (update when the CLI changes, as `grok models` doesn't list levels). Command uses `-p BRIEF --model ID --reasoning-effort LEVEL --output-format streaming-messages-json --always-approve --verbatim --tools run_terminal_cmd,read_file,write_file,search_replace,grep,list_dir --disallowed-tools Agent --disable-web-search --no-subagents`. The stream's Messages-compatible `assistant`/`user`/`result` events reuse the Claude Code converter. Final result usage has `reasoning_tokens`, and cost is `total_cost_usd` when supplied; under pool/OAuth it can be missing (0 in the current numeric run schema means **unreported**, not free). Grok's MCP meta-tools may still be enabled by the user's configuration, even with `--tools`; run with isolated configuration for strict comparisons.
+
+Muse Code (`muse`): models and levels come from the catalog `muse` caches in `~/.local/share/muse/model-catalog/*.json` (`rows[].model_id` with `reasoning_effort_variants[].tier`, hidden `-contributor` rows included, image models skipped), refreshed only when the Muse TUI fetches it; the `MuseCode.MODELS` table is the fallback without a cache. The recorded model is `meta/<id>`. Command: `bash -c` running `muse exec --json --session-id ID --model M --reasoning-effort L --disable-approval --disable-sandbox --disable-web-tools --disable-reminders --no-foreign-personal-context -- BRIEF`, then `muse export --session ID --out harness/export.json` whatever `exec`'s exit code was (exec's own `--json` stdout, `events.jsonl`, carries no tool calls or usage). `export.json` is the session: its `events` are records whose `runtime.session` payloads of `kind: run` hold `reasoning_committed`, `assistant_message_committed`, `assistant_tool_calls_committed` (`tool_calls[{call_id, name, args}]`), `tool_result_batch_committed`, `model_completed` (`usage`) and `terminal` events; only runs with a `top_level_turn.run_origin` fact count. Conversion: one assistant message per model call (thinking, text, toolCalls, usage); `bash`/`write_file`/`edit_file`/`read_file` become pi's `bash`/`write`/`edit`/`read`; tool durations are exact (the `tool_batch.effect` start and end per call); timestamps from the records' `recorded_at` (µs). Metrics: turns = `model_completed` events, tokens summed over their usage with `input` = `input_tokens` - cache read/write (Muse's include them), reasoning = `reasoning_tokens`; `cost_usd` for models with published [Meta Model API prices](https://dev.meta.ai/docs/pricing-rate-limits) is `(input + cacheWrite) * input_rate + cacheRead * cached_rate + output * output_rate`, divided by 1M (reasoning is already in output). It is marked `metrics.cost_estimated: true`: API-equivalent, **not** actual subscription spend. Supported: Wonder 1.0 Standard ($4/$0.20/$20 per million uncached/cached/output), Spark 1.2/1.3 Standard ($1.25/$0.15/$4.25) and Spark 1.2/1.3 Contributor ($0.10/$0.002/$0.20). Muse Wonder Full and Wonder Contributor have no published API rate: they use Wonder Standard's rate as a **proxy**, marked `metrics.cost_estimate_proxy: "meta/muse-wonder-1.0"` (≈ in the viewer). Unknown models remain 0 (**unknown**, not free). The rates are pinned in `MuseCode.API_PRICES` and require updating when Meta changes pricing. Re-importing a legacy Muse run with `harness/export.json` calculates its estimate without modifying the archived batch run.json. Failed = no `terminal` event or one that is not `completed` (error = its `reason`).
 
 Future harnesses and a VM runner plug in here and at "start one agent" in `runner.py`; a container executor mounts one run directory.
 
@@ -528,7 +531,8 @@ name in bold and the provider prefix quietly (`modelLabel()`). Runs are grouped 
 stripe in the vendor's hue on table rows (page.html) and compare cards (`vendorOf()`/`vendorAttrs()`: the first segment of the
 model id up to `-`, or the second after `openrouter/`; sets `data-vendor` and `--vh`). It is color only, so it works under any
 sort; runs of one vendor sit together in the default model order. "Best" means the lowest cost, duration or total tokens
-among **completed** runs (a failed run never wins), only when at least two runs compete (`rankBy()`); it's marked in green
+among runs that made their output (`!isFailed()`: neither a failed agent nor a failed output step ever wins; a cost of 0
+is unreported and never wins), only when at least two runs compete (`rankBy()`); it's marked in green
 with ★. Styling is one token set on `:root` (light) redefined under `prefers-color-scheme: dark`, system fonts only.
 
 Your ranking (`run.rank`) is shown as 🥇🥈🥉 then `#4`, `#5`… (`rankLabel()`/`rankChip()`): in the runs table's Rank
@@ -543,9 +547,9 @@ immediate sandboxed frame, the media gallery, or the "no output" message, with t
 one `KIND_UI` table (chip label, tab label, no-output text and failure badge per kind); page, run, compare and play all call
 them. Any output with an `entry` is shown in the sandbox, so a new kind needs no viewer code.
 
-- **index.html**: cards per page (thumb, a Game/Media chip, title, model names, n_runs, updated date) → page.html.
-- **page.html**: title, a meta line (kind, n runs, n models, last run), the Prompt (prompt.md) and a collapsed Final prompt,
-  then **highlights**: the cheapest, fastest and fewest-tokens completed run (each links to it) plus verified count, failed
+- **index.html**: cards per page (thumb, a Game/Media chip, title, one icon per model vendor (OpenRouter's provider icons, vendored under `assets/vendor/icons/`; its models on hover), n_runs, updated date) → page.html.
+- **page.html**: title, a details sidebar with a meta line (kind, n runs, n models), the Prompt (prompt.md) and a collapsed Final prompt,
+  then **highlights**: the cheapest, fastest and fewest-tokens run among those that made their output (each links to it; a cost of 0 means unreported and never ranks) plus verified count, failed
   count and total spend. Then a runs table (thumb, rank, model, effort, harness,
   verified ✓/✗ (`output.verified`), run at (the run's `started_at`, local time, year on hover; in the phone cards a line under the metrics), duration, tokens total/reasoning, cost, tool calls). Harness shows "pi 0.87.1" (name only
   when version is null, "–" when missing).
@@ -562,8 +566,8 @@ them. Any output with an `entry` is shown in the sandbox, so a new kind needs no
   table fits the 1240px page, and below it columns hide by priority: Reasoning at ≤1199px, Harness and Tool calls at ≤959px, the thumbnail at ≤799px. Model, Effort, Run at, Verified, Duration and Cost (plus
   the rank, caret and Tokens) always stay; hidden metrics are on the run page's Metrics tab and in compare.
   (`.table-wrap` keeps `overflow-x: auto` as a safety net only.) Model names with a pinned upstream wrap inside their cell.
-- **run.html**: a header with model (provider above) and effort, stat tiles (cost, duration, tokens, output tokens, tool calls, turns) each with the run's
-  rank among the page's completed runs ("cheapest of 6", "3rd of 6"), a line with verified (`output.verified`), harness,
+- **run.html**: a header with model and effort; a collapsible details sidebar (as on page.html) with the provider, stat tiles (cost, duration, tokens, output tokens, tool calls, turns) each with the run's
+  rank among the page's runs that made their output ("cheapest of 6", "3rd of 6"), a line with verified (`output.verified`), harness,
   started (plus the failed/timeout badge for the agent and an "export failed" / "packaging failed" / "output failed"
   badge when the output step failed), and the agent's `error`. Then tabs (the open tab is kept in the URL hash, e.g. `#transcript`; Transcript and
   Source show a count):

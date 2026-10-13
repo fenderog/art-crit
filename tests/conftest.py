@@ -16,6 +16,14 @@ FIXTURES = Path(__file__).parent / "fixtures"
 GODOT_INDEX_HTML = (FIXTURES / "godot_index.html").read_text()
 
 DEFAULT_LEVELS = ["low", "high"]
+
+
+@pytest.fixture(autouse=True)
+def no_muse_catalog(monkeypatch, tmp_path_factory):
+    """Muse Code reads its model list from the user's cache; tests get the built-in table instead."""
+    from art_crit.harness import MuseCode
+    monkeypatch.setattr(MuseCode, "CATALOG_DIR", tmp_path_factory.getbasetemp() / "no-muse-catalog")
+
 ENGINE_BYTES = {
     "index.wasm": b"FAKE-WASM-BYTES-0001",
     "index.js": b"FAKE-JS-BYTES-0001",

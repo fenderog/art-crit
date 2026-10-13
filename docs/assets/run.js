@@ -52,7 +52,7 @@ function render(run, base, siblings) {
     return el("div", { class: "stat" }, [el("span", { class: "stat-label", text: label }), el("span", { class: "stat-value", text: value }), rank]);
   };
   const tiles = el("div", { class: "stat-tiles" }, [
-    tile("Cost", "cost_usd", fmtCost(m.cost_usd)),
+    tile("Cost", "cost_usd", fmtCost(m.cost_usd, m.cost_estimated, m.cost_estimate_proxy)),
     tile("Duration", "duration_ms", fmtDuration(m.duration_ms)),
     tile("Tokens", "tokens_total", fmtNum(m.tokens_total)),
     tile("Output tokens", "tokens_output", fmtNum(m.tokens_output)),
@@ -195,7 +195,7 @@ function renderMetrics(run, base) {
   const hint = (k, v) => {
     if (typeof v !== "number") return null;
     if (k.endsWith("_ms")) return fmtDuration(v);
-    if (k.endsWith("_usd")) return fmtCost(v);
+    if (k.endsWith("_usd")) return fmtCost(v, k === "cost_usd" && run.metrics?.cost_estimated, k === "cost_usd" && run.metrics?.cost_estimate_proxy);
     if (v >= 10000) return fmtNum(v);
     return null;
   };

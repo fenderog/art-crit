@@ -65,7 +65,7 @@ function metricsLine(r, best) {
   };
   part("duration_ms", fmtDuration(m.duration_ms), "");
   part("tokens_total", fmtNum(m.tokens_total), " tokens");
-  part("cost_usd", fmtCost(m.cost_usd), "");
+  part("cost_usd", fmtCost(m.cost_usd, m.cost_estimated, m.cost_estimate_proxy), "");
   return line;
 }
 

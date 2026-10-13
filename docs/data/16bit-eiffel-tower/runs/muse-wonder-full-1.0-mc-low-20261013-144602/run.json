@@ -15,14 +15,16 @@
   "route": null,
   "metrics": {
     "duration_ms": 122430,
-    "cost_usd": 0.0,
+    "cost_usd": 0.3390448,
     "tool_calls": 10,
     "turns": 8,
     "tokens_total": 42855,
     "tokens_input": 35027,
     "tokens_output": 7828,
     "tokens_reasoning": 1100,
-    "tokens_cache_read": 211884
+    "tokens_cache_read": 211884,
+    "cost_estimated": true,
+    "cost_estimate_proxy": "meta/muse-wonder-1.0"
   },
   "thumb": "media/eiffel-tower-snes.png",
   "output": {

@@ -37,7 +37,7 @@ src/art_crit/          CLI, standard library only (argparse, json, subprocess, t
   clean.py          session cleaning, path rewrites, secret scan/redact
   site.py           rebuild page.json (with runs) / pages.json (+ each run's rank from ranking.json), rm, list, engine GC
   serve.py          `art-crit serve` (GitHub-Pages-like) + the local-only ranking API (PUT api/rank)
-  harness.py        Harness interface + Pi, ClaudeCode, Agy, GrokBuild (streams -> pi-format session) + metrics parsers
+  harness.py        Harness interface + Pi, ClaudeCode, Agy, GrokBuild, MuseCode (streams -> pi-format session) + metrics parsers
   runner.py         `art-crit run`: plan -> run agents in parallel -> collect -> kind step (finalize + verify) -> import;
                     `RunDir` = <batch>/<run id>/{run.json,work/,harness/,output/}
   pi_ext/           art-crit-shipped pi extensions loaded with explicit `-e` (work under `-ne`):
@@ -81,6 +81,7 @@ uv run art-crit models gpt-6             # models + effort levels from pi
 uv run art-crit models --harness claude-code   # Claude Code's (from the table in harness.py)
 uv run art-crit models --harness agy           # live agy models (effort is part of its slug)
 uv run art-crit models --harness grok-build    # live grok models, effort menu from harness.py
+uv run art-crit models --harness muse-code     # muse models + levels (a table in harness.py)
 uv run art-crit run --dry-run "prompt" -m claude-code:opus:high -m openai-codex/gpt-6-sol:high   # mixed harnesses
 uv run art-crit import <run-dir|batch-dir> --page <slug>   # publish runs written by `art-crit run`
 uv run art-crit run --no-publish "prompt" -m MODEL:LEVEL   # import locally only; run publishes each run by default (ADR-0019)
@@ -166,6 +167,16 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   Agy's `step_update` ACTIVE/DONE events need deduplication for tools and ordered text deltas. Neither CLI
   guarantees the same configuration isolation as Claude Code's `--safe-mode` (Grok's MCP meta-tools may remain).
   Agy has no cost field and Grok's server sometimes omits cost; 0 in a run can mean unreported, not free.
+- **Muse Code (`muse exec`):** its `--json` stdout is a thin live stream (no tool calls, no usage), so `MuseCode.command`
+  wraps `exec` in `bash -c` that runs `muse export --session ID --out harness/export.json` after the agent exits (ADR-0023).
+  That export is the session (`session_file`); until the agent exits there is none, so live progress shows 0. `muse` has no
+  list command: models and effort tiers come from the catalog it caches in `~/.local/share/muse/model-catalog/` (refreshed
+  when the Muse TUI fetches it, e.g. opening `/model`; a new model is missing until then), with `MuseCode.MODELS` as the
+  fallback when there's no cache. Tests point `CATALOG_DIR` at an empty dir (conftest) so they never read the real one. Tokens: Muse's
+  `input_tokens` includes cached ones, so `input` = input - cache read/write. `MuseCode.finish` uses pinned Meta API rates for known models: `(input + cacheWrite) * uncached + cacheRead * cached + output * output`, divided by 1M; `metrics.cost_estimated` marks API-equivalent cost, not subscription spend. Wonder Full/Contributor use Wonder Standard as a marked proxy (`cost_estimate_proxy`); unknown models stay 0 (unreported). Re-import an old Muse run with its original `harness/export.json` to backfill its published cost without changing the archived run. Update `API_PRICES` when Meta changes rates. Only runs marked
+  `top_level_turn.run_origin` count; the agent runs with `--disable-reminders` so no background agent adds usage. It
+  runs with approval and sandbox off but the workspace untrusted (no `--yolo`: that also enables delegation); user-level
+  Muse rules and skills may still load.
 - **Model ids and levels of Claude Code aren't listed by any command:** the table lives in `ClaudeCode.MODELS`/
   `ALIASES` (harness.py), mirroring the CLI's own alias map; update it when models change. Levels are per model: the CLI
   silently clamps what a model doesn't take, and the recorded `thinking_level` is the *requested* one, so only list

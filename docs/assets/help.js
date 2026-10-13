@@ -9,7 +9,7 @@ export const COLUMN_HELP = {
   duration_ms: "Wall-clock time of the agent session, from start to finish. ★ marks the fastest completed run.",
   tokens_total: "Input + output tokens reported by the provider. Excludes input served from the prompt cache. ★ marks the completed run that used the fewest.",
   tokens_reasoning: "Tokens spent on hidden internal reasoning (thinking) before answering. Not shown in the transcript beyond short summaries, but billed as output.",
-  cost_usd: "Cost in USD for the whole session as reported by the provider, including cached input at its discounted rate. For Claude Code runs it's Claude Code's own estimate at API prices (also when run on a subscription). ★ marks the cheapest completed run.",
+  cost_usd: "USD for the whole session, including discounted cached input. ~ marks an API-price estimate (not subscription spend); ≈ marks Wonder Full/Contributor priced using Wonder Standard's API rate as a proxy, not their actual price. Unknown models show 0 (unreported). Claude Code also estimates at API prices. ★ marks the cheapest completed run.",
   tool_calls: "Number of tools the agent invoked (bash, read, write, edit, ls, …).",
 };
 

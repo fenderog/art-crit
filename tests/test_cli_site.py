@@ -3,6 +3,7 @@
 import json
 
 from art_crit.cli import main
+from art_crit.site import run_failed
 
 
 def test_pages_and_page_json_shapes(bench_root, batch_dir):
@@ -111,6 +112,71 @@ def test_rm_unknown_page_is_an_error(bench_root, batch_dir, capsys):
     rc = main(["rm", "no-such-page", "--root", str(bench_root)])
     assert rc != 0
     assert "no such page" in capsys.readouterr().err
+
+
+def test_run_failed_senses():
+    ok = {"state": "complete", "output": {"ok": True, "verified": True}}
+    assert not run_failed(ok)
+    assert not run_failed({**ok, "output": {"ok": True, "verified": None}})  # unchecked isn't failed
+    assert run_failed({**ok, "state": "failed"})
+    assert run_failed({**ok, "state": "running"})
+    assert run_failed({**ok, "output": None})
+    assert run_failed({**ok, "output": {"ok": False, "verified": None}})
+    assert run_failed({**ok, "output": {"ok": True, "verified": False}})
+
+
+def _break_run(bench_root, run_id, **fields):
+    p = bench_root / "docs/data/voxel-horse/runs" / run_id / "run.json"
+    run = json.loads(p.read_text())
+    for key, value in fields.items():
+        run[key] = {**(run.get(key) or {}), **value} if isinstance(value, dict) else value
+    p.write_text(json.dumps(run, indent=2) + "\n")
+
+
+def _run_ids(bench_root):
+    page = json.loads((bench_root / "docs/data/voxel-horse/page.json").read_text())
+    return [r["id"] for r in page["runs"]]
+
+
+def test_rm_failed_removes_only_broken_runs(bench_root, batch_dir, capsys):
+    main(["import", str(batch_dir), "--root", str(bench_root)])
+    good_id, bad_id = _run_ids(bench_root)
+
+    assert main(["rm", "voxel-horse", "--failed", "--yes", "--root", str(bench_root)]) == 0
+    assert "no failed runs" in capsys.readouterr().out
+    assert _run_ids(bench_root) == [good_id, bad_id]
+
+    _break_run(bench_root, bad_id, output={"ok": False, "error": "boom", "verified": None})
+    assert main(["rm", "voxel-horse", "--failed", "--yes", "--root", str(bench_root)]) == 0
+    out = capsys.readouterr().out
+    assert bad_id in out and "kind step failed" in out
+    assert _run_ids(bench_root) == [good_id]
+
+    _break_run(bench_root, good_id, state="failed", error="died")
+    assert main(["rm", "voxel-horse", "--failed", "--yes", "--root", str(bench_root)]) == 0
+    assert not (bench_root / "docs/data/voxel-horse").exists()  # last run gone removes the page
+
+
+def test_rm_failed_rejects_a_run_id(bench_root, batch_dir, capsys):
+    main(["import", str(batch_dir), "--root", str(bench_root)])
+    assert main(["rm", "voxel-horse", "some-id", "--failed", "--root", str(bench_root)]) != 0
+    assert "no run id" in capsys.readouterr().err
+
+
+def test_rm_failed_asks_first(bench_root, batch_dir, capsys, monkeypatch):
+    main(["import", str(batch_dir), "--root", str(bench_root)])
+    [bad_id, good_id] = _run_ids(bench_root)
+    _break_run(bench_root, bad_id, output={"ok": True, "verified": False})
+
+    monkeypatch.setattr("builtins.input", lambda _: "n")
+    assert main(["rm", "voxel-horse", "--failed", "--root", str(bench_root)]) != 0
+    assert "aborted" in capsys.readouterr().out
+    assert _run_ids(bench_root) == [bad_id, good_id]
+
+    monkeypatch.setattr("builtins.input", lambda _: "y")
+    assert main(["rm", "voxel-horse", "--failed", "--root", str(bench_root)]) == 0
+    assert "not verified" in capsys.readouterr().out
+    assert _run_ids(bench_root) == [good_id]
 
 
 def test_rebuild_gcs_unreferenced_engines(bench_root, batch_factory):

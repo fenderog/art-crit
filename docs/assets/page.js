@@ -194,7 +194,7 @@ function render(page, runs, editable) {
           tds.push(
             el("td", { class: isBest ? "is-num is-best" : "is-num", attrs }, [
               el("div", { class: "bar-cell" }, [
-                el("span", { class: "val", text: c.fmt ? c.fmt(v) : v ?? "–" }),
+                el("span", { class: "val", text: c.key === "cost_usd" ? fmtCost(v, r.metrics.cost_estimated, r.metrics.cost_estimate_proxy) : c.fmt ? c.fmt(v) : v ?? "–" }),
                 el("span", { class: "track" }, [el("span", { class: "bar", style: { width: `${pct}%` } })]),
               ]),
             ])
@@ -325,7 +325,7 @@ function renderHighlights(runs) {
     tiles.push(
       el("a", { class: "hl hl-good", attrs: { href: runUrl(slug, winner.id) } }, [
         el("span", { class: "hl-label", text: label }),
-        el("span", { class: "hl-value", text: fmt(winner.metrics[key]) }),
+        el("span", { class: "hl-value", text: key === "cost_usd" ? fmtCost(winner.metrics[key], winner.metrics.cost_estimated, winner.metrics.cost_estimate_proxy) : fmt(winner.metrics[key]) }),
         el("span", { class: "hl-sub" }, [effortPill(winner.effort), el("span", { class: "name", text: modelParts(winner.model).short, attrs: { title: winner.model } })]),
       ])
     );
@@ -339,7 +339,7 @@ function renderHighlights(runs) {
     el("div", { class: "hl" }, [
       el("span", { class: "hl-label", text: "Verified" }),
       el("span", { class: "hl-value", text: checked.length ? `${verified} / ${runs.length}` : "–" }),
-      el("span", { class: "hl-sub", text: `${failed ? `${failed} failed · ` : ""}${fmtCost(total)} total spend` }),
+      el("span", { class: "hl-sub", text: `${failed ? `${failed} failed · ` : ""}${fmtCost(total, runs.some((r) => r.metrics.cost_estimated), runs.some((r) => r.metrics.cost_estimate_proxy))} total cost (unknowns excluded)` }),
     ])
   );
   box.append(...tiles);

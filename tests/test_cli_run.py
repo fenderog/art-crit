@@ -15,7 +15,7 @@ import pytest
 
 from art_crit.cli import main
 from art_crit.config import Config, RunRequest
-from art_crit.harness import GrokBuild, Pi, agy_metrics, convert_agy_stream, convert_claude_stream
+from art_crit.harness import GrokBuild, MuseCode, Pi, agy_metrics, convert_agy_stream, convert_claude_stream, convert_muse_export, muse_metrics
 from art_crit.runner import assign_run_ids, expand_levels, parse_duration, plan_runs
 from art_crit.util import CritError
 
@@ -800,6 +800,126 @@ def test_new_harness_model_listing(capsys):
     assert "gemini-3.8-flash: low, high" in capsys.readouterr().out
     assert main(["models", "--harness", "grok-build", "grok-4.5"]) == 0
     assert "grok-4.5: low, medium, high" in capsys.readouterr().out
+
+
+# --- Muse Code harness -----------------------------------------------------------------------------
+
+
+def test_muse_code_planning():
+    assert plan_for(["muse-code:muse-spark-1.3:low,max"]) == [
+        ("muse-code", "muse-spark-1.3", "low"), ("muse-code", "muse-spark-1.3", "max")]
+    with pytest.raises(CritError, match="max not supported"):
+        plan_for(["muse-code:muse-spark-1.2:xhigh,max"])
+
+
+def test_muse_code_runs_and_publishes_transcript(run_root, tmp_path, monkeypatch):
+    argv_path = tmp_path / "argv.json"
+    monkeypatch.setenv("FAKE_MUSE_ARGV", str(argv_path))
+    assert main(["run", "--yes", "--kind", "media", "draw a circle", "-m", "muse-code:muse-spark-1.3:high",
+                 "--root", str(run_root)]) == 0
+    [run] = json.loads((run_root / "docs/data/draw-a-circle/page.json").read_text())["runs"]
+    assert run["harness"]["name"] == "muse-code" and run["model"] == "meta/muse-spark-1.3"
+    assert run["state"] == "complete" and run["output"]["ok"] is True
+    assert "-mc-" in run["id"]
+    # input excludes cached tokens (100-60 + 130-100); the reminder run's usage is not counted
+    assert run["metrics"]["tokens_total"] == 100 and run["metrics"]["tokens_reasoning"] == 10
+    assert run["metrics"]["turns"] == 2 and run["metrics"]["tool_calls"] == 1
+    assert run["metrics"]["cost_usd"] == pytest.approx((70 * 1.25 + 160 * 0.15 + 30 * 4.25) / 1_000_000)
+    assert run["metrics"]["cost_estimated"] is True
+    argv = json.loads(argv_path.read_text())
+    assert argv[argv.index("--model") + 1] == "muse-spark-1.3"
+    assert argv[argv.index("--reasoning-effort") + 1] == "high"
+    assert "--json" in argv and "--disable-reminders" in argv and "--disable-web-tools" in argv
+    assert "--yolo" not in argv and argv[-2] == "--" and "draw a circle" in argv[-1]
+    run_dir = run_root / "docs/data/draw-a-circle/runs" / run["id"]
+    assert not (run_dir / "session/export.json").exists() and not (run_dir / "session/events.jsonl").exists()
+    msgs = [e["message"] for e in json.loads((run_dir / "session/conversation.json").read_text()) if e["type"] == "message"]
+    assert [m["role"] for m in msgs] == ["user", "assistant", "toolResult", "assistant"]
+    call = msgs[1]["content"][1]
+    assert msgs[1]["content"][0]["type"] == "thinking" and call["name"] == "read" and call["arguments"] == {"path": "output/circle.svg"}
+    assert msgs[1]["usage"]["input"] == 40 and msgs[1]["usage"]["cacheRead"] == 60
+    assert msgs[2]["toolCallId"] == call["id"] == "call_1" and msgs[2]["durationMs"] == 100
+    assert msgs[3]["content"][0]["text"] == "Done."
+
+
+@pytest.mark.parametrize("model, expected", [
+    ("meta/muse-spark-1.3-contributor", (20 * .10 + 60 * .002 + 30 * .20) / 1_000_000),
+    ("meta/muse-wonder-1.0", (20 * 4 + 60 * .20 + 30 * 20) / 1_000_000),
+    ("meta/muse-wonder-full-1.0", (20 * 4 + 60 * .20 + 30 * 20) / 1_000_000),
+    ("meta/muse-wonder-full-1.0-contributor", (20 * 4 + 60 * .20 + 30 * 20) / 1_000_000),
+    ("meta/muse-wonder-1.0-contributor", (20 * 4 + 60 * .20 + 30 * 20) / 1_000_000),
+    ("meta/unknown", None),
+])
+def test_muse_api_equivalent_cost(model, expected):
+    metrics = {"turns": 2, "tokens": {"input": 10, "cacheWrite": 10, "cacheRead": 60, "output": 30, "reasoning": 8},
+               "cost_usd": 0.0}
+    result = MuseCode().finish(None, model, metrics)
+    if expected is None:
+        assert result["cost_usd"] == 0 and "cost_estimated" not in result
+    else:
+        assert result["cost_usd"] == pytest.approx(expected) and result["cost_estimated"] is True
+        if "muse-wonder" in model and ("contributor" in model or "full" in model):
+            assert result["cost_estimate_proxy"] == "meta/muse-wonder-1.0"
+        else:
+            assert "cost_estimate_proxy" not in result
+    assert MuseCode().finish(None, model, {"turns": 0, "tokens": metrics["tokens"], "cost_usd": 0})["cost_usd"] == 0
+
+
+def test_reimport_prices_an_older_muse_run(run_root):
+    assert main(["run", "--yes", "--no-publish", "--kind", "media", "draw a circle",
+                 "-m", "muse-code:muse-spark-1.3:low", "--root", str(run_root)]) == 0
+    [batch] = (run_root.parent / "art-crit-runs").glob("*")
+    [run_dir] = [d for d in batch.iterdir() if (d / "run.json").is_file()]
+    record = json.loads((run_dir / "run.json").read_text())
+    record["metrics"]["cost_usd"] = 0
+    record["metrics"].pop("cost_estimated")
+    (run_dir / "run.json").write_text(json.dumps(record))
+    assert main(["import", str(run_dir), "--root", str(run_root)]) == 0
+    published = json.loads((run_root / "docs/data/draw-a-circle/runs" / record["id"] / "run.json").read_text())
+    assert published["metrics"]["cost_estimated"] is True
+    assert published["metrics"]["cost_usd"] > 0
+    assert json.loads((run_dir / "run.json").read_text())["metrics"]["cost_usd"] == 0  # archive untouched
+
+
+def test_muse_code_failed_terminal_fails_the_run(run_root, monkeypatch):
+    monkeypatch.setenv("FAKE_MUSE_ERROR", "1")
+    assert main(["run", "--yes", "--kind", "media", "broken circle", "-m", "muse-code:muse-spark-1.3:low",
+                 "--root", str(run_root)]) == 0
+    [run] = json.loads((run_root / "docs/data/broken-circle/page.json").read_text())["runs"]
+    assert run["state"] == "failed" and "model error" in run["error"]
+
+
+def test_muse_export_without_a_terminal_event_is_an_error():
+    assert muse_metrics({}, "low")["ended_in_error"]
+    entries = convert_muse_export({}, "brief", "low")
+    assert [e["type"] for e in entries] == ["session", "model_change", "thinking_level_change", "message"]
+
+
+def test_muse_command_exports_the_session_after_exec(tmp_path):
+    cmd = MuseCode().command("muse-spark-1.3", "low", "brief", tmp_path)
+    assert cmd[:2] == ["bash", "-c"] and cmd[3] == "muse-code" and cmd[4] == "muse"
+    assert cmd[cmd.index("--session-id") + 1] == cmd[5] and cmd[6] == str(tmp_path / "export.json")
+
+
+def test_muse_models_come_from_the_cached_catalog(tmp_path, monkeypatch):
+    tiers = lambda *names: [{"tier": n, "description": None} for n in names]
+    rows = [{"model_id": "muse-wonder-1.0", "reasoning_effort_variants": tiers("max", "low", "ultra")},
+            {"model_id": "muse-wonder-1.0-contributor", "visibility": "hidden", "reasoning_effort_variants": tiers("low")},
+            {"model_id": "muse-image-1.0", "reasoning_effort_variants": None}]
+    (tmp_path / "meta.json").write_text(json.dumps({"rows": rows}))
+    (tmp_path / "broken.json").write_text("{")
+    monkeypatch.setattr(MuseCode, "CATALOG_DIR", tmp_path)
+    muse = MuseCode()
+    assert muse.models() == ["muse-wonder-1.0", "muse-wonder-1.0-contributor"]
+    assert muse.levels("muse-wonder-1.0") == ["low", "max"]  # LEVEL_ORDER only, in order
+    assert plan_for(["muse-code:muse-wonder-1.0:max"]) == [("muse-code", "muse-wonder-1.0", "max")]
+    with pytest.raises(CritError, match="muse-spark-1.3"):
+        plan_for(["muse-code:muse-spark-1.3:low"])
+
+
+def test_muse_model_listing(capsys):
+    assert main(["models", "--harness", "muse-code", "muse-wonder"]) == 0
+    assert "muse-wonder-1.0-contributor: minimal, low, medium, high, xhigh, max" in capsys.readouterr().out
 
 
 # --- Claude Code harness ---------------------------------------------------------------------------

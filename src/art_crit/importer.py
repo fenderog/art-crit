@@ -85,6 +85,17 @@ def stage_source(work_dir, run_dir, kind, rewrites, redact, batch):
 def stage_run(src, slug, tmp_root, docs_root, rewrites, redact, allow_threads, known_engines):
     """One run directory -> a staged copy of runs/<id>/ under tmp_root (nothing is written to the site yet)."""
     record = json.loads((src / "run.json").read_text())
+    # Re-importing older Muse batches upgrades their zero (unreported) cost from the
+    # original export without changing the archived run or re-running the agent.
+    if record.get("harness", {}).get("name") == "muse-code" and not record["metrics"].get("cost_estimated"):
+        from .harness import MuseCode, _read_muse_export, muse_metrics
+
+        export = src / "harness" / "export.json"
+        if export.is_file():
+            estimate = MuseCode().finish(src / "harness", record["model"], muse_metrics(_read_muse_export(export)))
+            for key in ("cost_usd", "cost_estimated", "cost_estimate_proxy"):
+                if key in estimate and estimate.get("cost_estimated"):
+                    record["metrics"][key] = estimate[key]
     kind = KINDS[record["kind"]]()
     run_id = record["id"]
     run_dir = tmp_root / run_id

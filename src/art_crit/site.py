@@ -101,10 +101,59 @@ def rebuild(root):
                 shutil.rmtree(d)
 
 
-def cmd_rm(root, slug, run_id=None):
+def run_failed(run):
+    """Whether a run is broken in any of the three senses (ADR-0018): the agent didn't finish it
+    (`state` isn't complete), the kind step recorded nothing or failed (`output` / `output.ok`),
+    or the check failed (`output.verified`). An unchecked run (`verified` null) isn't failed."""
+    if run.get("state") != "complete":
+        return True
+    output = run.get("output")
+    if not output:
+        return True
+    return output.get("ok") is False or output.get("verified") is False
+
+
+def _failure_reason(run):
+    if run.get("state") != "complete":
+        return f"agent {run.get('state')}"
+    if not run.get("output"):
+        return "no output"
+    if run["output"].get("ok") is False:
+        return "kind step failed"
+    return "not verified"
+
+
+def cmd_rm(root, slug, run_id=None, failed=False, yes=False):
     page_dir = root / "docs" / "data" / slug
     if not page_dir.is_dir():
         raise CritError(f"no such page: {slug}")
+    if failed:
+        if run_id is not None:
+            raise CritError("--failed takes no run id: it removes every failed run on the page")
+        runs_dir = page_dir / "runs"
+        doomed = []
+        if runs_dir.is_dir():
+            for run_dir in sorted(runs_dir.iterdir()):
+                rj = run_dir / "run.json"
+                if rj.is_file() and run_failed(json.loads(rj.read_text())):
+                    doomed.append(run_dir.name)
+        if not doomed:
+            print(f"no failed runs on {slug}")
+            return 0
+        runs = {d: json.loads((runs_dir / d / "run.json").read_text()) for d in doomed}
+        print(f"failed runs on {slug}:")
+        for d in doomed:
+            print(f"  {d}\t{runs[d]['model']}\t{runs[d]['effort']}\t{_failure_reason(runs[d])}")
+        if not yes:
+            answer = input(f"Remove {len(doomed)} run{'s' if len(doomed) != 1 else ''}? [y/N] ").strip().lower()
+            if answer not in ("y", "yes"):
+                print("aborted")
+                return 1
+        for d in doomed:
+            shutil.rmtree(runs_dir / d)
+            print(f"removed run {slug}/{d}")
+        rebuild(root)
+        return 0
     if run_id is None:
         shutil.rmtree(page_dir)
         print(f"removed page {slug}")

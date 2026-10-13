@@ -104,6 +104,26 @@ def test_page_table_and_sorting(site, page):
     assert_no_errors(page)
 
 
+def test_muse_api_estimates_are_marked_in_all_views(site, page):
+    def estimate(route):
+        body = route.fetch().json()
+        body["runs"][0]["metrics"].update(cost_usd=0.000042, cost_estimated=True,
+                                          cost_estimate_proxy="meta/muse-wonder-1.0")
+        route.fulfill(json=body)
+
+    page.route("**/data/demo/page.json*", estimate)
+    page.goto(f"{site}page.html?p=demo&view=table")
+    page.wait_for_selector("table.runs tbody tr")
+    assert "≈$0.000042" in page.locator('td[data-col="cost_usd"]').first.inner_text()
+    page.goto(f"{site}compare.html?p=demo")
+    page.wait_for_selector(".compare-col")
+    assert "≈$0.000042" in page.locator(".compare-metrics").first.inner_text()
+    page.goto(f"{site}run.html?p=demo&r={LOW_ID}")
+    page.wait_for_selector(".stat-tiles")
+    assert "≈$0.000042" in page.locator(".stat-tiles").inner_text()
+    assert_no_errors(page)
+
+
 def test_clicking_a_row_expands_the_game_inline(site, page):
     page.goto(f"{site}page.html?p=demo&view=table")
     page.wait_for_selector("table.runs tbody tr.run-row")

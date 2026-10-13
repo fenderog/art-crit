@@ -35,6 +35,8 @@ def build_parser():
     rm = sub.add_parser("rm", parents=[common], help="remove a run, or a whole page")
     rm.add_argument("slug")
     rm.add_argument("run_id", nargs="?")
+    rm.add_argument("-f", "--failed", action="store_true", help="remove every failed run on the page (asks first)")
+    rm.add_argument("-y", "--yes", action="store_true", help="don't ask for confirmation")
 
     rn = sub.add_parser("rename", parents=[common], help="give a page a new slug (and optionally a title)")
     rn.add_argument("slug")
@@ -110,7 +112,7 @@ def main(argv=None):
         if args.command == "list":
             return cmd_list(root)
         if args.command == "rm":
-            return cmd_rm(root, args.slug, args.run_id)
+            return cmd_rm(root, args.slug, args.run_id, failed=args.failed, yes=args.yes)
         if args.command == "rename":
             return cmd_rename(root, args.slug, args.new_slug, args.title)
         if args.command == "rebuild":

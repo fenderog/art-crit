@@ -1605,14 +1605,16 @@
       "route": null,
       "metrics": {
         "duration_ms": 98909,
-        "cost_usd": 0.0,
+        "cost_usd": 0.276096,
         "tool_calls": 6,
         "turns": 7,
         "tokens_total": 37870,
         "tokens_input": 32231,
         "tokens_output": 5639,
         "tokens_reasoning": 355,
-        "tokens_cache_read": 171960
+        "tokens_cache_read": 171960,
+        "cost_estimated": true,
+        "cost_estimate_proxy": "meta/muse-wonder-1.0"
       },
       "thumb": "media/eiffel-tower-snes.png",
       "output": {
@@ -1659,14 +1661,16 @@
       "route": null,
       "metrics": {
         "duration_ms": 122430,
-        "cost_usd": 0.0,
+        "cost_usd": 0.3390448,
         "tool_calls": 10,
         "turns": 8,
         "tokens_total": 42855,
         "tokens_input": 35027,
         "tokens_output": 7828,
         "tokens_reasoning": 1100,
-        "tokens_cache_read": 211884
+        "tokens_cache_read": 211884,
+        "cost_estimated": true,
+        "cost_estimate_proxy": "meta/muse-wonder-1.0"
       },
       "thumb": "media/eiffel-tower-snes.png",
       "output": {
@@ -1713,14 +1717,16 @@
       "route": null,
       "metrics": {
         "duration_ms": 284303,
-        "cost_usd": 0.0,
+        "cost_usd": 0.6310512,
         "tool_calls": 21,
         "turns": 20,
         "tokens_total": 61179,
         "tokens_input": 46043,
         "tokens_output": 15136,
         "tokens_reasoning": 3700,
-        "tokens_cache_read": 720796
+        "tokens_cache_read": 720796,
+        "cost_estimated": true,
+        "cost_estimate_proxy": "meta/muse-wonder-1.0"
       },
       "thumb": "media/eiffel_tower_snes.png",
       "output": {
@@ -1767,14 +1773,16 @@
       "route": null,
       "metrics": {
         "duration_ms": 363477,
-        "cost_usd": 0.0,
+        "cost_usd": 0.7852952,
         "tool_calls": 27,
         "turns": 17,
         "tokens_total": 77727,
         "tokens_input": 56909,
         "tokens_output": 20818,
         "tokens_reasoning": 7371,
-        "tokens_cache_read": 706496
+        "tokens_cache_read": 706496,
+        "cost_estimated": true,
+        "cost_estimate_proxy": "meta/muse-wonder-1.0"
       },
       "thumb": "media/eiffel_tower_snes.png",
       "output": {
@@ -1822,14 +1830,16 @@
       "route": null,
       "metrics": {
         "duration_ms": 207849,
-        "cost_usd": 0.0,
+        "cost_usd": 0.49782,
         "tool_calls": 13,
         "turns": 12,
         "tokens_total": 53872,
         "tokens_input": 40951,
         "tokens_output": 12921,
         "tokens_reasoning": 3485,
-        "tokens_cache_read": 377980
+        "tokens_cache_read": 377980,
+        "cost_estimated": true,
+        "cost_estimate_proxy": "meta/muse-wonder-1.0"
       },
       "thumb": "media/eiffel_tower_snes.png",
       "output": {
@@ -1876,14 +1886,16 @@
       "route": null,
       "metrics": {
         "duration_ms": 611997,
-        "cost_usd": 0.0,
+        "cost_usd": 1.4736576,
         "tool_calls": 54,
         "turns": 46,
         "tokens_total": 113043,
         "tokens_input": 81731,
         "tokens_output": 31312,
         "tokens_reasoning": 11597,
-        "tokens_cache_read": 2602468
+        "tokens_cache_read": 2602468,
+        "cost_estimated": true,
+        "cost_estimate_proxy": "meta/muse-wonder-1.0"
       },
       "thumb": "media/eiffel_tower_snes.png",
       "output": {

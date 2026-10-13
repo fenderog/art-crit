@@ -16,9 +16,9 @@ export function fmtDuration(ms) {
   return `${m}m ${s}s`;
 }
 
-export function fmtCost(usd) {
+export function fmtCost(usd, estimated = false, proxy = false) {
   if (usd == null || Number.isNaN(usd)) return "–";
-  return `$${Number(usd).toFixed(usd < 0.01 ? 4 : 3)}`;
+  return `${proxy ? "≈" : estimated ? "~" : ""}$${Number(usd).toFixed(estimated && usd > 0 && usd < 0.0001 ? 6 : usd < 0.01 ? 4 : 3)}`;
 }
 
 // "Sep 27, 07:12 AM": compact form for table cells (fmtDate has the year).

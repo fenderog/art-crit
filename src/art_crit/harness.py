@@ -774,7 +774,7 @@ class GrokBuild(Harness):
 class MuseCode(Harness):
     """Meta's Muse Code (`muse exec`). Its `--json` stdout is a thin live event stream (no tool calls
     or usage), so each run exports its durable session log when the agent exits and that export is
-    the session (`export.json`). Cost is not reported (0 = unreported)."""
+    the session (`export.json`). Known models get an API-equivalent cost estimate at finish."""
 
     name = "muse-code"
     tag = "mc"
@@ -782,6 +782,17 @@ class MuseCode(Harness):
     # tiers) in CATALOG_DIR whenever its TUI fetches it (opening /model), and that is the source. MODELS is the
     # fallback when there is no cache yet; update it when the CLI changes.
     CATALOG_DIR = Path.home() / ".local" / "share" / "muse" / "model-catalog"
+    # USD per million tokens (uncached input, cached input, output). Meta Model API:
+    # https://dev.meta.ai/docs/pricing-rate-limits (update when published prices change).
+    # Full and Wonder Contributor have no API prices. Use Wonder Standard as a *labeled proxy*.
+    API_PRICES = {"muse-wonder-1.0": (4.00, 0.20, 20.00),
+                  "muse-spark-1.3": (1.25, 0.15, 4.25),
+                  "muse-spark-1.2": (1.25, 0.15, 4.25),
+                  "muse-spark-1.3-contributor": (0.10, 0.002, 0.20),
+                  "muse-spark-1.2-contributor": (0.10, 0.002, 0.20)}
+    PRICE_PROXIES = {"muse-wonder-full-1.0": "muse-wonder-1.0",
+                     "muse-wonder-full-1.0-contributor": "muse-wonder-1.0",
+                     "muse-wonder-1.0-contributor": "muse-wonder-1.0"}
     MODELS = {"muse-wonder-1.0": ["minimal", "low", "medium", "high", "xhigh", "max"],
               "muse-wonder-1.0-contributor": ["minimal", "low", "medium", "high", "xhigh", "max"],
               "muse-wonder-full-1.0": ["minimal", "low", "medium", "high", "xhigh", "max"],
@@ -847,6 +858,22 @@ class MuseCode(Harness):
     def metrics(self, session_dir, level=None):
         path = self.session_file(session_dir)
         return muse_metrics(_read_muse_export(path), level) if path else None
+
+    def finish(self, harness_dir, model, metrics):
+        model_id = model.removeprefix("meta/")
+        proxy = self.PRICE_PROXIES.get(model_id)
+        prices = self.API_PRICES.get(proxy or model_id)
+        if prices and metrics.get("turns"):
+            tokens = metrics["tokens"]
+            # Muse's input_tokens includes both cache reads and writes. Writes are billed as
+            # uncached input; reasoning_tokens is already part of output_tokens.
+            uncached = tokens["input"] + tokens["cacheWrite"]
+            metrics["cost_usd"] = round((uncached * prices[0] + tokens["cacheRead"] * prices[1]
+                                         + tokens["output"] * prices[2]) / 1_000_000, 9)
+            metrics["cost_estimated"] = True
+            if proxy:
+                metrics["cost_estimate_proxy"] = f"meta/{proxy}"
+        return metrics
 
 
 def _read_muse_export(path):

@@ -416,6 +416,8 @@ def collect(rd, batch, run, harness, version, started, ended, state, error, metr
         "metrics": {
             "duration_ms": int((ended - started).total_seconds() * 1000),
             "cost_usd": metrics.get("cost_usd", 0.0),
+            **({"cost_estimated": True} if metrics.get("cost_estimated") else {}),
+            **({"cost_estimate_proxy": metrics["cost_estimate_proxy"]} if metrics.get("cost_estimate_proxy") else {}),
             "tool_calls": metrics.get("tool_calls", 0),
             "turns": metrics.get("turns", 0),
             "tokens_total": tokens.get("total", 0),
