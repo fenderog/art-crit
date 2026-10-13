@@ -454,6 +454,12 @@ Tables: `hearts(page, run, user_id)`, primary key all three. `medals(page, user_
 `gold|silver|bronze`, primary key `(page, user_id, medal)` and `UNIQUE (page, user_id, run)`: one of each medal per user
 per page, each on a different result. `user_id` is the GitHub numeric id; logins and tokens are never stored.
 
+`tallies(page, run, hearts, gold, silver, bronze)` holds the running totals and is maintained only by four triggers on
+`hearts` and `medals`, so every write keeps it exact, atomically. Showing a page therefore reads one `tallies` row per
+run plus the viewer's own votes, looked up by `(page, user_id)`: the cost of a view does not grow with the number of
+votes. The last statement of `schema.sql` recounts every tally from the votes, so re-applying the schema repairs any
+drift and counts votes cast before the table existed. Apply the schema before deploying a Worker that needs it.
+
 | Request | Answer |
 |---|---|
 | `GET api/login?return=<path>` | 302 to GitHub's authorize URL (no scopes; `redirect_uri` = `api/callback`). Sets the login-state cookie. `return` is kept only if it is a page of this site, else `/art-crit/`. |
@@ -477,7 +483,7 @@ header shows `@login · Sign out` or `Sign in with GitHub` (`renderAuth`). `vote
 "Community" row of `♡/♥ n` and `🥇 n 🥈 n 🥉 n` buttons (`aria-pressed` = yours, a count only when above 0). Signed out, a
 click goes to `api/login` and comes back to the same URL; signed in, it writes and every bar of the page redraws from the
 answer, since a medal moves between results. A failed write shows `not saved: <reason>`. The bar is on grid and compare
-cards (inside the metrics row, so a card stays three grid rows), on the run page under the stat tiles, and in a table
+cards (inside the metrics row, at its bottom so the rows line up across cards, and so a card stays three grid rows), on the run page under the stat tiles, and in a table
 row's expanded detail. It is separate from the owner's `rank-chip`.
 
 ## Deployment

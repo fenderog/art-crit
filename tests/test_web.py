@@ -1050,6 +1050,17 @@ def test_medals_move_between_results_and_can_be_taken_back(site, page):
     assert_no_errors(page)
 
 
+def test_vote_rows_line_up_across_a_row_of_cards(site, page):
+    vote_api(page)
+    page.goto(f"{site}page.html?p=demo")
+    expect(page.locator(".votes")).to_have_count(3)
+    # a long harness name or big numbers wrap one card's metrics onto a second line; the vote rows must still align
+    page.evaluate("() => document.querySelectorAll('.compare-metrics')[1].append(' · ' + 'a-longer-metric '.repeat(8))")
+    tops = page.eval_on_selector_all(".votes", "els => els.map((e) => Math.round(e.getBoundingClientRect().top))")
+    assert len(set(tops)) == 1, tops
+    assert_no_errors(page)
+
+
 def test_votes_are_on_every_view_and_leave_the_owners_rank_alone(site, page):
     vote_api(page, signed_in=True)
     page.goto(f"{site}compare.html?p=demo")

@@ -263,6 +263,24 @@ them up with `npx wrangler d1 export art-crit-votes --remote --output votes.sql`
 are free, so if votes are ever stuffed, add a Cloudflare rate-limiting rule for `/art-crit/api/*`. Votes appear only on
 `fenderog.com/art-crit/`, not under `art-crit serve` or the old GitHub Pages URL.
 
+To upgrade after a change to `cloudflare/schema.sql`, run step 3 again and then step 5, in that order: an older Worker keeps
+working on a newer schema, but not the other way round. The schema is safe to re-apply; it recounts the tallies.
+
+### Rate limiting (recommended)
+
+GitHub accounts are free, so put a limit in front of the writes. It runs before the Worker, so blocked requests cost nothing.
+In the Cloudflare dashboard open `fenderog.com` → Security → WAF → Rate limiting rules → Create rule (the menu has moved
+before; search for "rate limiting"), and set:
+
+- Rule name: `art-crit votes writes`
+- Expression (Edit expression), which leaves the cheap `GET api/votes` read alone:
+  `(http.host eq "fenderog.com" and starts_with(http.request.uri.path, "/art-crit/api/") and not (http.request.method eq "GET" and http.request.uri.path eq "/art-crit/api/votes"))`
+- Characteristics: IP. Requests: 30. Period: 10 seconds. Action: Block. Duration: 10 seconds. (A Free zone only offers
+  these 10-second options and a single rule; Workers Paid is account-level and doesn't change the zone's plan.)
+
+Check it: `for i in $(seq 60); do curl -s -o /dev/null -w '%{http_code} ' -X POST https://fenderog.com/art-crit/api/logout; done`.
+You should see `403` (the Worker refusing a request without the site's Origin) and then `429` once the limit trips.
+
 ## Requirements
 
 - [uv](https://docs.astral.sh/uv/) — run everything as `uv run art-crit ...`. For a bare `art-crit`,

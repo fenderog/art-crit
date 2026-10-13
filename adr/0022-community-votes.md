@@ -22,6 +22,9 @@ the viewer's CSP already allows `connect-src 'self'`, so that API can live on th
   `medals(page, user_id, medal, run)`. Keys make the rules: a heart is unique per user and run; a user has one of each
   medal per page (`PRIMARY KEY (page, user_id, medal)`) and a run holds one medal per user (`UNIQUE (page, user_id, run)`).
   Placing a medal is one transactional batch that frees the medal's old result and any other medal on the new one.
+- **Totals are kept, not counted.** `tallies(page, run, hearts, gold, silver, bronze)` is maintained by triggers on
+  `hearts` and `medals`, so showing a page reads one row per run plus the viewer's own votes (indexed by page and user),
+  and costs the same with ten votes or ten million. The last statement of `schema.sql` recounts them from the votes.
 - **Hearts and medals are per user, tallied per result.** Nothing is a single winner; the page shows totals
   (`♥ 12 · 🥇 3 · 🥈 1 · 🥉 2`) in a labelled "Community" row, separate from the owner's rank chip.
 - **Sign-in is GitHub's OAuth web flow with no scopes** (public profile only). The Worker keeps the numeric GitHub id
@@ -37,6 +40,8 @@ the viewer's CSP already allows `connect-src 'self'`, so that API can live on th
 
 ## Alternatives considered
 
+- **Counting the votes on every view** (the first version): each view read every vote on the page, which at a few
+  thousand voters would use up D1's free read allowance within a few hundred views.
 - **Cloudflare KV**: no transactions, and counting votes per run means listing keys; the medal rules would become
   read-modify-write races. D1's constraints enforce them.
 - **A Durable Object per page**: strongest consistency, but more moving parts than a handful of small tables needs.
@@ -54,8 +59,8 @@ the viewer's CSP already allows `connect-src 'self'`, so that API can live on th
   now includes the Worker's Origin and session checks; keep their tests (`tests/js/votes.test.mjs`).
 - **Votes are not in git.** They live only in D1: back them up with `wrangler d1 export`, and deleting a run leaves its
   votes behind (harmless, they are never shown). Local previews have no votes.
-- **Sign-in raises the cost of stuffing votes but doesn't stop it**: GitHub accounts are free. There is no rate limit
-  in the Worker; add a Cloudflare rate-limiting rule on `/art-crit/api/*` if it is ever needed.
+- **Sign-in raises the cost of stuffing votes but doesn't stop it**: GitHub accounts are free. The Worker has no rate
+  limit of its own; the recommended Cloudflare rate-limiting rule on `/art-crit/api/*` is in the README.
 - The Worker now needs a D1 database and three secrets (`GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `SESSION_SECRET`),
   and depends on a GitHub OAuth App. The setup is in README.md. Without them it answers 503 and the viewer shows nothing.
 - Each vote request fetches the page's `page.json` from Pages to validate run ids (cached for 60 seconds).

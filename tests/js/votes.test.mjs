@@ -6,7 +6,7 @@ import { memoryD1 } from "./d1.mjs";
 
 const ORIGIN = "https://fenderog.com";
 const RUNS = ["run-a", "run-b", "run-c"];
-const USERS = { alice: { id: 101, login: "alice" }, bob: { id: 202, login: "bob" } };
+const USERS = { alice: { id: 101, login: "alice" }, bob: { id: 202, login: "bob" }, carol: { id: 303, login: "carol" } };
 const env = () => ({ DB: memoryD1(), GITHUB_CLIENT_ID: "client-id", GITHUB_CLIENT_SECRET: "client-secret", SESSION_SECRET: "test-secret" });
 
 globalThis.fetch = async (url, options = {}) => {
@@ -138,6 +138,67 @@ test("medals: one gold, one silver, one bronze per user, each on a different run
   assert.equal(res.mine.gold, null);
   assert.equal(res.totals["run-b"].gold, 1);
   assert.equal(res.totals["run-c"].bronze, 1);
+});
+
+test("the totals stay equal to the votes themselves through hearts, medal moves and take-backs", async () => {
+  const e = env();
+  const people = [await signIn(e, "alice"), await signIn(e, "bob"), await signIn(e, "carol")];
+  let seed = 7; // a fixed pseudo-random run of 300 actions (mulberry32), so a failure reproduces
+  const pick = (n) => {
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return Math.floor((((t ^ (t >>> 14)) >>> 0) / 4294967296) * n);
+  };
+  for (let i = 0; i < 300; i++) {
+    const cookie = people[pick(3)];
+    const run = RUNS[pick(3)];
+    if (pick(2)) await heart(e, cookie, run, pick(2) === 1);
+    else await medal(e, cookie, ["gold", "silver", "bronze"][pick(3)], pick(4) === 0 ? null : run);
+  }
+  const counted = Object.fromEntries(RUNS.map((id) => [id, { hearts: 0, gold: 0, silver: 0, bronze: 0 }]));
+  for (const { run } of e.DB.sql("SELECT run FROM hearts WHERE page = 'demo'")) counted[run].hearts++;
+  for (const { run, medal } of e.DB.sql("SELECT run, medal FROM medals WHERE page = 'demo'")) counted[run][medal]++;
+  const shown = (await (await call(e, "/votes?p=demo")).json()).totals;
+  assert.deepEqual(shown, counted);
+  assert.ok(Object.values(counted).some((t) => t.hearts > 0) && Object.values(counted).some((t) => t.gold + t.silver + t.bronze > 0));
+  assert.ok(Object.values(shown).every((t) => Object.values(t).every((n) => n >= 0)));
+});
+
+test("re-applying the schema recounts the tallies, e.g. for votes cast before they existed", async () => {
+  const e = env();
+  const alice = await signIn(e, "alice");
+  await heart(e, alice, "run-a", true);
+  await medal(e, alice, "gold", "run-b");
+  e.DB.run("DELETE FROM tallies"); // as if the votes predate the tallies table
+  assert.equal((await (await call(e, "/votes?p=demo")).json()).totals["run-a"].hearts, 0);
+  e.DB.reapplySchema();
+  const totals = (await (await call(e, "/votes?p=demo")).json()).totals;
+  assert.equal(totals["run-a"].hearts, 1);
+  assert.equal(totals["run-b"].gold, 1);
+  e.DB.run("UPDATE tallies SET hearts = 99, gold = 99"); // a drifted tally is repaired the same way
+  e.DB.reapplySchema();
+  assert.deepEqual((await (await call(e, "/votes?p=demo")).json()).totals["run-a"], { hearts: 1, gold: 0, silver: 0, bronze: 0 });
+});
+
+test("showing a page reads one tally per run plus the viewer's own votes, never the page's voters", async () => {
+  const e = env();
+  const alice = await signIn(e, "alice");
+  await heart(e, alice, "run-a", true);
+  for (const cookie of [undefined, alice]) {
+    e.DB.seen.length = 0;
+    assert.equal((await call(e, "/votes?p=demo", { cookie })).status, 200);
+    const reads = e.DB.seen.filter((s) => /^\s*select/i.test(s.sql));
+    assert.equal(reads.length, cookie ? 3 : 1);
+    for (const { sql, args } of reads) {
+      const plan = e.DB.plan(sql, ...args).join(" | ");
+      // A SEARCH on `page` alone still walks every vote on the page, so it must be the tallies (one row per run) or
+      // a lookup that is keyed by the user as well.
+      if (/FROM tallies/i.test(sql)) assert.match(plan, /SEARCH tallies USING .*\(page=\?\)/, `${sql}: ${plan}`);
+      else assert.match(plan, /SEARCH \w+ USING .*\(page=\? AND user_id=\?\)/, `${sql}: ${plan}`);
+      assert.doesNotMatch(plan, /SCAN/, `${sql}: ${plan}`);
+    }
+  }
 });
 
 test("writes need a session, the site's own origin, JSON, and a real page and run", async () => {

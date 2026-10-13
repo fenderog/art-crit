@@ -128,6 +128,8 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
 - **Community votes are the one thing the published site writes**, through the Worker's `/art-crit/api/*` into D1
   (ADR-0022). Writes need a session cookie *and* an `Origin` equal to the site's own; don't loosen either, add CORS
   headers to the API, or add another write path. Only GitHub ids are stored (never tokens), and votes are not in git.
+  `tallies` is kept only by the triggers in `cloudflare/schema.sql`: never write it from the Worker. Apply the schema to D1
+  *before* deploying a Worker that needs it (an older Worker runs on a newer schema, not the reverse).
 - **Untrusted text** (model output, transcripts) goes through `textContent` or `renderMarkdown()`, which
   builds DOM nodes from Markdown tokens and permits only HTTP(S) links. Never use innerHTML with run data. (ADR-0004)
 - Commit or push only when the user asks, or as part of a task they asked you to ship.
@@ -247,7 +249,7 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   the owner), with a GitHub Action checking PRs only touch `docs/data/` + `docs/engines/`. Discussed and
   deliberately not built for now.
 - Community votes are built (ADR-0022). Not built: sorting by votes, a Votes column in the runs table (the table shows
-  the controls in each row's expanded detail), a rate limit, an `art-crit` command to export votes into a backup.
+  the controls in each row's expanded detail), a rate limit inside the Worker (the recommended Cloudflare rule is in the README), an `art-crit` command to export votes into a backup.
 - Arena-style A/B voting (blind head-to-head): a different mechanism from hearts and medals; would reuse the same
   Worker + D1.
 

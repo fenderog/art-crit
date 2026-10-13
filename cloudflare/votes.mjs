@@ -124,23 +124,21 @@ async function pageRuns(pages, slug) {
 }
 
 // Everything the viewer needs for one page: totals per run, and (signed in) the viewer's own hearts and medals.
+// The cost of a view stays flat however many votes there are: the totals are one row per run (kept by the triggers
+// in schema.sql), and a viewer's own votes are looked up by (page, user), never by scanning the page's voters.
 async function readVotes(env, slug, runs, user) {
   const db = env.DB;
-  const statements = [
-    db.prepare("SELECT run, COUNT(*) AS n FROM hearts WHERE page = ? GROUP BY run").bind(slug),
-    db.prepare("SELECT run, medal, COUNT(*) AS n FROM medals WHERE page = ? GROUP BY run, medal").bind(slug),
-  ];
+  const statements = [db.prepare("SELECT run, hearts, gold, silver, bronze FROM tallies WHERE page = ?").bind(slug)];
   if (user) {
     statements.push(
       db.prepare("SELECT run FROM hearts WHERE page = ? AND user_id = ?").bind(slug, user.id),
       db.prepare("SELECT medal, run FROM medals WHERE page = ? AND user_id = ?").bind(slug, user.id),
     );
   }
-  const [hearts, medals, myHearts, myMedals] = await db.batch(statements);
+  const [tallies, myHearts, myMedals] = await db.batch(statements);
   const totals = Object.create(null);
   for (const id of runs) totals[id] = { hearts: 0, gold: 0, silver: 0, bronze: 0 };
-  for (const { run, n } of hearts.results) if (totals[run]) totals[run].hearts = n;
-  for (const { run, medal, n } of medals.results) if (totals[run]) totals[run][medal] = n;
+  for (const { run, ...counts } of tallies.results) if (totals[run]) totals[run] = counts;
   let mine = null;
   if (user) {
     mine = { hearts: myHearts.results.map((r) => r.run).filter((id) => totals[id]), gold: null, silver: null, bronze: null };

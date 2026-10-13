@@ -496,6 +496,7 @@ table.metrics .hint { color: var(--ink-3); margin-left: 8px; }
 }
 .compare-body { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .compare-meta { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.compare-meta .votes { margin-top: auto; } /* the meta row is as tall as the tallest card's: sit at its bottom so the rows line up */
 .compare-col[data-vendor] { background: color-mix(in srgb, var(--vendor) 4%, var(--surface)); box-shadow: inset 0 3px 0 color-mix(in srgb, var(--vendor) 50%, transparent), var(--shadow); }
 .compare-col.is-failed { border-color: color-mix(in srgb, var(--bad) 40%, var(--line)); }
 .compare-col h3 { margin: 0; font-size: 1rem; display: flex; align-items: flex-start; gap: 6px 12px; flex-wrap: wrap; justify-content: space-between; }
