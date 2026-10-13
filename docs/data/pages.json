@@ -1,16 +1,14 @@
 [
   {
     "slug": "ceate-an-svg-of-an-awkward",
-    "title": "Ceate an svg of an awkward",
-    "kind": "godot",
-    "n_runs": 5,
+    "title": "Awkward Robot Family",
+    "kind": "media",
+    "n_runs": 1,
     "models": [
-      "anthropic/claude-opus-5-5",
-      "anthropic/claude-sonnet-5-5",
-      "openai-codex/gpt-6.1-sol"
+      "anthropic/claude-opus-5-5"
     ],
-    "updated": "2026-10-13T22:35:47Z",
-    "thumb": "data/ceate-an-svg-of-an-awkward/runs/gpt-6.1-sol-low-20261013-153112/thumb.png"
+    "updated": "2026-10-13T22:38:51Z",
+    "thumb": "data/ceate-an-svg-of-an-awkward/runs/claude-opus-5-5-cc-low-20261013-153749/media/robot_family_portrait.svg"
   },
   {
     "slug": "16bit-eiffel-tower",

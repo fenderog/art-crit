@@ -302,11 +302,16 @@ function renderHighlights(runs) {
   const verified = runs.filter((r) => outputVerified(r) === true).length;
   const failed = runs.filter((r) => !isComplete(r)).length;
   const total = runs.reduce((s, r) => s + (r.metrics.cost_usd || 0), 0);
+  const unreported = runs.filter((r) => !(r.metrics.cost_usd > 0)).length;
   tiles.push(
     el("div", { class: "hl" }, [
       el("span", { class: "hl-label", text: "Verified" }),
       el("span", { class: "hl-value", text: checked.length ? `${verified} / ${runs.length}` : "–" }),
-      el("span", { class: "hl-sub", text: `${failed ? `${failed} failed · ` : ""}${fmtCost(total, runs.some((r) => r.metrics.cost_estimated), runs.some((r) => r.metrics.cost_estimate_proxy))} total cost (unknowns excluded)` }),
+      el("span", {
+        class: "hl-sub",
+        text: [failed ? `${failed} failed` : null, `${fmtCost(total, runs.some((r) => r.metrics.cost_estimated), runs.some((r) => r.metrics.cost_estimate_proxy))} total`, unreported ? `${unreported} without cost` : null].filter(Boolean).join(" · "),
+        attrs: unreported ? { title: `${unreported} run${unreported === 1 ? "" : "s"} reported no cost (Agy, Muse, sometimes Grok); the total leaves them out` } : {},
+      }),
     ])
   );
   box.append(...tiles);

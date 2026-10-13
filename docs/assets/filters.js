@@ -3,7 +3,7 @@
 // filterRuns() in runs.js; the grid and the table both draw whatever it returns.
 
 import { el, qsList, qs, setQuery } from "./dom.js";
-import { effortIndex, vendorOf, vendorName, vendorOptions, modelParts } from "./runs.js";
+import { effortIndex, vendorOf, vendorName, vendorOptions, modelParts, prettyModelName } from "./runs.js";
 
 export function readFilters() {
   return { vendors: qsList("vendor"), efforts: qsList("effort"), models: qsList("model"), verified: qs("verified") === "1", hideFailed: qs("failed") === "hide" };
@@ -53,9 +53,15 @@ export function renderFilterBar(box, runs, filters, onChange) {
   box.replaceChildren(...[
     group("Vendor", vendors.map((v) => chip("vendors", v, vendorName(v), vendorOptions(sample(v))))),
     group("Effort", efforts.map((e) => chip("efforts", e, e ?? "–"))),
-    group("Model", models.map((m) => chip("models", m, modelParts(m).short, { attrs: { title: m } }))),
+    group("Model", models.map((m) => chip("models", m, chipName(m), { attrs: { title: m } }))),
     el("div", { class: "filter-group" }, [toggle("verified", "Verified only"), toggle("hideFailed", "Hide failed"), clear]),
   ].filter(Boolean));
   box.hidden = runs.length < 2;
   syncs.forEach((sync) => sync());
+}
+
+// "Haiku 5.5", or "DeepSeek V4.1 Flash via deepinfra" for a pinned OpenRouter upstream; the full id is the tooltip.
+function chipName(model) {
+  const { name, via } = modelParts(model);
+  return via ? `${prettyModelName(name)} via ${via}` : prettyModelName(name);
 }
