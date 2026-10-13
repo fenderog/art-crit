@@ -3,7 +3,7 @@
     "slug": "ceate-an-svg-of-an-awkward",
     "title": "Awkward Robot Family",
     "kind": "media",
-    "n_runs": 41,
+    "n_runs": 42,
     "models": [
       "anthropic/claude-haiku-5-5",
       "anthropic/claude-opus-5-5",
@@ -16,8 +16,8 @@
       "openai-codex/gpt-6.1-sol",
       "xai/grok-4.7"
     ],
-    "updated": "2026-10-13T23:17:34Z",
-    "thumb": "data/ceate-an-svg-of-an-awkward/runs/gemini-3.8-flash-agy-medium-20261013-153749/media/awkward_robot_family_portrait.svg"
+    "updated": "2026-10-13T23:23:05Z",
+    "thumb": "data/ceate-an-svg-of-an-awkward/runs/gemini-3.8-flash-agy-high-20261013-153749/media/awkward_robot_family_portrait.poster.jpg"
   },
   {
     "slug": "16bit-eiffel-tower",
