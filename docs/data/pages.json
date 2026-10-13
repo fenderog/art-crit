@@ -3,13 +3,13 @@
     "slug": "ceate-an-svg-of-an-awkward",
     "title": "Awkward Robot Family",
     "kind": "media",
-    "n_runs": 5,
+    "n_runs": 6,
     "models": [
       "anthropic/claude-opus-5-5",
       "anthropic/claude-sonnet-5-5",
       "openai-codex/gpt-6.1-sol"
     ],
-    "updated": "2026-10-13T22:41:21Z",
+    "updated": "2026-10-13T22:41:57Z",
     "thumb": "data/ceate-an-svg-of-an-awkward/runs/gpt-6.1-sol-low-20261013-153749/media/awkward-family.svg"
   },
   {
