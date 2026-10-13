@@ -3,11 +3,13 @@ import { fmtNum, fmtDuration, fmtCost, fmtDate } from "./fmt.js";
 import { runDir, harnessLabel, stateBadge, effortPill, modelParts, rankBy, ordinal, LOWER_IS_BETTER, isComplete, rankChip, playUrl } from "./runs.js";
 import { outputBadge, outputVerified, isPlayable, renderOutput, kindUi } from "./output.js";
 import { loadVotes, renderAuth, voteBar } from "./votes.js";
+import { setupAside } from "./aside.js";
 
 const slug = qs("p");
 const runId = qs("r");
 const main = document.getElementById("main");
 
+setupAside();
 const [page, votes] = await Promise.all([loadPage(slug), loadVotes(slug)]);
 renderAuth(votes);
 if (page) {
@@ -45,7 +47,7 @@ function render(run, base, siblings) {
         rank = el("span", {
           class: r === 1 && word ? "stat-rank is-best" : "stat-rank",
           text: r === 1 ? `${word || "lowest"} of ${n}` : `${ordinal(r)} of ${n}`,
-          attrs: { title: "Rank among this prompt's completed runs, lowest first" },
+          attrs: { title: "Rank among this prompt's runs that made their output, lowest first" },
         });
       }
     }
@@ -71,7 +73,7 @@ function render(run, base, siblings) {
   ]);
   strip.append(tiles, meta);
   if (votes) strip.append(voteBar(votes, run.id));
-  if (run.error) strip.after(el("p", { class: "run-error", text: run.error }));
+  if (run.error) document.getElementById("tabs").before(el("p", { class: "run-error", text: run.error }));
 
   // Counts on the tabs (never on the Game/Output tab, whose label is its whole text).
   if (m.turns != null) tabCount("transcript", fmtNum(m.turns));

@@ -113,19 +113,10 @@ code, pre, kbd { font-family: var(--mono); }
   display: inline-flex; align-items: center; gap: 9px;
   font-weight: 700; letter-spacing: -0.02em; font-size: 16px; text-decoration: none; color: var(--ink);
 }
-/* the mark: three sticky-note dots in the accent cast */
-.site-header .brand::before {
-  content: ""; width: 26px; height: 26px; flex: none; border-radius: 50%;
-  background:
-    radial-gradient(circle at 30% 34%, var(--marigold) 0 4.5px, transparent 5px),
-    radial-gradient(circle at 70% 34%, #f64932 0 4.5px, transparent 5px),
-    radial-gradient(circle at 50% 70%, #097fe8 0 4.5px, transparent 5px),
-    var(--surface);
-  box-shadow: inset 0 0 0 1.5px var(--ink);
-  transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
-}
+/* the wordmark (assets/logo.svg, which switches its own colors for dark mode) */
+.site-header .brand img { display: block; height: 24px; width: auto; transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1); }
 .site-header .brand:hover { text-decoration: none; }
-.site-header .brand:hover::before { transform: rotate(-12deg) scale(1.08); }
+.site-header .brand:hover img { transform: rotate(-2deg) scale(1.04); }
 .site-header .crumb { color: var(--ink-3); min-width: 0; overflow-wrap: anywhere; }
 .site-header .crumb a { color: var(--ink-3); text-decoration: none; padding: 4px 6px; border-radius: var(--r-sm); transition: color var(--ease), background var(--ease); }
 .site-header .crumb a:hover { color: var(--ink); background: var(--hover); }
@@ -252,6 +243,8 @@ a:hover > .model .model-name { text-decoration: underline; text-underline-offset
   color: color-mix(in srgb, var(--vendor) 80%, var(--ink)); font-size: 12px; font-weight: 700; line-height: 1;
   transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+.vendor-icon.has-img { border: 1px solid var(--line); background: #fff; overflow: hidden; }
+.vendor-icon img { display: block; width: 18px; height: 18px; object-fit: contain; }
 .card:hover .vendor-icon { transform: translateY(-2px); }
 .card:hover .vendor-icon:nth-child(2n) { transform: translateY(-2px) rotate(-8deg); }
 .model-chips { display: flex; flex-wrap: wrap; gap: 4px; }
@@ -550,16 +543,25 @@ table.metrics .hint { color: var(--ink-3); margin-left: 8px; }
 .compare-body { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .compare-meta { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .compare-meta .votes { margin-top: auto; } /* the meta row is as tall as the tallest card's: sit at its bottom so the rows line up */
+.compare-col > .compare-metrics, .compare-meta { padding-top: 10px; border-top: 1px solid var(--line); }
 .compare-col[data-vendor] { box-shadow: inset 0 3px 0 color-mix(in srgb, var(--vendor) 70%, transparent); }
 .compare-col:hover { border-color: var(--line-strong); }
 .compare-col.is-failed { border-color: color-mix(in srgb, var(--bad) 40%, var(--line)); }
 .compare-col h3 { margin: 0; font-size: 1rem; display: flex; align-items: flex-start; gap: 6px 12px; flex-wrap: wrap; justify-content: space-between; }
 .card-title { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
 .card-title > a { min-width: 0; }
+/* the card's model: the vendor icon, then the model as people say it (the full id is its tooltip) */
+.card-model { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 2px 8px; color: var(--ink); text-decoration: none; }
+.card-model .model-name { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; }
+.card-model .vendor-icon { width: 24px; height: 24px; font-size: 11px; }
+.card-model .vendor-icon img { width: 16px; height: 16px; }
+.card-model .model-via { flex-basis: 100%; padding-left: 32px; }
+a.card-model:hover { text-decoration: none; }
+a.card-model:hover .model-name { text-decoration: underline; text-underline-offset: 3px; }
 .card-tags { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .card-tags .effort { margin-top: 0; }
 .compare-col .rank-chip { font-size: 1.25rem; }
-input.run-select { width: 16px; height: 16px; margin: 3px 0 0; flex: none; accent-color: var(--accent); cursor: pointer; }
+input.run-select { width: 16px; height: 16px; margin: 4px 0 0; flex: none; accent-color: var(--accent); cursor: pointer; }
 /* Few runs (compare, up to 4): equal columns filling the page, two across on mid widths, one on phones. */
 .compare-columns.is-few { grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); }
 @media (max-width: 1000px) { .compare-columns.is-few { grid-template-columns: repeat(var(--cols-mid), minmax(0, 1fr)); } }
@@ -723,7 +725,6 @@ body:has(.page-container) { --page: 1440px; } /* the header lines up with the wi
 /* inside the sidebar the prompt, final prompt and highlights are sections, not cards of their own */
 .page-aside .page-meta { align-items: center; gap: 6px 14px; font-size: 13px; }
 .page-aside .page-meta > * + *::before { content: none; }
-.page-aside .page-meta .last-run { flex-basis: 100%; color: var(--ink-3); }
 .page-aside .prompt-box { margin: 0; padding: 0 0 0 12px; border: 0; border-radius: 0; background: none; }
 .page-aside .prompt-box::before { top: 2px; bottom: 2px; border-radius: 3px; }
 .page-aside .prompt-box .prompt-text { font-family: var(--font); font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
@@ -736,6 +737,17 @@ body:has(.page-container) { --page: 1440px; } /* the header lines up with the wi
 }
 .page-aside .hl-value { text-align: right; }
 .page-aside .hl-sub { grid-column: 1 / -1; font-size: 12.5px; }
+
+/* run.html's sidebar: the stat tiles two across, the badges and facts stacked */
+.page-main > .run-header { margin-bottom: 8px; }
+.run-header h1 { flex: 1; }
+.run-aside .eyebrow { margin: 0; }
+.run-aside .metric-strip { margin: 0; gap: 16px; }
+.page-aside .stat-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.page-aside .stat { padding: 10px 12px; background: var(--bg); border-color: transparent; }
+.page-aside .stat-value { font-size: 1.2rem; }
+.page-aside .run-meta { flex-direction: column; align-items: flex-start; gap: 8px; font-size: 13px; padding-top: 14px; border-top: 1px solid var(--line); }
+.page-aside .votes { padding-top: 14px; border-top: 1px solid var(--line); }
 
 @media (max-width: 1023px) {
   .page-layout, .page-layout[data-aside="closed"] { grid-template-columns: minmax(0, 1fr); }

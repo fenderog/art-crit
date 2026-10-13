@@ -47,7 +47,19 @@ export function vendorOf(model) {
 
 // One hue per vendor (fixed for the common ones, hashed for the rest), applied as data-vendor + --vh.
 const VENDOR_HUES = { anthropic: 25, openai: 160, google: 215, xai: 275, meta: 250, deepseek: 195, mistral: 35, qwen: 265 };
-const VENDOR_NAMES = { anthropic: "Anthropic", openai: "OpenAI", google: "Google", deepseek: "DeepSeek", xai: "xAI", meta: "Meta", mistral: "Mistral", qwen: "Qwen" };
+const VENDOR_NAMES = {
+  anthropic: "Anthropic", openai: "OpenAI", google: "Google", deepseek: "DeepSeek", xai: "xAI", x: "xAI", meta: "Meta",
+  mistral: "Mistral", mistralai: "Mistral", qwen: "Qwen", moonshotai: "Moonshot AI", z: "Z.ai",
+};
+// Provider icons as OpenRouter shows them (assets/vendor/icons/, see its README); vendors without one get their initial.
+const VENDOR_ICONS = {
+  anthropic: "anthropic.svg", openai: "openai.svg", google: "google.svg", meta: "meta.png", deepseek: "deepseek.png",
+  mistral: "mistralai.png", mistralai: "mistralai.png", moonshotai: "moonshotai.png", qwen: "qwen.png", z: "zai.png",
+  xai: "xai.png", x: "xai.png",
+};
+export function vendorIcon(key) {
+  return VENDOR_ICONS[key] ? `assets/vendor/icons/${VENDOR_ICONS[key]}` : null;
+}
 export function vendorName(key) {
   return VENDOR_NAMES[key] ?? key[0].toUpperCase() + key.slice(1);
 }
@@ -86,6 +98,33 @@ export function modelLabel(model) {
   ]);
 }
 
+// A model id as people say it: "claude-haiku-5-5" → "Haiku 5.5", "gpt-6.1-sol" → "GPT-6.1 Sol",
+// "deepseek-v4.1-flash" → "DeepSeek V4.1 Flash", "mistral-large-4-0" → "Mistral Large 4.0". Release dates are dropped.
+const NAME_WORDS = { gpt: "GPT", glm: "GLM", deepseek: "DeepSeek", flashx: "FlashX", gemini: "Gemini", grok: "Grok" };
+export function prettyModelName(name) {
+  const parts = String(name).replace(/^claude-/, "").split("-").filter((p) => !/^\d{8}$/.test(p));
+  const out = [];
+  for (const p of parts) {
+    const prev = out[out.length - 1];
+    if (/^\d+$/.test(p) && prev && /^\d+(\.\d+)*$/.test(prev)) out[out.length - 1] = `${prev}.${p}`; // 5-5 → 5.5
+    else out.push(p);
+  }
+  return out
+    .map((w) => NAME_WORDS[w] ?? (/^\d+(\.\d+)?b$/.test(w) ? w.toUpperCase() : /^[a-z]/.test(w) ? w[0].toUpperCase() + w.slice(1) : w)) // 27b → 27B
+    .join(" ")
+    .replace(/\b(GPT|GLM) (?=\d)/g, "$1-"); // "GPT 6.1" → "GPT-6.1"
+}
+
+// The vendor's small icon (OpenRouter's, else its initial in the vendor hue), with `label` as its tooltip.
+export function vendorMark(model, label) {
+  const v = vendorOf(model);
+  const icon = vendorIcon(v);
+  const opts = vendorOptions(model);
+  label ??= vendorName(v);
+  return el("span", { class: icon ? "vendor-icon has-img" : "vendor-icon", text: icon ? null : vendorName(v)[0], ...opts, attrs: { ...opts.attrs, title: label, "aria-label": label, role: "img" } },
+    icon ? [el("img", { attrs: { src: icon, alt: "" } })] : []);
+}
+
 export function runUrl(slug, id) {
   return `run.html?p=${encodeURIComponent(slug)}&r=${encodeURIComponent(id)}`;
 }
@@ -100,7 +139,7 @@ export function byModelThenEffort(a, b) {
   return String(a.model).localeCompare(String(b.model)) || effortIndex(a.effort) - effortIndex(b.effort) || String(a.id).localeCompare(String(b.id));
 }
 
-// Metrics where lower is better, used for "best" highlights. Only completed runs compete.
+// Metrics where lower is better, used for "best" highlights. Only runs that made their output compete.
 export const LOWER_IS_BETTER = { duration_ms: "fastest", cost_usd: "cheapest", tokens_total: "fewest tokens" };
 
 // Two separate questions: isComplete() is about the agent (state), outputOk() about what the kind step made
@@ -109,10 +148,12 @@ export function isComplete(run) {
   return !run.state || run.state === "complete";
 }
 
-// Ranks runs by a metric (ascending) among completed runs that have it: Map(run id → 1-based rank),
+// Ranks runs by a metric (ascending) among runs that made their output and have the metric: Map(run id → 1-based rank),
 // with ties sharing a rank. Empty when fewer than two runs compete (nothing to compare).
+// A cost of 0 means the harness reported none (Agy, Muse, sometimes Grok), not a free run, so it doesn't compete.
 export function rankBy(runs, key) {
-  const vals = runs.filter((r) => isComplete(r) && r.metrics && typeof r.metrics[key] === "number");
+  const has = (v) => typeof v === "number" && (key !== "cost_usd" || v > 0);
+  const vals = runs.filter((r) => !isFailed(r) && r.metrics && has(r.metrics[key]));
   const ranks = new Map();
   if (vals.length < 2) return ranks;
   const sorted = [...vals].sort((a, b) => a.metrics[key] - b.metrics[key]);

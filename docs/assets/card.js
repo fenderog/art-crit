@@ -3,7 +3,7 @@
 
 import { el } from "./dom.js";
 import { fmtDuration, fmtCost, fmtNum } from "./fmt.js";
-import { runDir, harnessLabel, stateBadge, effortPill, modelLabel, runUrl, LOWER_IS_BETTER, isComplete, byRankThenModel, rankChip, vendorOptions, groupByVendor, bestSets, playUrl } from "./runs.js";
+import { runDir, harnessLabel, stateBadge, effortPill, modelParts, prettyModelName, vendorMark, runUrl, LOWER_IS_BETTER, isComplete, byRankThenModel, rankChip, vendorOptions, groupByVendor, bestSets, playUrl } from "./runs.js";
 import { outputBadge, outputOk, renderOutput } from "./output.js";
 import { selectBox } from "./selection.js";
 import { voteBar } from "./votes.js";
@@ -80,13 +80,17 @@ export function runCard(slug, r, best, selection = null, votes = null) {
     on: { click: (e) => { e.preventDefault(); window.open(url, "_blank", "popup,noopener,width=1280,height=800"); } },
   }) : null;
   const heading = [
-    el("span", { class: "card-title" }, [selection ? selectBox(r, selection) : null, el("a", { attrs: { href: runUrl(slug, r.id) } }, [modelLabel(r.model)])]),
+    el("span", { class: "card-title" }, [selection ? selectBox(r, selection) : null, el("a", { class: "card-model", attrs: { href: runUrl(slug, r.id), title: r.model } }, [
+      vendorMark(r.model),
+      el("span", { class: "model-name", text: prettyModelName(modelParts(r.model).name) }),
+      modelParts(r.model).via ? el("span", { class: "model-via", text: `via ${modelParts(r.model).via}` }) : null,
+    ])]),
     el("span", { class: "card-tags" }, [rankChip(r.rank), r.rank != null ? " " : null, effortPill(r.effort), sb ? " " : null, sb, pop ? " " : null, pop]),
   ];
-  // The vote row shares the metrics row: a card is exactly three grid rows (heading, metrics, output), see .compare-col.
+  // The vote row shares the metrics row: a card is exactly three grid rows (heading, output, metrics), see .compare-col.
   const meta = votes ? el("div", { class: "compare-meta" }, [metricsLine(r, best), voteBar(votes, r.id)]) : metricsLine(r, best);
   const body = el("div", { class: "compare-body" });
   if (r.error) body.append(el("p", { class: "run-error", text: r.error }));
   body.append(...renderOutput(r, base, { compact: true, href: runUrl(slug, r.id) }));
-  return el("div", { class: isComplete(r) ? "compare-col" : "compare-col is-failed", ...vendorOptions(r.model) }, [el("h3", {}, heading), meta, body]);
+  return el("div", { class: isComplete(r) ? "compare-col" : "compare-col is-failed", ...vendorOptions(r.model) }, [el("h3", {}, heading), body, meta]);
 }

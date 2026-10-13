@@ -1,5 +1,16 @@
 [
   {
+    "slug": "ceate-an-svg-of-an-awkward",
+    "title": "Ceate an svg of an awkward",
+    "kind": "godot",
+    "n_runs": 1,
+    "models": [
+      "anthropic/claude-sonnet-5-5"
+    ],
+    "updated": "2026-10-13T22:32:03Z",
+    "thumb": "data/ceate-an-svg-of-an-awkward/runs/claude-sonnet-5-5-cc-low-20261013-153112/thumb.png"
+  },
+  {
     "slug": "16bit-eiffel-tower",
     "title": "16-bit Eiffel Tower",
     "kind": "media",
