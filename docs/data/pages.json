@@ -1,5 +1,28 @@
 [
   {
+    "slug": "skateboard-pelican",
+    "title": "Skateboard pelican",
+    "kind": "media",
+    "n_runs": 49,
+    "models": [
+      "anthropic/claude-haiku-5-5",
+      "anthropic/claude-opus-5-5",
+      "anthropic/claude-sonnet-5-5",
+      "meta/muse-spark-1.3-contributor",
+      "meta/muse-wonder-1.0",
+      "openai-codex/gpt-6-astra",
+      "openai-codex/gpt-6.1-sol",
+      "openrouter/deepseek/deepseek-v4.1-flash",
+      "openrouter/moonshotai/kimi-k3",
+      "openrouter/qwen/qwen3.8-max-prime",
+      "openrouter/z-ai/glm-5.3",
+      "openrouter/z-ai/glm-5.3-flashx",
+      "openrouter/z-ai/glm-5.3-prime"
+    ],
+    "updated": "2026-10-13T03:43:35Z",
+    "thumb": "data/skateboard-pelican/runs/muse-wonder-1.0-max-20261012-204114/media/pelican-skateboard.svg"
+  },
+  {
     "slug": "16bit-eiffel-tower",
     "title": "16-bit Eiffel Tower",
     "kind": "media",
@@ -14,28 +37,6 @@
     ],
     "updated": "2026-10-10T08:20:20Z",
     "thumb": "data/16bit-eiffel-tower/runs/muse-spark-1.3-contributor-xhigh-20261010-010045/media/eiffel_snes.png"
-  },
-  {
-    "slug": "skateboard-pelican",
-    "title": "Skateboard pelican",
-    "kind": "media",
-    "n_runs": 43,
-    "models": [
-      "anthropic/claude-haiku-5-5",
-      "anthropic/claude-opus-5-5",
-      "anthropic/claude-sonnet-5-5",
-      "meta/muse-spark-1.3-contributor",
-      "openai-codex/gpt-6-astra",
-      "openai-codex/gpt-6.1-sol",
-      "openrouter/deepseek/deepseek-v4.1-flash",
-      "openrouter/moonshotai/kimi-k3",
-      "openrouter/qwen/qwen3.8-max-prime",
-      "openrouter/z-ai/glm-5.3",
-      "openrouter/z-ai/glm-5.3-flashx",
-      "openrouter/z-ai/glm-5.3-prime"
-    ],
-    "updated": "2026-10-10T07:11:00Z",
-    "thumb": "data/skateboard-pelican/runs/qwen3.8-max-prime-medium-20261009-234928/media/pelican_skateboard.svg"
   },
   {
     "slug": "pixel-eiffel",
