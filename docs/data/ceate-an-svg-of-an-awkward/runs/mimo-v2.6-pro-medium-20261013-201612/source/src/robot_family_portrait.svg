@@ -1,0 +1,964 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1200" viewBox="0 0 1600 1200" role="img" aria-label="Awkward robot family portrait">
+  <title>Awkward Robot Family Portrait</title>
+
+  <defs>
+    <!-- ===== metal & surface gradients ===== -->
+    <linearGradient id="gSteel" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#e2ecf4"/>
+      <stop offset="0.45" stop-color="#a7b9c8"/>
+      <stop offset="1" stop-color="#5e7385"/>
+    </linearGradient>
+    <linearGradient id="gSteelDark" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#7d8fa0"/>
+      <stop offset="0.5" stop-color="#4b5c6b"/>
+      <stop offset="1" stop-color="#26313b"/>
+    </linearGradient>
+    <linearGradient id="gSteelLight" x1="0" y1="0" x2="0.6" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.5" stop-color="#cfdce6"/>
+      <stop offset="1" stop-color="#8fa4b4"/>
+    </linearGradient>
+    <linearGradient id="gBrass" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#f6dc9e"/>
+      <stop offset="0.45" stop-color="#c9994f"/>
+      <stop offset="1" stop-color="#7c5626"/>
+    </linearGradient>
+    <linearGradient id="gCopper" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#f0b189"/>
+      <stop offset="0.5" stop-color="#c07148"/>
+      <stop offset="1" stop-color="#7e4126"/>
+    </linearGradient>
+    <linearGradient id="gMint" x1="0" y1="0" x2="0.75" y2="1">
+      <stop offset="0" stop-color="#f0faf8"/>
+      <stop offset="0.45" stop-color="#bcd6d3"/>
+      <stop offset="1" stop-color="#6e8d90"/>
+    </linearGradient>
+    <linearGradient id="gCharcoal" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#5c6874"/>
+      <stop offset="0.5" stop-color="#333e48"/>
+      <stop offset="1" stop-color="#1a222a"/>
+    </linearGradient>
+    <linearGradient id="gRed" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#ff8b73"/>
+      <stop offset="0.45" stop-color="#e0523c"/>
+      <stop offset="1" stop-color="#9c2c20"/>
+    </linearGradient>
+    <linearGradient id="gCream" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#fff7e6"/>
+      <stop offset="0.5" stop-color="#efdcbc"/>
+      <stop offset="1" stop-color="#b99d78"/>
+    </linearGradient>
+
+    <!-- ===== environment gradients ===== -->
+    <linearGradient id="gBackdrop" x1="0.15" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#3c5d66"/>
+      <stop offset="0.5" stop-color="#223b45"/>
+      <stop offset="1" stop-color="#12242c"/>
+    </linearGradient>
+    <linearGradient id="gFold" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0.09"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="gFloor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#46392f"/>
+      <stop offset="0.55" stop-color="#2b231d"/>
+      <stop offset="1" stop-color="#181310"/>
+    </linearGradient>
+    <linearGradient id="gRug" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#b1794c"/>
+      <stop offset="0.5" stop-color="#8d5c38"/>
+      <stop offset="1" stop-color="#5d3922"/>
+    </linearGradient>
+    <radialGradient id="gWarm" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffe7c2" stop-opacity="0.55"/>
+      <stop offset="0.6" stop-color="#ffd9a6" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#ffd9a6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gVig" cx="0.5" cy="0.44" r="0.75">
+      <stop offset="0.5" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="0.82" stop-color="#05090c" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#05090c" stop-opacity="0.72"/>
+    </radialGradient>
+
+    <!-- ===== glow gradients ===== -->
+    <radialGradient id="gGlowCyan">
+      <stop offset="0" stop-color="#c9f7ff" stop-opacity="0.95"/>
+      <stop offset="0.45" stop-color="#5fd8f2" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#5fd8f2" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gGlowAmber">
+      <stop offset="0" stop-color="#ffe4b0" stop-opacity="0.95"/>
+      <stop offset="0.45" stop-color="#ffb761" stop-opacity="0.36"/>
+      <stop offset="1" stop-color="#ffb761" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gGlowRed">
+      <stop offset="0" stop-color="#ffd2c2" stop-opacity="0.95"/>
+      <stop offset="0.45" stop-color="#ff8a63" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#ff8a63" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gGlowGreen">
+      <stop offset="0" stop-color="#d8ffe6" stop-opacity="0.95"/>
+      <stop offset="0.45" stop-color="#7bf0ae" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#7bf0ae" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- ===== filters ===== -->
+    <filter id="fSoft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="12"/>
+    </filter>
+    <filter id="fSoftS" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+    <filter id="fDrop" x="-25%" y="-25%" width="150%" height="160%">
+      <feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#04080b" flood-opacity="0.5"/>
+    </filter>
+    <filter id="fDropS" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#04080b" flood-opacity="0.42"/>
+    </filter>
+
+    <!-- ===== reusable details ===== -->
+    <symbol id="rivet" viewBox="0 0 12 12">
+      <circle cx="6" cy="6" r="5" fill="#222e37"/>
+      <circle cx="4.6" cy="4.6" r="1.9" fill="#a9bccb" opacity="0.9"/>
+    </symbol>
+    <symbol id="bolt" viewBox="0 0 14 14">
+      <path d="M7 1 L12.2 4 L12.2 10 L7 13 L1.8 10 L1.8 4 Z" fill="#2c3944" stroke="#14202a" stroke-width="1.2"/>
+      <circle cx="7" cy="7" r="2.6" fill="#7f93a3"/>
+    </symbol>
+    <g id="sparkle">
+      <path d="M0 -12 L3 -3 L12 0 L3 3 L0 12 L-3 3 L-12 0 L-3 -3 Z" fill="#ffffff" opacity="0.9"/>
+    </g>
+  </defs>
+
+  <!-- ============ STUDIO BACKDROP ============ -->
+  <rect width="1600" height="1200" fill="url(#gBackdrop)"/>
+  <g>
+    <rect x="40" y="0" width="120" height="960" fill="url(#gFold)"/>
+    <rect x="260" y="0" width="150" height="960" fill="url(#gFold)"/>
+    <rect x="520" y="0" width="130" height="960" fill="url(#gFold)"/>
+    <rect x="760" y="0" width="160" height="960" fill="url(#gFold)"/>
+    <rect x="1030" y="0" width="140" height="960" fill="url(#gFold)"/>
+    <rect x="1290" y="0" width="150" height="960" fill="url(#gFold)"/>
+  </g>
+  <ellipse cx="770" cy="560" rx="700" ry="560" fill="url(#gWarm)"/>
+  <g opacity="0.5">
+    <path d="M0 928 H1600 V946 H0 Z" fill="#5c4a3c"/>
+    <path d="M0 928 H1600 V932 H0 Z" fill="#8c7159" opacity="0.7"/>
+  </g>
+
+  <!-- ============ FLOOR & RUG ============ -->
+  <rect x="0" y="944" width="1600" height="256" fill="url(#gFloor)"/>
+  <ellipse cx="800" cy="1085" rx="640" ry="122" fill="url(#gRug)"/>
+  <ellipse cx="800" cy="1085" rx="640" ry="122" fill="none" stroke="#43291a" stroke-width="7" opacity="0.7"/>
+  <ellipse cx="800" cy="1085" rx="520" ry="94" fill="none" stroke="#e0b184" stroke-width="6" opacity="0.35"/>
+  <ellipse cx="800" cy="1085" rx="430" ry="74" fill="none" stroke="#43291a" stroke-width="5" opacity="0.5"/>
+  <g opacity="0.28" stroke="#f0c79c" stroke-width="5" stroke-linecap="round" fill="none">
+    <path d="M420 1085 q 40 -32 80 0 q 40 32 80 0"/>
+    <path d="M1020 1085 q 40 -32 80 0 q 40 32 80 0"/>
+    <path d="M700 1130 q 40 -30 80 0 q 40 30 80 0"/>
+    <path d="M700 1040 q 40 -30 80 0 q 40 30 80 0"/>
+  </g>
+  <!-- soft contact shading under everything -->
+  <ellipse cx="800" cy="1060" rx="560" ry="90" fill="#2a1a10" opacity="0.22" filter="url(#fSoft)"/>
+
+  <!-- ============================================================
+       GRANDMA — CRT-era elder, mid-sentence, facing the wrong way
+       ============================================================ -->
+  <g id="grandma">
+    <ellipse cx="312" cy="1046" rx="176" ry="30" fill="#1c1108" opacity="0.55" filter="url(#fSoft)"/>
+
+    <!-- legs & feet -->
+    <g stroke="#101820" stroke-linecap="round" fill="none">
+      <path d="M266 962 L258 1002 L262 1028" stroke-width="42"/>
+      <path d="M342 962 L350 1002 L346 1028" stroke-width="42"/>
+    </g>
+    <g stroke="url(#gBrass)" stroke-linecap="round" fill="none">
+      <path d="M266 962 L258 1002 L262 1028" stroke-width="32"/>
+      <path d="M342 962 L350 1002 L346 1028" stroke-width="32"/>
+    </g>
+    <rect x="218" y="1008" width="82" height="38" rx="14" fill="url(#gBrass)" stroke="#101820" stroke-width="5"/>
+    <rect x="316" y="1008" width="82" height="38" rx="14" fill="url(#gBrass)" stroke="#101820" stroke-width="5"/>
+
+    <!-- skirt / lower casing -->
+    <path d="M222 832 Q306 812 392 832 L404 1016 Q306 1042 208 1016 Z" fill="url(#gBrass)" stroke="#101820" stroke-width="6"/>
+    <g stroke="#7c5626" stroke-width="5" opacity="0.55" fill="none">
+      <path d="M262 846 Q258 930 250 1014"/>
+      <path d="M312 842 Q312 930 312 1020"/>
+      <path d="M362 846 Q366 930 372 1014"/>
+    </g>
+    <path d="M208 1016 Q306 1042 404 1016 L404 1030 Q306 1056 208 1030 Z" fill="#6b4820" opacity="0.75"/>
+
+    <!-- torso -->
+    <rect x="230" y="642" width="154" height="206" rx="28" fill="url(#gBrass)" stroke="#101820" stroke-width="6"/>
+    <rect x="242" y="652" width="130" height="60" rx="18" fill="#ffffff" opacity="0.12"/>
+
+    <!-- chest panel: warm bulb heart + gauges -->
+    <rect x="250" y="686" width="114" height="124" rx="14" fill="#2c3944" stroke="#101820" stroke-width="5"/>
+    <circle cx="307" cy="726" r="46" fill="url(#gGlowAmber)"/>
+    <circle cx="307" cy="726" r="21" fill="#ffcf8c" stroke="#7c5626" stroke-width="4"/>
+    <path d="M297 716 L317 736 M317 716 L297 736" stroke="#ffe4b0" stroke-width="4" stroke-linecap="round" opacity="0.85"/>
+    <g>
+      <circle cx="272" cy="780" r="14" fill="#d9c39a" stroke="#101820" stroke-width="4"/>
+      <path d="M272 780 L279 771" stroke="#101820" stroke-width="3.5" stroke-linecap="round"/>
+      <circle cx="342" cy="780" r="14" fill="#d9c39a" stroke="#101820" stroke-width="4"/>
+      <path d="M342 780 L336 772" stroke="#101820" stroke-width="3.5" stroke-linecap="round"/>
+    </g>
+    <use href="#rivet" x="240" y="662" width="12" height="12"/>
+    <use href="#rivet" x="362" y="662" width="12" height="12"/>
+    <use href="#rivet" x="240" y="822" width="12" height="12"/>
+    <use href="#rivet" x="362" y="822" width="12" height="12"/>
+
+    <!-- shawl -->
+    <path d="M222 660 Q306 622 392 660 L398 736 Q360 762 342 736 Q322 766 306 738 Q288 768 270 736 Q250 764 216 734 Z"
+          fill="url(#gCopper)" stroke="#101820" stroke-width="6"/>
+    <g fill="#f6d2b6" opacity="0.5">
+      <circle cx="252" cy="686" r="6"/><circle cx="292" cy="674" r="6"/><circle cx="332" cy="676" r="6"/>
+      <circle cx="368" cy="690" r="6"/><circle cx="272" cy="716" r="6"/><circle cx="316" cy="712" r="6"/>
+      <circle cx="356" cy="716" r="6"/>
+    </g>
+
+    <!-- dangling wires -->
+    <g fill="none" stroke="#20303a" stroke-width="7" stroke-linecap="round">
+      <path d="M244 838 Q232 892 240 946"/>
+      <path d="M268 844 Q262 900 274 958"/>
+    </g>
+    <circle cx="240" cy="952" r="11" fill="#7f93a3" stroke="#101820" stroke-width="4"/>
+    <circle cx="275" cy="964" r="11" fill="#7f93a3" stroke="#101820" stroke-width="4"/>
+
+    <!-- neck -->
+    <rect x="284" y="606" width="46" height="52" rx="12" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5"/>
+    <ellipse cx="307" cy="608" rx="24" ry="9" fill="#8fa4b4" opacity="0.7"/>
+
+    <!-- head -->
+    <g transform="rotate(-7 307 552)">
+      <!-- rabbit ears -->
+      <g stroke="#101820" stroke-width="12" stroke-linecap="round" fill="none">
+        <path d="M282 494 L242 392"/>
+        <path d="M332 494 L378 398"/>
+      </g>
+      <g stroke="url(#gBrass)" stroke-width="7" stroke-linecap="round" fill="none">
+        <path d="M282 494 L242 392"/>
+        <path d="M332 494 L378 398"/>
+      </g>
+      <circle cx="239" cy="382" r="16" fill="url(#gCopper)" stroke="#101820" stroke-width="5"/>
+      <circle cx="381" cy="388" r="16" fill="url(#gCopper)" stroke="#101820" stroke-width="5"/>
+      <ellipse cx="307" cy="486" rx="52" ry="17" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5" transform="rotate(-8 307 486)"/>
+
+      <rect x="230" y="482" width="156" height="146" rx="32" fill="url(#gBrass)" stroke="#101820" stroke-width="6"/>
+      <rect x="240" y="492" width="136" height="52" rx="20" fill="#ffffff" opacity="0.13"/>
+      <use href="#rivet" x="238" y="592" width="12" height="12"/>
+      <use href="#rivet" x="366" y="592" width="12" height="12"/>
+
+      <!-- CRT face -->
+      <rect x="250" y="508" width="116" height="82" rx="12" fill="#16242c" stroke="#101820" stroke-width="5"/>
+      <g opacity="0.16" stroke="#bfe9f4" stroke-width="3">
+        <path d="M256 526 H360"/><path d="M256 548 H360"/><path d="M256 570 H360"/>
+      </g>
+      <!-- static eyes -->
+      <g fill="#bfe9f4">
+        <rect x="262" y="528" width="34" height="9" rx="3" opacity="0.95"/>
+        <rect x="266" y="542" width="24" height="7" rx="3" opacity="0.5"/>
+        <rect x="270" y="553" width="14" height="6" rx="3" opacity="0.8"/>
+        <rect x="320" y="528" width="34" height="9" rx="3" opacity="0.95"/>
+        <rect x="326" y="542" width="22" height="7" rx="3" opacity="0.55"/>
+        <rect x="332" y="553" width="14" height="6" rx="3" opacity="0.75"/>
+      </g>
+      <!-- wavy talking mouth -->
+      <path d="M262 578 q 11 -11 22 0 t 22 0 t 22 0 t 22 0" fill="none" stroke="#8fe3b6" stroke-width="6.5" stroke-linecap="round" opacity="0.9"/>
+      <rect x="252" y="510" width="112" height="18" rx="8" fill="#ffffff" opacity="0.1"/>
+
+      <!-- cheek vents -->
+      <g stroke="#7c5626" stroke-width="4" opacity="0.7">
+        <path d="M244 566 H252"/><path d="M244 578 H252"/>
+        <path d="M364 566 H372"/><path d="M364 578 H372"/>
+      </g>
+    </g>
+
+    <!-- gesturing arm (her right, raised mid-anecdote) -->
+    <g stroke-linecap="round" fill="none">
+      <path d="M228 700 L172 646 L186 566" stroke="#101820" stroke-width="44"/>
+      <path d="M228 700 L172 646 L186 566" stroke="url(#gBrass)" stroke-width="34"/>
+      <circle cx="172" cy="646" r="21" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5"/>
+    </g>
+    <g fill="url(#gBrass)" stroke="#101820" stroke-width="5" stroke-linecap="round">
+      <rect x="160" y="524" width="48" height="48" rx="16" transform="rotate(14 184 548)"/>
+      <path d="M166 528 L156 496" stroke-width="15"/>
+      <path d="M186 522 L186 488" stroke-width="15"/>
+      <path d="M204 528 L216 500" stroke-width="15"/>
+    </g>
+
+    <!-- arm holding cane (her left) -->
+    <g stroke-linecap="round" fill="none">
+      <path d="M382 702 L410 782 L396 862" stroke="#101820" stroke-width="44"/>
+      <path d="M382 702 L410 782 L396 862" stroke="url(#gBrass)" stroke-width="34"/>
+      <circle cx="410" cy="782" r="21" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5"/>
+    </g>
+    <rect x="372" y="852" width="50" height="46" rx="16" fill="url(#gBrass)" stroke="#101820" stroke-width="5" transform="rotate(-8 397 875)"/>
+    <!-- cane -->
+    <g fill="none" stroke="#101820" stroke-linecap="round">
+      <path d="M400 866 L428 1044" stroke-width="22"/>
+    </g>
+    <g fill="none" stroke="url(#gCopper)" stroke-linecap="round">
+      <path d="M400 866 L428 1044" stroke-width="13"/>
+      <path d="M400 866 q -22 -6 -22 -26 q 0 -16 18 -16" stroke-width="13"/>
+    </g>
+  </g>
+
+  <!-- ============================================================
+       DAD — the rigid patriarch, arm hovering awkwardly
+       ============================================================ -->
+  <g id="dad">
+    <ellipse cx="648" cy="1052" rx="212" ry="34" fill="#1c1108" opacity="0.55" filter="url(#fSoft)"/>
+
+    <!-- legs -->
+    <g stroke-linecap="round" fill="none">
+      <path d="M576 892 L564 956 L572 1012" stroke="#101820" stroke-width="66"/>
+      <path d="M706 892 L718 956 L708 1012" stroke="#101820" stroke-width="66"/>
+    </g>
+    <g stroke-linecap="round" fill="none">
+      <path d="M576 892 L564 956 L572 1012" stroke="url(#gSteel)" stroke-width="54"/>
+      <path d="M706 892 L718 956 L708 1012" stroke="url(#gSteel)" stroke-width="54"/>
+    </g>
+    <g fill="none" stroke="#d6e6f2" stroke-width="7" opacity="0.5" stroke-linecap="round">
+      <path d="M556 972 L562 1008"/>
+      <path d="M726 972 L718 1008"/>
+    </g>
+    <g>
+      <circle cx="564" cy="956" r="28" fill="url(#gSteelDark)" stroke="#101820" stroke-width="6"/>
+      <circle cx="718" cy="956" r="28" fill="url(#gSteelDark)" stroke="#101820" stroke-width="6"/>
+    </g>
+    <rect x="512" y="1004" width="112" height="46" rx="18" fill="url(#gSteelDark)" stroke="#101820" stroke-width="6" transform="rotate(-6 568 1027)"/>
+    <rect x="654" y="1004" width="112" height="46" rx="18" fill="url(#gSteelDark)" stroke="#101820" stroke-width="6"/>
+
+    <!-- pelvis -->
+    <rect x="534" y="828" width="212" height="96" rx="30" fill="url(#gSteelDark)" stroke="#101820" stroke-width="6"/>
+    <rect x="604" y="846" width="72" height="58" rx="16" fill="url(#gSteel)" stroke="#101820" stroke-width="5"/>
+    <use href="#rivet" x="550" y="842" width="12" height="12"/>
+    <use href="#rivet" x="718" y="842" width="12" height="12"/>
+    <use href="#rivet" x="550" y="896" width="12" height="12"/>
+    <use href="#rivet" x="718" y="896" width="12" height="12"/>
+
+    <!-- torso -->
+    <rect x="502" y="512" width="276" height="352" rx="36" fill="url(#gSteel)" stroke="#101820" stroke-width="7"/>
+    <path d="M520 530 Q548 520 566 522 L566 606 Q540 604 520 596 Z" fill="#ffffff" opacity="0.16"/>
+    <path d="M534 620 L560 616 L548 726 L522 722 Z" fill="#ffffff" opacity="0.1"/>
+
+    <!-- shoulder pads -->
+    <rect x="474" y="526" width="128" height="104" rx="34" fill="url(#gSteelLight)" stroke="#101820" stroke-width="7"/>
+    <rect x="718" y="526" width="128" height="104" rx="34" fill="url(#gSteel)" stroke="#101820" stroke-width="7"/>
+    <use href="#rivet" x="486" y="546" width="12" height="12"/>
+    <use href="#rivet" x="812" y="546" width="12" height="12"/>
+
+    <!-- chest core -->
+    <rect x="566" y="582" width="152" height="182" rx="18" fill="url(#gSteelDark)" stroke="#101820" stroke-width="6"/>
+    <circle cx="642" cy="654" r="72" fill="url(#gGlowCyan)"/>
+    <circle cx="642" cy="654" r="44" fill="#20323d" stroke="#101820" stroke-width="5"/>
+    <circle cx="642" cy="654" r="30" fill="#67dcf2" opacity="0.9"/>
+    <circle cx="642" cy="654" r="30" fill="none" stroke="#c9f7ff" stroke-width="4" opacity="0.8"/>
+    <path d="M630 640 L654 664 M654 640 L630 664" stroke="#0d2b36" stroke-width="6" stroke-linecap="round" opacity="0.65"/>
+    <g stroke="#8fa4b4" stroke-width="7" stroke-linecap="round" opacity="0.75">
+      <path d="M588 726 H696"/><path d="M588 742 H696"/><path d="M588 758 H696"/>
+    </g>
+    <use href="#rivet" x="552" y="566" width="12" height="12"/>
+    <use href="#rivet" x="718" y="566" width="12" height="12"/>
+    <use href="#rivet" x="552" y="786" width="12" height="12"/>
+    <use href="#rivet" x="718" y="786" width="12" height="12"/>
+
+    <!-- badge plate -->
+    <rect x="518" y="600" width="44" height="66" rx="10" fill="#2c3944" stroke="#101820" stroke-width="5"/>
+    <path d="M528 620 L552 640 M552 620 L528 640" stroke="#9fb6c6" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
+    <circle cx="540" cy="656" r="7" fill="#9fb6c6" opacity="0.8"/>
+
+    <!-- neck -->
+    <rect x="610" y="462" width="64" height="70" rx="16" fill="url(#gSteelDark)" stroke="#101820" stroke-width="6"/>
+    <ellipse cx="642" cy="466" rx="32" ry="11" fill="#8fa4b4" opacity="0.6"/>
+
+    <!-- head -->
+    <g transform="rotate(-2 642 392)">
+      <!-- antennae -->
+      <g stroke="#101820" stroke-width="17" stroke-linecap="round" fill="none">
+        <path d="M712 314 L728 252 L722 214"/>
+        <path d="M570 312 L544 268 L562 232"/>
+      </g>
+      <g stroke="url(#gSteelDark)" stroke-width="9" stroke-linecap="round" fill="none">
+        <path d="M712 314 L728 252 L722 214"/>
+        <path d="M570 312 L544 268 L562 232"/>
+      </g>
+      <circle cx="721" cy="204" r="19" fill="url(#gSteelLight)" stroke="#101820" stroke-width="5"/>
+      <circle cx="716" cy="199" r="6" fill="#ffffff" opacity="0.8"/>
+      <circle cx="564" cy="222" r="15" fill="url(#gCopper)" stroke="#101820" stroke-width="5"/>
+
+      <!-- ears -->
+      <rect x="498" y="352" width="48" height="92" rx="16" fill="url(#gSteelDark)" stroke="#101820" stroke-width="6"/>
+      <rect x="736" y="352" width="48" height="92" rx="16" fill="url(#gSteelDark)" stroke="#101820" stroke-width="6"/>
+      <g stroke="#8fa4b4" stroke-width="5" opacity="0.7">
+        <path d="M508 376 H536"/><path d="M508 392 H536"/><path d="M508 408 H536"/>
+        <path d="M746 376 H774"/><path d="M746 392 H774"/><path d="M746 408 H774"/>
+      </g>
+
+      <rect x="536" y="302" width="212" height="188" rx="38" fill="url(#gSteel)" stroke="#101820" stroke-width="7"/>
+      <rect x="556" y="322" width="172" height="70" rx="26" fill="#ffffff" opacity="0.18"/>
+
+      <!-- face plate -->
+      <rect x="560" y="336" width="164" height="136" rx="24" fill="url(#gSteelLight)" stroke="#101820" stroke-width="5" opacity="0.95"/>
+
+      <!-- brows: one raised -->
+      <path d="M582 350 L632 340" stroke="#2c3944" stroke-width="13" stroke-linecap="round"/>
+      <path d="M660 346 L712 358" stroke="#2c3944" stroke-width="13" stroke-linecap="round"/>
+
+      <!-- eyes -->
+      <g>
+        <circle cx="612" cy="392" r="27" fill="#22303a" stroke="#101820" stroke-width="6"/>
+        <circle cx="688" cy="392" r="27" fill="#22303a" stroke="#101820" stroke-width="6"/>
+        <circle cx="612" cy="392" r="26" fill="url(#gGlowCyan)"/>
+        <circle cx="688" cy="392" r="26" fill="url(#gGlowCyan)"/>
+        <circle cx="612" cy="392" r="15" fill="#4fd2ee"/>
+        <circle cx="688" cy="392" r="15" fill="#4fd2ee"/>
+        <circle cx="606" cy="385" r="6" fill="#ffffff" opacity="0.95"/>
+        <circle cx="682" cy="385" r="6" fill="#ffffff" opacity="0.95"/>
+      </g>
+
+      <!-- forced LED smile -->
+      <rect x="588" y="428" width="112" height="38" rx="16" fill="#2c3944" stroke="#101820" stroke-width="5"/>
+      <path d="M598 442 q 46 30 92 0" fill="none" stroke="#86e8a8" stroke-width="11" stroke-linecap="round" stroke-dasharray="10 9" opacity="0.95"/>
+    </g>
+
+    <!-- stiff right arm -->
+    <g stroke-linecap="round" fill="none">
+      <path d="M492 588 L470 700 L476 802" stroke="#101820" stroke-width="62"/>
+      <path d="M492 588 L470 700 L476 802" stroke="url(#gSteel)" stroke-width="50"/>
+    </g>
+    <circle cx="492" cy="588" r="32" fill="url(#gSteelLight)" stroke="#101820" stroke-width="6"/>
+    <circle cx="470" cy="700" r="26" fill="url(#gSteelDark)" stroke="#101820" stroke-width="6"/>
+    <rect x="446" y="792" width="62" height="72" rx="20" fill="url(#gSteelDark)" stroke="#101820" stroke-width="6"/>
+    <g stroke="#101820" stroke-width="26" stroke-linecap="round">
+      <path d="M456 852 L452 884"/>
+      <path d="M478 856 L478 890"/>
+      <path d="M498 852 L504 882"/>
+    </g>
+    <g stroke="url(#gSteel)" stroke-width="17" stroke-linecap="round">
+      <path d="M456 852 L452 884"/>
+      <path d="M478 856 L478 890"/>
+      <path d="M498 852 L504 882"/>
+    </g>
+
+    <!-- awkward raised arm: hand hovering, NOT touching her -->
+    <g stroke-linecap="round" fill="none">
+      <path d="M788 592 L838 566 L834 512" stroke="#101820" stroke-width="62"/>
+      <path d="M788 592 L838 566 L834 512" stroke="url(#gSteel)" stroke-width="50"/>
+    </g>
+    <circle cx="788" cy="592" r="32" fill="url(#gSteel)" stroke="#101820" stroke-width="6"/>
+    <circle cx="838" cy="566" r="26" fill="url(#gSteelDark)" stroke="#101820" stroke-width="6"/>
+    <g transform="rotate(-24 826 486)">
+      <rect x="796" y="456" width="62" height="58" rx="20" fill="url(#gSteelDark)" stroke="#101820" stroke-width="6"/>
+      <g stroke="#101820" stroke-width="26" stroke-linecap="round">
+        <path d="M806 508 L800 538"/>
+        <path d="M828 512 L828 544"/>
+        <path d="M848 506 L856 534"/>
+      </g>
+      <g stroke="url(#gSteel)" stroke-width="17" stroke-linecap="round">
+        <path d="M806 508 L800 538"/>
+        <path d="M828 512 L828 544"/>
+        <path d="M848 506 L856 534"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============================================================
+       MOM — composed, leaning subtly away, tuned to the teenager
+       ============================================================ -->
+  <g id="mom">
+    <ellipse cx="958" cy="1044" rx="182" ry="30" fill="#1c1108" opacity="0.55" filter="url(#fSoft)"/>
+
+    <!-- legs -->
+    <g stroke-linecap="round" fill="none">
+      <path d="M908 946 L900 982 L906 1012" stroke="#101820" stroke-width="42"/>
+      <path d="M1002 946 L1010 982 L1004 1012" stroke="#101820" stroke-width="42"/>
+    </g>
+    <g stroke-linecap="round" fill="none">
+      <path d="M908 946 L900 982 L906 1012" stroke="url(#gMint)" stroke-width="32"/>
+      <path d="M1002 946 L1010 982 L1004 1012" stroke="url(#gMint)" stroke-width="32"/>
+    </g>
+    <circle cx="900" cy="982" r="18" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5"/>
+    <circle cx="1010" cy="982" r="18" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5"/>
+    <rect x="866" y="1004" width="72" height="36" rx="15" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5" transform="rotate(7 902 1022)"/>
+    <rect x="972" y="1004" width="74" height="36" rx="15" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5" transform="rotate(-6 1009 1022)"/>
+
+    <!-- hips -->
+    <path d="M882 798 Q958 776 1032 798 L1046 952 Q958 984 866 952 Z" fill="url(#gMint)" stroke="#101820" stroke-width="6"/>
+    <rect x="872" y="786" width="176" height="34" rx="16" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5"/>
+    <circle cx="960" cy="803" r="16" fill="url(#gCopper)" stroke="#101820" stroke-width="5"/>
+    <path d="M952 803 L968 803" stroke="#7e4126" stroke-width="4" stroke-linecap="round"/>
+
+    <!-- torso -->
+    <rect x="876" y="566" width="164" height="248" rx="46" fill="url(#gMint)" stroke="#101820" stroke-width="7"/>
+    <path d="M892 592 Q908 578 928 576 L928 626 Q902 626 892 618 Z" fill="#ffffff" opacity="0.2"/>
+    <!-- chest plate -->
+    <ellipse cx="958" cy="672" rx="56" ry="66" fill="url(#gSteelLight)" stroke="#101820" stroke-width="6"/>
+    <path d="M958 632 L988 672 L958 712 L928 672 Z" fill="url(#gGlowAmber)"/>
+    <path d="M958 644 L980 672 L958 700 L936 672 Z" fill="#ffcf8c" stroke="#a97b3c" stroke-width="4"/>
+    <!-- collar -->
+    <path d="M886 592 Q958 556 1030 592" fill="none" stroke="url(#gCopper)" stroke-width="14" stroke-linecap="round"/>
+    <!-- shoulders -->
+    <ellipse cx="892" cy="608" rx="34" ry="30" fill="url(#gMint)" stroke="#101820" stroke-width="6"/>
+    <ellipse cx="1024" cy="608" rx="34" ry="30" fill="url(#gMint)" stroke="#101820" stroke-width="6"/>
+
+    <!-- neck -->
+    <rect x="930" y="516" width="56" height="62" rx="16" fill="url(#gSteelDark)" stroke="#101820" stroke-width="6"/>
+    <ellipse cx="958" cy="520" rx="28" ry="10" fill="#8fa4b4" opacity="0.6"/>
+
+    <!-- head -->
+    <g transform="rotate(6 1008 452)">
+      <!-- dish antenna, tilted away -->
+      <g stroke="#101820" stroke-width="15" stroke-linecap="round" fill="none">
+        <path d="M1046 388 L1076 350"/>
+      </g>
+      <g stroke="url(#gSteelDark)" stroke-width="8" stroke-linecap="round" fill="none">
+        <path d="M1046 388 L1076 350"/>
+      </g>
+      <g transform="rotate(-32 1096 336)">
+        <ellipse cx="1096" cy="336" rx="44" ry="17" fill="url(#gSteelLight)" stroke="#101820" stroke-width="5"/>
+        <ellipse cx="1096" cy="336" rx="26" ry="9" fill="#8fa4b4" opacity="0.7"/>
+        <path d="M1096 336 L1112 314" stroke="#101820" stroke-width="6" stroke-linecap="round"/>
+      </g>
+
+      <rect x="878" y="380" width="170" height="152" rx="50" fill="url(#gMint)" stroke="#101820" stroke-width="7"/>
+      <rect x="892" y="392" width="120" height="48" rx="22" fill="#ffffff" opacity="0.22"/>
+      <!-- earrings -->
+      <circle cx="884" cy="474" r="14" fill="none" stroke="url(#gCopper)" stroke-width="6"/>
+      <circle cx="1042" cy="474" r="14" fill="none" stroke="url(#gCopper)" stroke-width="6"/>
+
+      <!-- visor -->
+      <rect x="890" y="418" width="146" height="62" rx="26" fill="#16242c" stroke="#101820" stroke-width="5"/>
+      <rect x="896" y="424" width="134" height="18" rx="9" fill="#ffffff" opacity="0.12"/>
+      <!-- almond eyes -->
+      <g>
+        <path d="M912 452 q 18 -22 38 -2 q -19 16 -38 2 Z" fill="#6fe2f6"/>
+        <path d="M966 450 q 18 -22 38 -2 q -19 16 -38 2 Z" fill="#6fe2f6"/>
+        <path d="M912 452 q 18 -22 38 -2 q -19 16 -38 2 Z" fill="url(#gGlowCyan)"/>
+        <path d="M966 450 q 18 -22 38 -2 q -19 16 -38 2 Z" fill="url(#gGlowCyan)"/>
+      </g>
+      <!-- lashes -->
+      <g stroke="#16242c" stroke-width="5" stroke-linecap="round">
+        <path d="M902 434 L892 424"/><path d="M912 428 L906 414"/><path d="M926 424 L924 410"/>
+        <path d="M1030 432 L1040 422"/><path d="M1020 426 L1026 412"/>
+      </g>
+      <!-- polite smile -->
+      <path d="M936 500 q 22 18 44 -2" fill="none" stroke="#2f4c57" stroke-width="7" stroke-linecap="round"/>
+      <circle cx="918" cy="492" r="11" fill="#f2a08c" opacity="0.35"/>
+      <circle cx="1012" cy="490" r="11" fill="#f2a08c" opacity="0.35"/>
+    </g>
+
+    <!-- arm cradling the baby -->
+    <g stroke-linecap="round" fill="none">
+      <path d="M890 622 L832 676 L858 716" stroke="#101820" stroke-width="42"/>
+      <path d="M890 622 L832 676 L858 716" stroke="url(#gMint)" stroke-width="32"/>
+    </g>
+    <circle cx="832" cy="676" r="19" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5"/>
+    <rect x="836" y="696" width="56" height="42" rx="16" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5" transform="rotate(-12 864 717)"/>
+
+    <!-- arm reaching to the teenager's shoulder (she grips, he resists) -->
+    <g stroke-linecap="round" fill="none">
+      <path d="M1024 622 L1092 588 L1132 566" stroke="#101820" stroke-width="42"/>
+      <path d="M1024 622 L1092 588 L1132 566" stroke="url(#gMint)" stroke-width="32"/>
+    </g>
+    <circle cx="1092" cy="588" r="19" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5"/>
+    <g transform="rotate(-12 1152 556)">
+      <rect x="1122" y="532" width="58" height="46" rx="16" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5"/>
+      <g stroke="#101820" stroke-width="17" stroke-linecap="round">
+        <path d="M1170 546 L1196 540"/><path d="M1172 562 L1198 562"/><path d="M1168 576 L1192 584"/>
+      </g>
+      <g stroke="url(#gMint)" stroke-width="10" stroke-linecap="round">
+        <path d="M1170 546 L1196 540"/><path d="M1172 562 L1198 562"/><path d="M1168 576 L1192 584"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============================================================
+       BABY — unimpressed, half asleep
+       ============================================================ -->
+  <g id="baby">
+    <!-- rattle antenna -->
+    <g stroke="#101820" stroke-width="15" stroke-linecap="round" fill="none">
+      <path d="M846 528 L858 486"/>
+    </g>
+    <g stroke="url(#gSteelDark)" stroke-width="8" stroke-linecap="round" fill="none">
+      <path d="M846 528 L858 486"/>
+    </g>
+    <circle cx="862" cy="472" r="18" fill="url(#gCream)" stroke="#101820" stroke-width="5"/>
+    <path d="M848 466 L876 478" stroke="#c3392c" stroke-width="5" stroke-linecap="round"/>
+    <path d="M850 478 L874 464" stroke="#c3392c" stroke-width="5" stroke-linecap="round" opacity="0.7"/>
+
+    <!-- legs -->
+    <g stroke-linecap="round" fill="none">
+      <path d="M812 686 L806 716" stroke="#101820" stroke-width="32"/>
+      <path d="M866 686 L874 716" stroke="#101820" stroke-width="32"/>
+    </g>
+    <g stroke-linecap="round" fill="none">
+      <path d="M812 686 L806 716" stroke="url(#gCream)" stroke-width="23"/>
+      <path d="M866 686 L874 716" stroke="url(#gCream)" stroke-width="23"/>
+    </g>
+    <ellipse cx="803" cy="722" rx="18" ry="14" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5"/>
+    <ellipse cx="877" cy="722" rx="18" ry="14" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5"/>
+
+    <!-- body -->
+    <rect x="792" y="608" width="92" height="88" rx="28" fill="url(#gCream)" stroke="#101820" stroke-width="6"/>
+    <rect x="806" y="626" width="64" height="52" rx="18" fill="#ffffff" opacity="0.35"/>
+    <circle cx="838" cy="652" r="15" fill="url(#gGlowRed)"/>
+    <circle cx="838" cy="652" r="9" fill="#e0523c" stroke="#9c2c20" stroke-width="3.5"/>
+
+    <!-- arms -->
+    <g stroke-linecap="round" fill="none">
+      <path d="M800 630 L772 596" stroke="#101820" stroke-width="28"/>
+      <path d="M878 636 L898 668" stroke="#101820" stroke-width="28"/>
+    </g>
+    <g stroke-linecap="round" fill="none">
+      <path d="M800 630 L772 596" stroke="url(#gCream)" stroke-width="19"/>
+      <path d="M878 636 L898 668" stroke="url(#gCream)" stroke-width="19"/>
+    </g>
+    <circle cx="768" cy="590" r="14" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5"/>
+    <circle cx="902" cy="672" r="14" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5"/>
+
+    <!-- head -->
+    <g transform="rotate(-8 838 566)">
+      <rect x="788" y="520" width="100" height="92" rx="34" fill="url(#gCream)" stroke="#101820" stroke-width="6"/>
+      <rect x="800" y="530" width="70" height="26" rx="12" fill="#ffffff" opacity="0.45"/>
+      <circle cx="814" cy="566" r="19" fill="#22303a" stroke="#101820" stroke-width="5"/>
+      <circle cx="864" cy="566" r="19" fill="#22303a" stroke="#101820" stroke-width="5"/>
+      <circle cx="814" cy="566" r="11" fill="#4fd2ee"/>
+      <circle cx="864" cy="566" r="11" fill="#4fd2ee"/>
+      <circle cx="810" cy="562" r="4" fill="#ffffff"/>
+      <circle cx="860" cy="562" r="4" fill="#ffffff"/>
+      <!-- sleepy half lids -->
+      <path d="M793 556 q 21 -14 42 -2 l 0 -22 q -21 -6 -42 6 Z" fill="url(#gCream)"/>
+      <path d="M843 556 q 21 -14 42 -2 l 0 -22 q -21 -6 -42 6 Z" fill="url(#gCream)"/>
+      <path d="M795 558 q 20 -12 40 -2" stroke="#9c2c20" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.55"/>
+      <path d="M845 558 q 20 -12 40 -2" stroke="#9c2c20" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.55"/>
+      <ellipse cx="839" cy="598" rx="10" ry="8" fill="#2f4c57"/>
+    </g>
+  </g>
+
+  <!-- ============================================================
+       TEENAGER — slouching away, arms crossed, one foot hovering
+       ============================================================ -->
+  <g id="teen">
+    <ellipse cx="1258" cy="1068" rx="168" ry="26" fill="#1c1108" opacity="0.5" filter="url(#fSoft)"/>
+
+    <g transform="rotate(8 1232 1030)">
+      <!-- legs -->
+      <g stroke-linecap="round" fill="none">
+        <path d="M1198 848 L1188 926 L1198 992" stroke="#101820" stroke-width="52"/>
+        <path d="M1256 848 L1288 916 L1262 968" stroke="#101820" stroke-width="52"/>
+      </g>
+      <g stroke-linecap="round" fill="none">
+        <path d="M1198 848 L1188 926 L1198 992" stroke="url(#gCharcoal)" stroke-width="42"/>
+        <path d="M1256 848 L1288 916 L1262 968" stroke="url(#gCharcoal)" stroke-width="42"/>
+      </g>
+      <circle cx="1188" cy="926" r="23" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5"/>
+      <circle cx="1288" cy="916" r="23" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5"/>
+      <!-- grounded boot -->
+      <rect x="1154" y="984" width="92" height="46" rx="18" fill="url(#gCharcoal)" stroke="#101820" stroke-width="6"/>
+      <rect x="1160" y="1016" width="80" height="12" rx="6" fill="#5fd8f2" opacity="0.85"/>
+      <!-- hovering boot -->
+      <g transform="rotate(-12 1264 992)">
+        <rect x="1222" y="962" width="88" height="44" rx="18" fill="url(#gCharcoal)" stroke="#101820" stroke-width="6"/>
+        <rect x="1228" y="992" width="76" height="12" rx="6" fill="#5fd8f2" opacity="0.9"/>
+      </g>
+      <ellipse cx="1268" cy="1024" rx="56" ry="14" fill="url(#gGlowCyan)" opacity="0.9"/>
+      <ellipse cx="1268" cy="1024" rx="30" ry="7" fill="#8fe9ff" opacity="0.55"/>
+
+      <!-- hips -->
+      <rect x="1156" y="806" width="146" height="72" rx="22" fill="url(#gCharcoal)" stroke="#101820" stroke-width="6"/>
+      <path d="M1162 838 H1296" stroke="#e8763a" stroke-width="7" stroke-linecap="round" opacity="0.85"/>
+
+      <!-- torso -->
+      <rect x="1146" y="586" width="158" height="238" rx="26" fill="url(#gCharcoal)" stroke="#101820" stroke-width="7"/>
+      <path d="M1162 600 L1196 596 L1196 700 L1162 696 Z" fill="#ffffff" opacity="0.12"/>
+      <!-- strap -->
+      <path d="M1160 616 L1300 702" stroke="#101820" stroke-width="34" stroke-linecap="round" fill="none"/>
+      <path d="M1160 616 L1300 702" stroke="url(#gRed)" stroke-width="24" stroke-linecap="round" fill="none"/>
+      <rect x="1210" y="642" width="34" height="28" rx="8" fill="url(#gSteelLight)" stroke="#101820" stroke-width="5" transform="rotate(32 1227 656)"/>
+      <!-- stickers -->
+      <circle cx="1196" cy="762" r="16" fill="none" stroke="#e8763a" stroke-width="6" opacity="0.9"/>
+      <path d="M1244 748 L1266 780 L1222 780 Z" fill="#5fd8f2" opacity="0.55"/>
+      <use href="#rivet" x="1152" y="596" width="12" height="12"/>
+      <use href="#rivet" x="1286" y="596" width="12" height="12"/>
+      <use href="#rivet" x="1152" y="798" width="12" height="12"/>
+      <use href="#rivet" x="1286" y="798" width="12" height="12"/>
+
+      <!-- shoulder pads -->
+      <path d="M1128 596 L1178 580 L1188 634 L1136 644 Z" fill="url(#gSteelDark)" stroke="#101820" stroke-width="6"/>
+      <path d="M1322 596 L1272 580 L1262 634 L1314 644 Z" fill="url(#gSteelDark)" stroke="#101820" stroke-width="6"/>
+      <path d="M1136 604 L1174 592" stroke="#e8763a" stroke-width="6" stroke-linecap="round"/>
+      <path d="M1314 604 L1276 592" stroke="#e8763a" stroke-width="6" stroke-linecap="round"/>
+
+      <!-- neck -->
+      <rect x="1202" y="540" width="50" height="56" rx="12" fill="url(#gSteelDark)" stroke="#101820" stroke-width="6"/>
+
+      <!-- head, tilted away -->
+      <g transform="rotate(12 1222 486)">
+        <!-- messy fins -->
+        <path d="M1176 428 L1152 358 L1200 404 Z" fill="url(#gCharcoal)" stroke="#101820" stroke-width="6"/>
+        <path d="M1216 414 L1214 342 L1252 400 Z" fill="url(#gCharcoal)" stroke="#101820" stroke-width="6"/>
+        <path d="M1258 420 L1286 358 L1292 424 Z" fill="url(#gCharcoal)" stroke="#101820" stroke-width="6"/>
+        <path d="M1176 424 L1160 372" stroke="#e8763a" stroke-width="6" stroke-linecap="round" opacity="0.8"/>
+
+        <path d="M1146 460 L1176 410 L1272 402 L1306 444 L1300 522 L1262 556 L1182 550 L1142 512 Z"
+              fill="url(#gCharcoal)" stroke="#101820" stroke-width="7"/>
+        <path d="M1160 462 L1186 424 L1230 420 L1214 458 Z" fill="#ffffff" opacity="0.12"/>
+
+        <!-- visor with heavy lid -->
+        <path d="M1156 452 L1296 438 L1300 486 L1160 498 Z" fill="#16242c" stroke="#101820" stroke-width="5"/>
+        <path d="M1156 452 L1296 438 L1298 462 L1158 474 Z" fill="url(#gCharcoal)"/>
+        <path d="M1166 482 L1288 470" stroke="#e8763a" stroke-width="10" stroke-linecap="round" opacity="0.95"/>
+        <path d="M1166 482 L1288 470" stroke="#ffb98a" stroke-width="10" stroke-linecap="round" opacity="0.35" filter="url(#fSoftS)"/>
+
+        <!-- sullen mouth -->
+        <path d="M1186 518 L1246 522 L1266 512" fill="none" stroke="#2f3c46" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M1176 528 L1178 540" stroke="#2f3c46" stroke-width="7" stroke-linecap="round"/>
+
+        <!-- headphone -->
+        <circle cx="1312" cy="486" r="32" fill="url(#gSteelDark)" stroke="#101820" stroke-width="6"/>
+        <circle cx="1312" cy="486" r="16" fill="none" stroke="#e8763a" stroke-width="6"/>
+        <g stroke="#101820" stroke-width="13" stroke-linecap="round" fill="none">
+          <path d="M1312 452 L1330 414"/>
+        </g>
+        <g stroke="url(#gSteelDark)" stroke-width="7" stroke-linecap="round" fill="none">
+          <path d="M1312 452 L1330 414"/>
+        </g>
+        <circle cx="1333" cy="404" r="11" fill="#e8763a" stroke="#101820" stroke-width="5"/>
+      </g>
+
+      <!-- crossed arms -->
+      <g stroke-linecap="round" fill="none">
+        <path d="M1300 630 L1322 706 L1258 752" stroke="#101820" stroke-width="50"/>
+        <path d="M1300 630 L1322 706 L1258 752" stroke="url(#gCharcoal)" stroke-width="40"/>
+        <path d="M1258 752 L1170 778" stroke="#101820" stroke-width="50"/>
+        <path d="M1258 752 L1170 778" stroke="url(#gCharcoal)" stroke-width="40"/>
+      </g>
+      <circle cx="1322" cy="706" r="22" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5"/>
+      <rect x="1128" y="750" width="58" height="48" rx="17" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5" transform="rotate(-12 1157 774)"/>
+      <g stroke-linecap="round" fill="none">
+        <path d="M1160 626 L1132 700 L1196 742" stroke="#101820" stroke-width="50"/>
+        <path d="M1160 626 L1132 700 L1196 742" stroke="url(#gCharcoal)" stroke-width="40"/>
+        <path d="M1196 742 L1288 710" stroke="#101820" stroke-width="50"/>
+        <path d="M1196 742 L1288 710" stroke="url(#gCharcoal)" stroke-width="40"/>
+      </g>
+      <circle cx="1132" cy="700" r="22" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5"/>
+      <rect x="1276" y="682" width="58" height="48" rx="17" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5" transform="rotate(-12 1305 706)"/>
+      <path d="M1284 700 L1316 692" stroke="#e8763a" stroke-width="6" stroke-linecap="round" opacity="0.8"/>
+    </g>
+  </g>
+
+  <!-- ============================================================
+       KID — mid-wave, thrilled to be here
+       ============================================================ -->
+  <g id="kid">
+    <ellipse cx="566" cy="1082" rx="132" ry="22" fill="#1c1108" opacity="0.55" filter="url(#fSoft)"/>
+
+    <!-- wheel + skids -->
+    <circle cx="558" cy="1002" r="58" fill="url(#gSteelDark)" stroke="#101820" stroke-width="7"/>
+    <circle cx="558" cy="1002" r="38" fill="url(#gSteel)" stroke="#101820" stroke-width="5"/>
+    <circle cx="558" cy="1002" r="13" fill="#2c3944" stroke="#101820" stroke-width="4"/>
+    <g stroke="#8fa4b4" stroke-width="6" opacity="0.8">
+      <path d="M558 972 V1032"/><path d="M528 1002 H588"/>
+    </g>
+    <rect x="474" y="1042" width="52" height="22" rx="10" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5"/>
+    <rect x="590" y="1042" width="52" height="22" rx="10" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5"/>
+
+    <!-- body -->
+    <rect x="482" y="782" width="152" height="192" rx="48" fill="url(#gRed)" stroke="#101820" stroke-width="7"/>
+    <path d="M500 800 Q516 792 534 792 L534 848 Q506 846 500 838 Z" fill="#ffffff" opacity="0.2"/>
+    <rect x="512" y="832" width="92" height="112" rx="28" fill="url(#gCream)" stroke="#101820" stroke-width="5"/>
+    <circle cx="558" cy="876" r="34" fill="#2c3944" stroke="#101820" stroke-width="5"/>
+    <circle cx="558" cy="876" r="30" fill="url(#gGlowAmber)"/>
+    <circle cx="558" cy="876" r="17" fill="#ffcf8c" stroke="#a97b3c" stroke-width="4"/>
+    <g stroke="#a97b3c" stroke-width="4" stroke-linecap="round" opacity="0.9">
+      <path d="M558 862 V890"/><path d="M544 870 L572 882"/><path d="M572 870 L544 882"/>
+    </g>
+    <circle cx="518" cy="812" r="11" fill="#ffcf8c" stroke="#101820" stroke-width="4"/>
+    <circle cx="598" cy="812" r="11" fill="#67dcf2" stroke="#101820" stroke-width="4"/>
+
+    <!-- wind-up key -->
+    <g stroke="#101820" stroke-width="16" stroke-linecap="round" fill="none">
+      <path d="M634 812 L676 792"/>
+    </g>
+    <g stroke="url(#gSteelLight)" stroke-width="9" stroke-linecap="round" fill="none">
+      <path d="M634 812 L676 792"/>
+    </g>
+    <ellipse cx="694" cy="774" rx="16" ry="22" fill="none" stroke="#101820" stroke-width="12" transform="rotate(-20 694 774)"/>
+    <ellipse cx="694" cy="774" rx="16" ry="22" fill="none" stroke="url(#gSteelLight)" stroke-width="6" transform="rotate(-20 694 774)"/>
+    <ellipse cx="702" cy="816" rx="16" ry="22" fill="none" stroke="#101820" stroke-width="12" transform="rotate(20 702 816)"/>
+    <ellipse cx="702" cy="816" rx="16" ry="22" fill="none" stroke="url(#gSteelLight)" stroke-width="6" transform="rotate(20 702 816)"/>
+
+    <!-- neck -->
+    <rect x="536" y="752" width="44" height="40" rx="12" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5"/>
+
+    <!-- head -->
+    <g transform="rotate(-7 558 700)">
+      <!-- wobbling antenna -->
+      <g stroke="#101820" stroke-width="16" stroke-linecap="round" fill="none">
+        <path d="M556 626 L572 566"/>
+      </g>
+      <g stroke="url(#gSteelDark)" stroke-width="9" stroke-linecap="round" fill="none">
+        <path d="M556 626 L572 566"/>
+      </g>
+      <circle cx="576" cy="552" r="19" fill="url(#gRed)" stroke="#101820" stroke-width="5"/>
+      <g stroke="#ffb98a" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.75">
+        <path d="M592 528 q 12 12 6 28"/>
+        <path d="M608 518 q 18 20 8 44"/>
+      </g>
+
+      <rect x="468" y="620" width="182" height="156" rx="58" fill="url(#gCream)" stroke="#101820" stroke-width="7"/>
+      <rect x="486" y="634" width="110" height="42" rx="20" fill="#ffffff" opacity="0.5"/>
+      <path d="M474 700 q 6 44 32 62" fill="none" stroke="#c3392c" stroke-width="7" opacity="0.5"/>
+      <!-- ear discs -->
+      <circle cx="462" cy="694" r="26" fill="url(#gSteelDark)" stroke="#101820" stroke-width="6"/>
+      <circle cx="656" cy="694" r="26" fill="url(#gSteelDark)" stroke="#101820" stroke-width="6"/>
+      <circle cx="462" cy="694" r="12" fill="#e0523c" stroke="#101820" stroke-width="4"/>
+      <circle cx="656" cy="694" r="12" fill="#e0523c" stroke="#101820" stroke-width="4"/>
+
+      <!-- big eyes -->
+      <g>
+        <circle cx="520" cy="686" r="31" fill="#22303a" stroke="#101820" stroke-width="6"/>
+        <circle cx="600" cy="686" r="31" fill="#22303a" stroke="#101820" stroke-width="6"/>
+        <circle cx="520" cy="686" r="19" fill="#4fd2ee"/>
+        <circle cx="600" cy="686" r="19" fill="#4fd2ee"/>
+        <circle cx="513" cy="677" r="8" fill="#ffffff"/>
+        <circle cx="607" cy="677" r="8" fill="#ffffff"/>
+        <use href="#sparkle" transform="translate(528 698) scale(0.55)"/>
+        <use href="#sparkle" transform="translate(594 698) scale(0.55)"/>
+      </g>
+      <path d="M492 648 q 26 -16 52 -6" fill="none" stroke="#9c2c20" stroke-width="8" stroke-linecap="round"/>
+      <path d="M582 642 q 26 -10 52 6" fill="none" stroke="#9c2c20" stroke-width="8" stroke-linecap="round"/>
+
+      <!-- wide open happy mouth -->
+      <path d="M512 722 Q560 782 608 722 Z" fill="#2c3944" stroke="#101820" stroke-width="5"/>
+      <path d="M516 724 Q560 736 604 724 L602 740 Q560 752 518 740 Z" fill="#fff7e6"/>
+      <ellipse cx="560" cy="756" rx="22" ry="11" fill="#d9695f"/>
+      <circle cx="492" cy="726" r="15" fill="#f2a08c" opacity="0.5"/>
+      <circle cx="628" cy="726" r="15" fill="#f2a08c" opacity="0.5"/>
+    </g>
+
+    <!-- waving arm -->
+    <g stroke-linecap="round" fill="none">
+      <path d="M492 816 L432 756 L414 682" stroke="#101820" stroke-width="48"/>
+      <path d="M492 816 L432 756 L414 682" stroke="url(#gRed)" stroke-width="38"/>
+    </g>
+    <circle cx="432" cy="756" r="22" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5"/>
+    <g transform="rotate(-12 396 632)">
+      <rect x="364" y="596" width="62" height="58" rx="21" fill="url(#gCream)" stroke="#101820" stroke-width="6"/>
+      <g stroke="#101820" stroke-width="27" stroke-linecap="round">
+        <path d="M372 606 L356 574"/><path d="M392 598 L388 562"/><path d="M412 600 L420 566"/><path d="M426 612 L442 588"/>
+      </g>
+      <g stroke="url(#gCream)" stroke-width="17" stroke-linecap="round">
+        <path d="M372 606 L356 574"/><path d="M392 598 L388 562"/><path d="M412 600 L420 566"/><path d="M426 612 L442 588"/>
+      </g>
+    </g>
+    <g stroke="#ffd7b0" stroke-width="7" fill="none" stroke-linecap="round" opacity="0.55">
+      <path d="M330 646 q -16 -28 -4 -56"/>
+      <path d="M312 660 q -26 -38 -12 -78"/>
+    </g>
+
+    <!-- arm with toy robot -->
+    <g stroke-linecap="round" fill="none">
+      <path d="M626 828 L674 872 L692 912" stroke="#101820" stroke-width="46"/>
+      <path d="M626 828 L674 872 L692 912" stroke="url(#gRed)" stroke-width="36"/>
+    </g>
+    <circle cx="674" cy="872" r="21" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5"/>
+    <rect x="672" y="902" width="52" height="46" rx="17" fill="url(#gCream)" stroke="#101820" stroke-width="6" transform="rotate(10 698 925)"/>
+    <!-- tiny toy robot -->
+    <g>
+      <rect x="686" y="852" width="52" height="48" rx="14" fill="url(#gSteel)" stroke="#101820" stroke-width="5"/>
+      <rect x="692" y="806" width="42" height="42" rx="15" fill="url(#gSteelLight)" stroke="#101820" stroke-width="5"/>
+      <circle cx="713" cy="828" r="10" fill="#22303a" stroke="#101820" stroke-width="4"/>
+      <circle cx="713" cy="828" r="5.5" fill="#e8763a"/>
+      <path d="M713 806 L722 782" stroke="#101820" stroke-width="7" stroke-linecap="round"/>
+      <circle cx="724" cy="776" r="8" fill="#e0523c" stroke="#101820" stroke-width="4"/>
+      <path d="M702 842 q 11 8 22 0" fill="none" stroke="#101820" stroke-width="5" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <!-- ============================================================
+       PET — the only one facing the wrong direction
+       ============================================================ -->
+  <g id="dog">
+    <ellipse cx="1046" cy="1072" rx="152" ry="22" fill="#1c1108" opacity="0.5" filter="url(#fSoft)"/>
+
+    <!-- legs -->
+    <g stroke-linecap="round" fill="none">
+      <path d="M962 1012 L952 1054" stroke="#101820" stroke-width="30"/>
+      <path d="M998 1016 L1006 1058" stroke="#101820" stroke-width="30"/>
+      <path d="M1092 1016 L1084 1056" stroke="#101820" stroke-width="30"/>
+      <path d="M1122 1012 L1136 1050" stroke="#101820" stroke-width="30"/>
+    </g>
+    <g stroke-linecap="round" fill="none">
+      <path d="M962 1012 L952 1054" stroke="url(#gSteelDark)" stroke-width="21"/>
+      <path d="M998 1016 L1006 1058" stroke="url(#gSteelDark)" stroke-width="21"/>
+      <path d="M1092 1016 L1084 1056" stroke="url(#gSteelDark)" stroke-width="21"/>
+      <path d="M1122 1012 L1136 1050" stroke="url(#gSteelDark)" stroke-width="21"/>
+    </g>
+    <ellipse cx="948" cy="1060" rx="22" ry="12" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5"/>
+    <ellipse cx="1010" cy="1064" rx="22" ry="12" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5"/>
+    <ellipse cx="1080" cy="1062" rx="22" ry="12" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5"/>
+    <ellipse cx="1142" cy="1056" rx="22" ry="12" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5"/>
+
+    <!-- body -->
+    <rect x="944" y="938" width="200" height="96" rx="38" fill="url(#gSteelDark)" stroke="#101820" stroke-width="7"/>
+    <rect x="962" y="952" width="120" height="34" rx="16" fill="#ffffff" opacity="0.12"/>
+    <path d="M1002 938 L1002 1034" stroke="#e8763a" stroke-width="8" opacity="0.7"/>
+    <use href="#rivet" x="958" y="1012" width="12" height="12"/>
+    <use href="#rivet" x="1030" y="1012" width="12" height="12"/>
+    <use href="#rivet" x="1102" y="1012" width="12" height="12"/>
+
+    <!-- wagging tail -->
+    <g stroke="#101820" stroke-width="26" stroke-linecap="round" fill="none">
+      <path d="M1140 962 L1196 928 L1212 886"/>
+    </g>
+    <g stroke="url(#gSteel)" stroke-width="16" stroke-linecap="round" fill="none">
+      <path d="M1140 962 L1196 928 L1212 886"/>
+    </g>
+    <circle cx="1215" cy="876" r="16" fill="url(#gCopper)" stroke="#101820" stroke-width="5"/>
+    <g stroke="#ffd7b0" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.5">
+      <path d="M1238 902 q 22 12 30 34"/>
+      <path d="M1252 878 q 34 20 42 56"/>
+    </g>
+
+    <!-- head facing away from the group -->
+    <g transform="rotate(-8 962 930)">
+      <!-- collar -->
+      <rect x="984" y="928" width="34" height="82" rx="12" fill="url(#gRed)" stroke="#101820" stroke-width="6"/>
+      <circle cx="1001" cy="982" r="15" fill="url(#gBrass)" stroke="#101820" stroke-width="5"/>
+      <!-- head -->
+      <rect x="882" y="878" width="118" height="94" rx="32" fill="url(#gSteel)" stroke="#101820" stroke-width="7"/>
+      <rect x="896" y="890" width="70" height="26" rx="12" fill="#ffffff" opacity="0.18"/>
+      <!-- muzzle -->
+      <rect x="832" y="906" width="72" height="58" rx="22" fill="url(#gSteelLight)" stroke="#101820" stroke-width="6"/>
+      <rect x="818" y="914" width="30" height="28" rx="10" fill="#22303a" stroke="#101820" stroke-width="5"/>
+      <circle cx="826" cy="921" r="5" fill="#9fb6c6" opacity="0.9"/>
+      <path d="M842 950 L890 958" stroke="#22303a" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
+      <!-- eye looking away -->
+      <circle cx="908" cy="914" r="16" fill="#22303a" stroke="#101820" stroke-width="5"/>
+      <circle cx="902" cy="914" r="9" fill="#e8763a"/>
+      <circle cx="899" cy="910" r="3.5" fill="#ffffff"/>
+      <!-- floppy ear -->
+      <path d="M958 884 L1012 866 L1024 928 L980 936 Z" fill="url(#gSteelDark)" stroke="#101820" stroke-width="6"/>
+      <path d="M972 890 L1002 882" stroke="#8fa4b4" stroke-width="5" stroke-linecap="round" opacity="0.55"/>
+    </g>
+  </g>
+
+  <!-- ============ FLOOR CLUTTER ============ -->
+  <g id="clutter">
+    <g transform="rotate(-18 726 1128)">
+      <path d="M712 1112 L742 1112 L752 1128 L742 1144 L712 1144 L702 1128 Z" fill="url(#gSteelDark)" stroke="#101820" stroke-width="5"/>
+      <circle cx="727" cy="1128" r="8" fill="#8fa4b4"/>
+    </g>
+    <ellipse cx="786" cy="1152" rx="22" ry="9" fill="url(#gSteel)" stroke="#101820" stroke-width="5"/>
+    <ellipse cx="786" cy="1152" rx="9" ry="4" fill="#22303a"/>
+  </g>
+
+  <!-- ============ LIGHTING / VIGNETTE ============ -->
+  <rect width="1600" height="1200" fill="url(#gVig)"/>
+  <ellipse cx="720" cy="300" rx="560" ry="330" fill="url(#gWarm)" opacity="0.45"/>
+</svg>
