@@ -75,14 +75,14 @@ export function renderAuth(store) {
   draw();
 }
 
-// The "Community" row of one result: ♥ and 🥇🥈🥉 with their totals. Pressed = yours. Signed out, a click goes to
+// The "Community votes" row of one result: ♥ and 🥇🥈🥉 with their totals. Pressed = yours. Signed out, a click goes to
 // GitHub to sign in. Every bar of the page redraws when any vote changes, since a medal moves between results.
 export function voteBar(store, runId) {
   const note = el("span", { class: "vote-note", attrs: { role: "status" } });
   const heart = voteButton("vote vote-heart");
   const medals = MEDALS.map((m) => ({ ...m, button: voteButton("vote vote-medal") }));
   const bar = el("div", { class: "votes", attrs: { role: "group", "aria-label": "Community votes" } }, [
-    el("span", { class: "votes-label", text: "Community" }),
+    el("span", { class: "votes-label", text: "Community votes" }),
     heart, ...medals.map((m) => m.button), note,
   ]);
 
