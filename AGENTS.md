@@ -195,6 +195,10 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   through `el()` or `.filter(Boolean)`.
 - **Metrics from a pi session:** `tokens.total = input + output` (not `totalTokens`, which includes cache
   reads). Cost is the sum of `usage.cost.total` over assistant messages.
+- **Run failure summary:** `runner.print_failure_summary` reads local run records after progress and publishing
+  finish (also on resume/Ctrl-C). Keep agent, output, verification and publication errors distinct; skipped checks
+  are not failures. `finish_output` saves all kind reports in `output/verification/verify-report.json`, including
+  verifier exceptions (`ok: null`); this local diagnostic lets resume explain failures without changing run states.
 - **Ctrl-C:** agents run with `start_new_session=True`, so Ctrl-C doesn't reach them. The runner kills
   their process groups itself. Keep the `live`/`interrupted` locking in `runner.execute` and `run_agent`.
 - **Stale browser cache after a deploy** (Pages caches for 10 minutes) can pair new HTML with old JS and

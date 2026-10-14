@@ -297,6 +297,15 @@ session file as it grows; otherwise one line per state change. The states are th
 failed, timeout) plus transient labels of the output step (exporting, packaging, processing, verifying, then done, or
 "no output" when it failed); the labels are never written to `batch.json`.
 
+After progress and import/publish finish, a **failure summary** on stderr lists affected runs in plan order
+(id, harness, model and effort), their agent/timeout, output or verification reasons, and the batch path for
+full records/logs. It also lists unrecovered per-run import/push failures; a successful final retry clears those.
+Successful runs and skipped checks are omitted. The same summary works on `--resume` and includes completed
+failures on Ctrl-C, without treating queued/interrupted jobs as failed. Existing states and exit codes are unchanged.
+Verification reports from every kind are saved locally at `output/verification/verify-report.json` for diagnostics
+(including on resume). A verifier exception is saved as `{ok: null, error: "could not run verification: …"}`:
+reported as a check problem, not an agent failure, and `output.verified` stays null. These reports are not published.
+
 ### Kinds (`src/art_crit/kinds/`)
 
 A kind is one class registered in `KINDS` (like `HARNESSES`); the runner and the importer never branch on a kind's name.

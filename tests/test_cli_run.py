@@ -179,7 +179,7 @@ def test_missing_confirmation_on_nontty_is_an_error(run_root, monkeypatch):
     assert rc == 1
 
 
-def test_yes_skips_confirmation_and_runs(run_root):
+def test_yes_skips_confirmation_and_runs(run_root, capsys):
     rc = main(["run", "--yes", "a spinning cube", "-m", "openai-codex/gpt-6-sol:low", "--root", str(run_root)])
     assert rc == 0
     results = json.loads((run_root / "docs/data/a-spinning-cube/page.json").read_text())["runs"]
@@ -193,18 +193,23 @@ def test_yes_skips_confirmation_and_runs(run_root):
     page = json.loads((run_root / "docs/data/a-spinning-cube/page.json").read_text())
     assert page["prompt"] == "a spinning cube"
     assert page["final_prompt"].startswith("a spinning cube\n\nBuild this as a complete, playable Godot")
+    assert "Failure summary:" not in capsys.readouterr().err
 
 
 # --- failures --------------------------------------------------------------------------------
 
 
-def test_failed_run_is_still_imported(run_root, monkeypatch):
+def test_failed_run_is_still_imported(run_root, monkeypatch, capsys):
     monkeypatch.setenv("FAKE_PI_EXIT_CODE", "1")
     rc = main(["run", "--yes", "broken run", "-m", "openai-codex/gpt-6-sol:low", "--root", str(run_root)])
     assert rc == 0
     results = json.loads((run_root / "docs/data/broken-run/page.json").read_text())["runs"]
     assert results[0]["state"] == "failed"
     assert results[0]["error"]
+    err = capsys.readouterr().err
+    assert "Failure summary: 1 of 1 runs had problems" in err
+    assert results[0]["id"] in err and "pi / openai-codex/gpt-6-sol:low" in err
+    assert "agent failed: fake pi: forced failure" in err
 
 
 def test_error_stop_produces_failed_state(run_root, monkeypatch):
@@ -216,12 +221,13 @@ def test_error_stop_produces_failed_state(run_root, monkeypatch):
     assert "fake induced error" in results[0]["error"]
 
 
-def test_timeout_kills_hung_agent(run_root, monkeypatch):
+def test_timeout_kills_hung_agent(run_root, monkeypatch, capsys):
     monkeypatch.setenv("FAKE_PI_HANG", "1")
     rc = main(["run", "--yes", "--timeout", "1s", "hung run", "-m", "openai-codex/gpt-6-sol:low", "--root", str(run_root)])
     assert rc == 0
     results = json.loads((run_root / "docs/data/hung-run/page.json").read_text())["runs"]
     assert results[0]["state"] == "timeout"
+    assert "agent timeout: timed out after 1s" in capsys.readouterr().err
 
 
 def test_a_run_is_one_directory_with_work_harness_and_output(run_root, tmp_path):
@@ -268,7 +274,7 @@ def test_tool_durations_are_stored_and_the_event_stream_is_not_published(run_roo
     assert result["durationMs"] == 2500  # from the assistant entry that called it to the result entry
 
 
-def test_export_failure_is_the_outputs_error_not_the_agents(run_root, monkeypatch):
+def test_export_failure_is_the_outputs_error_not_the_agents(run_root, monkeypatch, capsys):
     def failing_export(godot_bin, project_dir, out_dir, timeout=600):
         return False, None, "Godot export failed: boom"
 
@@ -279,6 +285,85 @@ def test_export_failure_is_the_outputs_error_not_the_agents(run_root, monkeypatc
     assert results[0]["state"] == "complete" and results[0]["error"] is None  # the agent did finish
     assert results[0]["output"] == {"kind": "godot", "ok": False, "verified": None, "error": "Godot export failed: boom"}
     assert results[0]["thumb"] is None
+    err = capsys.readouterr().err
+    assert "output: Godot export failed: boom" in err
+    assert "agent failed:" not in err
+
+
+@pytest.mark.parametrize("report,reason", [
+    ({"ok": False, "pageErrors": ["ReferenceError: robot is not defined"]}, "page error: ReferenceError: robot is not defined"),
+    ({"ok": False, "blockedRequests": ["https://example.test/model.js"]}, "blocked request: https://example.test/model.js"),
+    ({"ok": False, "booted": False}, "page did not become ready"),
+    ({"ok": False, "framesDiffer": False}, "captured frames did not change"),
+    ({"ok": False}, "check failed without a recorded reason"),
+    ({"ok": True}, None),
+    (None, None),
+    (RuntimeError("Chrome unavailable"), "could not run verification: Chrome unavailable"),
+])
+def test_verification_summary_survives_resume(run_root, monkeypatch, tmp_path, capsys, report, reason):
+    def verify(self, out_dir):
+        if isinstance(report, Exception):
+            raise report
+        return report
+
+    monkeypatch.setattr("art_crit.kinds.godot.Godot.verify", verify)
+    assert main(["run", "--yes", "--no-publish", "verify summary", "-m", "openai-codex/gpt-6-sol:low",
+                 "--root", str(run_root)]) == 0
+    [batch] = (tmp_path / "art-crit-runs").glob("*-verify-summary")
+    [run] = json.loads((run_root / "docs/data/verify-summary/page.json").read_text())["runs"]
+    assert run["state"] == "complete" and run["output"]["ok"] is True
+    assert run["output"]["error"] is None
+    expected = report["ok"] if isinstance(report, dict) else None
+    assert run["output"]["verified"] is expected  # verifier exceptions aren't model failures
+    first = capsys.readouterr().err
+    monkeypatch.setattr("art_crit.kinds.godot.Godot.verify", lambda *args: pytest.fail("resume must reuse diagnostics"))
+    assert main(["run", "--resume", str(batch), "--no-publish", "--root", str(run_root)]) == 0
+    resumed = capsys.readouterr().err
+    for err in (first, resumed):
+        if reason:
+            assert err.count("Failure summary:") == 1
+            assert f"verification: {reason}" in err
+            assert str(batch) in err
+        else:
+            assert "Failure summary:" not in err
+
+
+def test_failure_summary_is_in_plan_order_and_omits_successes(run_root, monkeypatch, capsys):
+    def finalize(self, work, out):
+        if "-high-" in work.parent.name:
+            return False, "missing project.godot"
+        ok, _, error = fake_export_project(None, work, out)
+        return ok, error
+
+    monkeypatch.setattr("art_crit.kinds.godot.Godot.finalize", finalize)
+    assert main(["run", "--yes", "--no-publish", "mixed summary", "-m", "openai-codex/gpt-6-sol:high,low",
+                 "-m", "openai-codex/gpt-6-luna:high", "--root", str(run_root)]) == 0
+    summary = capsys.readouterr().err
+    assert "Failure summary: 2 of 3 runs had problems" in summary
+    assert "gpt-6-sol:low" not in summary
+    assert summary.index("gpt-6-sol:high") < summary.index("gpt-6-luna:high")
+    assert summary.count("output: missing project.godot") == 2
+
+
+@pytest.mark.parametrize("recovers", [False, True])
+def test_summary_reports_only_unrecovered_publish_errors(run_root, monkeypatch, capsys, recovers):
+    attempts = []
+
+    def publish(*args):
+        attempts.append(1)
+        if len(attempts) == 1 or not recovers:
+            raise CritError("git push failed: offline")
+        return 0
+
+    monkeypatch.setattr("art_crit.cli.cmd_publish", publish)
+    assert main(["run", "--yes", "push summary", "-m", "openai-codex/gpt-6-sol:low",
+                 "--root", str(run_root)]) == (0 if recovers else 1)
+    err = capsys.readouterr().err
+    if recovers:
+        assert "Failure summary:" not in err
+    else:
+        assert "Failure summary: 1 of 1 runs had problems" in err
+        assert "publish: git push failed: offline" in err
 
 
 # --- parallelism -------------------------------------------------------------------------------

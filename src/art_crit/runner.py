@@ -447,7 +447,12 @@ def finish_output(kind, rd, record, lock, verify, progress):
             report = kind.verify(rd.output)
             output["verified"] = report["ok"] if report else None
         except Exception as e:  # verification must never fail the run
+            report = {"ok": None, "error": f"could not run verification: {e}"}
             print(f"note: verification of {record['id']} failed to run: {e}", file=sys.stderr)
+        if report is not None:
+            report_path = rd.output / "verification" / "verify-report.json"
+            report_path.parent.mkdir(parents=True, exist_ok=True)
+            report_path.write_text(json.dumps(report, indent=2) + "\n")
     record["output"] = output
     rd.write(record)
     progress.update(key, state="done" if ok else "no output")
@@ -469,6 +474,67 @@ def read_batch(batch_dir):
     return batch
 
 
+def verification_reason(rd):
+    """Use the kind's saved diagnostics, without branching on kind names. Old batches may have none."""
+    path = rd.output / "verification" / "verify-report.json"
+    try:
+        report = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return ""
+    reasons = []
+    for key, label in (("error", ""), ("errors", ""), ("pageErrors", "page error"),
+                       ("consoleErrors", "console error"), ("blockedRequests", "blocked request")):
+        values = report.get(key) or []
+        if isinstance(values, str):
+            values = [values]
+        reasons.extend(f"{label}: {value}" if label else str(value) for value in values[:3])
+    if report.get("booted") is False:
+        reasons.append("page did not become ready")
+    if not reasons and report.get("framesDiffer") is False:
+        reasons.append("captured frames did not change")
+    return "; ".join(reasons)
+
+
+def print_failure_summary(batch_dir, runs, publish_errors=None):
+    """Report final problems in plan order, once progress/publishing is finished. Never changes state."""
+    failures = []
+    for run in runs:
+        rd = RunDir(batch_dir, run["id"])
+        record = rd.read()
+        reasons = []
+        if record is None:
+            if run["state"] not in UNFINISHED:
+                reasons.append("run record missing")
+        elif record["state"] in ("failed", "timeout"):
+            reasons.append(f"agent {record['state']}: {record.get('error') or 'no reason recorded'}")
+        elif record["state"] == "complete":
+            output = record.get("output")
+            if not output:
+                reasons.append("output: no output recorded")
+            else:
+                if output.get("ok") is False or output.get("error"):
+                    reasons.append(f"output: {output.get('error') or 'output step failed without a reason'}")
+                if output.get("verified") is False:
+                    reasons.append(f"verification: {verification_reason(rd) or output.get('error') or 'check failed without a recorded reason'}")
+                elif output.get("verified") is None and output.get("ok"):
+                    diagnostic = verification_reason(rd)
+                    if diagnostic:
+                        reasons.append(f"verification: {diagnostic}")
+        if error := (publish_errors or {}).get(run["id"]):
+            reasons.append(f"publish: {error}")
+        if reasons:
+            label = f"{run['id']} ({run['harness']} / {run['model']}:{run['level']})"
+            failures.append((label, reasons))
+    if not failures:
+        return
+    print(f"\nFailure summary: {len(failures)} of {len(runs)} runs had problems", file=sys.stderr)
+    for label, reasons in failures:
+        print(f"  {label}", file=sys.stderr)
+        for reason in reasons:
+            print(f"    - {' '.join(reason.split())[:500]}", file=sys.stderr)
+    print(f"Full records and logs: {batch_dir}", file=sys.stderr)
+
+
 class Publisher:
     """`art-crit run` (the default): import and push each run as it finishes, so the live site fills up while
     the batch is still running (nothing is left for the batch's own import at the end; see `execute`).
@@ -481,6 +547,7 @@ class Publisher:
         self.config, self.batch_dir, self.slug, self.title = config, batch_dir, slug, title
         self.lock = threading.Lock()
         self.published = set()
+        self.errors = {}
 
     def publish(self, run_id):
         from .cli import cmd_publish  # cli imports runner
@@ -490,8 +557,10 @@ class Publisher:
                 cmd_import(self.config, self.batch_dir / run_id, page=self.slug, title=self.title)
                 cmd_publish(self.config.root, f"art-crit run: {self.slug} ({run_id})")
             except CritError as e:
+                self.errors[run_id] = str(e)
                 print(f"note: {run_id} not published: {e}", file=sys.stderr)
                 return
+            self.errors.pop(run_id, None)
             self.published.add(run_id)
 
     def missed(self, runs):
@@ -561,13 +630,20 @@ def execute(config, request, batch_dir, harnesses, verify=True):
         save()
         progress.stop()
         print(f"interrupted; resume with: art-crit run --resume {batch_dir}")
+        print_failure_summary(batch_dir, runs, publisher.errors if publisher else None)
         sys.exit(130)
     pool.shutdown(wait=True)
     progress.stop()
-    if publisher and not publisher.missed(runs):  # every run is already imported and pushed
-        print(f"published {len(publisher.published)} runs to {slug!r} as they finished")
-        return 0
-    return _import_and_publish(config, batch_dir, slug, import_title, request.publish)
+    try:
+        if publisher and not publisher.missed(runs):  # every run is already imported and pushed
+            print(f"published {len(publisher.published)} runs to {slug!r} as they finished")
+            return 0
+        result = _import_and_publish(config, batch_dir, slug, import_title, request.publish)
+        if publisher and result == 0:
+            publisher.errors.clear()  # the final import/push recovered the per-run failures
+        return result
+    finally:
+        print_failure_summary(batch_dir, runs, publisher.errors if publisher else None)
 
 
 def cmd_run(config, request, *, yes=False, dry_run=False, resume=None, verify=True, harnesses=None):

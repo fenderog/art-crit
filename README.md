@@ -42,6 +42,8 @@ their work is packaged and checked where a check exists. Failures and timeouts a
 they're part of the comparison. Each run is published as it lands: imported, committed and pushed to
 `main` (Cloudflare Pages builds on each push), so a long batch fills up the live site while it runs.
 Pass `--no-publish` to import locally only and push later with `art-crit publish`.
+If any jobs have problems, a final summary lists each model/effort, the failure stage and reason, and
+where to find its full logs. This includes timeouts, output/verification failures, and unrecovered publishing errors.
 
 A few things worth knowing:
 
