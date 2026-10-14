@@ -50,12 +50,19 @@ const VENDOR_HUES = { anthropic: 25, openai: 160, google: 215, xai: 275, meta: 2
 const VENDOR_NAMES = {
   anthropic: "Anthropic", openai: "OpenAI", google: "Google", deepseek: "DeepSeek", xai: "xAI", x: "xAI", meta: "Meta",
   mistral: "Mistral", mistralai: "Mistral", qwen: "Qwen", moonshotai: "Moonshot AI", z: "Z.ai",
+  stepfun: "StepFun", thinkingmachines: "Thinking Machines", xiaomi: "Xiaomi", nvidia: "NVIDIA", minimax: "MiniMax",
+  tencent: "Tencent", cohere: "Cohere", bytedance: "ByteDance Seed", amazon: "Amazon", perplexity: "Perplexity",
+  sakana: "Sakana AI", poolside: "Poolside", upstage: "Upstage", nousresearch: "Nous Research", liquid: "Liquid AI",
+  inception: "Inception", ibm: "IBM",
 };
 // Provider icons as OpenRouter shows them (assets/vendor/icons/, see its README); vendors without one get their initial.
 const VENDOR_ICONS = {
   anthropic: "anthropic.svg", openai: "openai.svg", google: "google.svg", meta: "meta.png", deepseek: "deepseek.png",
   mistral: "mistralai.png", mistralai: "mistralai.png", moonshotai: "moonshotai.png", qwen: "qwen.png", z: "zai.png",
-  xai: "xai.png", x: "xai.png",
+  xai: "xai.png", x: "xai.png", stepfun: "stepfun.png", thinkingmachines: "thinkingmachines.png", xiaomi: "xiaomi.png",
+  nvidia: "nvidia.png", minimax: "minimax.png", tencent: "tencent.png", cohere: "cohere.png", bytedance: "bytedance.png",
+  amazon: "amazon.png", perplexity: "perplexity.svg", sakana: "sakana.png", poolside: "poolside.svg", upstage: "upstage.png",
+  nousresearch: "nousresearch.png", liquid: "liquid.png", inception: "inception.svg", ibm: "ibm.svg",
 };
 export function vendorIcon(key) {
   return VENDOR_ICONS[key] ? `assets/vendor/icons/${VENDOR_ICONS[key]}` : null;
