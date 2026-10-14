@@ -3,7 +3,7 @@
     "slug": "ceate-an-svg-of-an-awkward",
     "title": "Awkward Robot Family",
     "kind": "media",
-    "n_runs": 63,
+    "n_runs": 64,
     "models": [
       "anthropic/claude-haiku-5-5",
       "anthropic/claude-opus-5-5",
@@ -17,13 +17,14 @@
       "openrouter/deepseek/deepseek-v4.1-flash",
       "openrouter/moonshotai/kimi-k3",
       "openrouter/qwen/qwen3.8-max-prime",
+      "openrouter/stepfun/step-5-preview",
       "openrouter/xiaomi/mimo-v2.6-pro",
       "openrouter/z-ai/glm-5.3",
       "openrouter/z-ai/glm-5.3-flashx",
       "openrouter/z-ai/glm-5.3-prime",
       "xai/grok-4.7"
     ],
-    "updated": "2026-10-14T00:57:14Z",
+    "updated": "2026-10-14T00:57:18Z",
     "thumb": "data/ceate-an-svg-of-an-awkward/runs/glm-5.3-flashx-high-20261013-175044/media/robot-family-portrait.svg"
   },
   {
