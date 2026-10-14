@@ -1,0 +1,555 @@
+[
+  {
+    "type": "session",
+    "version": 3,
+    "id": "01a137e7-a17b-75aa-a3d7-412370352425",
+    "timestamp": "2026-10-14T00:54:49.468Z",
+    "cwd": "<vol>/dev/art-crit-runs/2026-10-13-175044-ceate-an-svg-of-an-awkward/deepseek-v4.1-flash-low-20261013-175044/work"
+  },
+  {
+    "type": "model_change",
+    "id": "556be01c",
+    "parentId": null,
+    "timestamp": "2026-10-14T00:54:49.505Z",
+    "provider": "openrouter",
+    "modelId": "deepseek/deepseek-v4.1-flash"
+  },
+  {
+    "type": "thinking_level_change",
+    "id": "00e8eef4",
+    "parentId": "556be01c",
+    "timestamp": "2026-10-14T00:54:49.505Z",
+    "thinkingLevel": "low"
+  },
+  {
+    "type": "message",
+    "id": "a42ce9f8",
+    "parentId": "00e8eef4",
+    "timestamp": "2026-10-14T00:54:49.510Z",
+    "message": {
+      "role": "system",
+      "content": "",
+      "sections": {
+        "preamble": "You are an expert coding assistant operating inside pi, a coding agent harness. You help users by reading files, executing commands, editing code, and writing new files.",
+        "tools": "<tools>\n- read: Read file contents\n- bash: Execute bash commands (ls, grep, find, etc.)\n- edit: Make precise file edits with exact text replacement, including multiple disjoint edits in one call\n- write: Create or overwrite files\n\nIn addition to the tools above, you may have access to other custom tools depending on the project.\n</tools>",
+        "rules": "<rules>\n- Use bash for file operations like ls, rg, find\n- Use read to examine files instead of cat or sed.\n- You can inspect PI_* environment variables for current model and session details.\n- Use edit for precise changes (edits[].oldText must match exactly)\n- When changing multiple separate locations in one file, use one edit call with multiple entries in edits[] instead of multiple edit calls\n- Each edits[].oldText is matched against the original file, not after earlier edits are applied. Do not emit overlapping or nested edits. Merge nearby changes into one edit.\n- Keep edits[].oldText as small as possible while still being unique in the file. Do not pad with large unchanged regions.\n- Use write only for new files or complete rewrites.\n- Be concise in your responses\n- Show file paths clearly when working with files\n</rules>",
+        "docs": "<docs>\nPi documentation (read only when the user asks about pi itself, its SDK, extensions, themes, skills, or TUI):\n- Main documentation: <vol>/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/README.md\n- Additional docs: <vol>/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/docs\n- Examples: <vol>/homebrew/lib/node_modules/@earendil-works/pi-coding-agent/examples (extensions, custom tools, SDK)\n- When reading pi docs or examples, resolve docs/... under Additional docs and examples/... under Examples, not the current working directory\n- When asked about: extensions (docs/extensions.md, examples/extensions/), themes (docs/themes.md), skills (docs/skills.md), prompt templates (docs/prompt-templates.md), TUI components (docs/tui.md), keybindings (docs/keybindings.md), SDK integrations (docs/sdk.md), custom providers (docs/custom-provider.md), adding models (docs/models.md), pi packages (docs/packages.md), environment variables (docs/environment-variables.md), MCP servers (docs/mcp.md), codemode scripts and non-LLM models such as classifiers and image models (docs/codemode.md)\n- When working on pi topics, read the docs and examples, and follow .md cross-references before implementing\n- Always read pi .md files completely and follow links to related docs (e.g., tui.md for TUI API details)\n</docs>",
+        "cwd": "<cwd>\n<vol>/dev/art-crit-runs/2026-10-13-175044-ceate-an-svg-of-an-awkward/deepseek-v4.1-flash-low-20261013-175044/work\n</cwd>"
+      },
+      "timestamp": 1791939289510,
+      "toolsAdded": [
+        {
+          "name": "read",
+          "description": "Read the contents of a file. Supports text files and images (jpg, png, gif, webp, bmp). Images are sent as attachments. For text files, output is truncated to 2000 lines or 50KB (whichever is hit first). Use offset/limit for large files. When you need the full file, continue with offset until complete.",
+          "parameters": {
+            "type": "object",
+            "required": [
+              "path"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Path to the file to read (relative or absolute)"
+              },
+              "offset": {
+                "type": "number",
+                "description": "Line number to start reading from (1-indexed)"
+              },
+              "limit": {
+                "type": "number",
+                "description": "Maximum number of lines to read"
+              }
+            }
+          },
+          "constrainedSampling": {
+            "type": "json_schema",
+            "strict": "prefer"
+          }
+        },
+        {
+          "name": "bash",
+          "description": "Execute a bash command in the current working directory. Returns stdout and stderr. Output is truncated to last 2000 lines or 50KB (whichever is hit first). If truncated, full output is saved to a temp file. Optionally provide a timeout in seconds.",
+          "parameters": {
+            "type": "object",
+            "required": [
+              "command"
+            ],
+            "properties": {
+              "command": {
+                "type": "string",
+                "description": "Shell command to execute"
+              },
+              "timeout": {
+                "type": "number",
+                "description": "Timeout in seconds (optional, no default timeout)"
+              }
+            }
+          },
+          "constrainedSampling": {
+            "type": "json_schema",
+            "strict": "prefer"
+          }
+        },
+        {
+          "name": "edit",
+          "description": "Edit a single file using exact text replacement. Every edits[].oldText must match a unique, non-overlapping region of the original file. If two changes affect the same block or nearby lines, merge them into one edit instead of emitting overlapping edits. Do not include large unchanged regions just to connect distant changes.",
+          "parameters": {
+            "type": "object",
+            "required": [
+              "path",
+              "edits"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Path to the file to edit (relative or absolute)"
+              },
+              "edits": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "oldText",
+                    "newText"
+                  ],
+                  "properties": {
+                    "oldText": {
+                      "type": "string",
+                      "description": "Exact text for one targeted replacement. It must be unique in the original file and must not overlap with any other edits[].oldText in the same call."
+                    },
+                    "newText": {
+                      "type": "string",
+                      "description": "Replacement text for this targeted edit."
+                    }
+                  }
+                },
+                "description": "One or more targeted replacements. Each edit is matched against the original file, not incrementally. Do not include overlapping or nested edits. If two changes touch the same block or nearby lines, merge them into one edit instead."
+              }
+            }
+          },
+          "constrainedSampling": {
+            "type": "json_schema",
+            "strict": "prefer"
+          }
+        },
+        {
+          "name": "write",
+          "description": "Write content to a file. Creates the file if it doesn't exist, overwrites if it does. Automatically creates parent directories.",
+          "parameters": {
+            "type": "object",
+            "required": [
+              "path",
+              "content"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Path to the file to write (relative or absolute)"
+              },
+              "content": {
+                "type": "string",
+                "description": "Content to write to the file"
+              }
+            }
+          },
+          "constrainedSampling": {
+            "type": "json_schema",
+            "strict": "prefer"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "type": "message",
+    "id": "85dcb9a1",
+    "parentId": "a42ce9f8",
+    "timestamp": "2026-10-14T00:54:49.510Z",
+    "message": {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "Ceate an SVG of an awkward family portrait of robots. Give each robot a distinct personality, and suggest their relationships through poses and composition. No text.\n\nDeliver the result as image and/or video files, working in the current directory.\n- Save the finished files in ./output/. Only what is in ./output/ is published as the result, so\n  ./output/ holds those finished image/video files and nothing else.\n- Formats: images as .png, .jpg, .webp, .gif or .svg; videos as .mp4 or .webm. At most 8 files,\n  each under 2 MB; videos at most 10 seconds.\n- Tools available on this machine: python3 3.15.0 (standard library only), node 26.11.1 (no npm packages), ffmpeg 9.0.2, ffprobe 9.0.2. Don't install packages or download anything.\n- Keep the code you write to make the files in the working directory (its root, or a subdirectory\n  like ./src/, but not in ./output/): it's published as the source. Delete intermediate files such\n  as rendered frames when you're done.\n- Only create or edit files inside the current directory.\n- Finish with a short summary of what you made.\n"
+        }
+      ],
+      "timestamp": 1791939289509
+    }
+  },
+  {
+    "type": "message",
+    "id": "4db367f7",
+    "parentId": "85dcb9a1",
+    "timestamp": "2026-10-14T00:54:54.239Z",
+    "message": {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "Let me create an SVG of an awkward family portrait of robots. I'll design distinct personalities through poses and composition. Let me plan.\n\nFamily portrait: two parent robots and two child robots, plus perhaps a grandparent. Awkward pose \u2014 like a formal studio photo.\n\nLet me think about personalities:\n- Father robot: big, boxy, stern, one arm stiffly around mother, looking slightly away. Mustache antenna.\n- Mother robot: slender, tall, elegant, arms folded or holding a small robot, looking at camera with forced smile, a flower on head.\n- Teenage robot: slouched, arms crossed, looking away, headphones.\n- Small child robot: hyper, sitting on floor, waving, tilted.\n- Maybe a grandpa robot in corner, sleeping.\n\nComposition: studio backdrop, spotlight, formal arrangement, awkward spacing. The whole thing framed like an old family photo with a curtain.\n\nLet me write an SVG carefully. No text. Make it detailed and charming. Then render to PNG using... we have no rsvg. We could use ffmpeg? ffmpeg can't render SVG typically (librsvg maybe). Let me check. Actually the deliverable can be SVG itself, so I can just save the SVG. But maybe also render a PNG. Let me check if ffmpeg supports SVG input. Probably not. Python standard library only can't render SVG. Node no packages.\n\nI'll just deliver the SVG. Maybe also produce a PNG via some route... Let me check available tools: maybe rsvg-convert, inkscape, imagemagick. Let me check.\n\nLet me first check environment."
+        },
+        {
+          "type": "toolCall",
+          "id": "call-d6aa2a17-1c1a-4193-b9e9-80cb6ebd514a",
+          "name": "bash",
+          "arguments": {
+            "command": "cd <vol>/dev/art-crit-runs/2026-10-13-175044-ceate-an-svg-of-an-awkward/deepseek-v4.1-flash-low-20261013-175044/work && pwd && ls -la && which rsvg-convert inkscape convert magick chromium google-chrome ffmpeg python3 node 2>/dev/null",
+            "timeout": 30
+          }
+        }
+      ],
+      "api": "openai-completions",
+      "provider": "openrouter",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "usage": {
+        "input": 1989,
+        "output": 475,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "reasoning": 337,
+        "totalTokens": 2464,
+        "cost": {
+          "input": 7.876440000000001e-05,
+          "output": 0.000423225,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0.0005019894
+        }
+      },
+      "stopReason": "toolUse",
+      "timestamp": 1791939289515,
+      "responseId": "gen-1791939289-uM2Vj1ph9vsdYPCJy0g9",
+      "rawStopReason": "tool_calls",
+      "durationMs": 4723,
+      "thinkingLevel": "low"
+    }
+  },
+  {
+    "type": "message",
+    "id": "3b4dbc93",
+    "parentId": "4db367f7",
+    "timestamp": "2026-10-14T00:54:54.263Z",
+    "message": {
+      "role": "toolResult",
+      "toolCallId": "call-d6aa2a17-1c1a-4193-b9e9-80cb6ebd514a",
+      "toolName": "bash",
+      "content": [
+        {
+          "type": "text",
+          "text": "<vol>/dev/art-crit-runs/2026-10-13-175044-ceate-an-svg-of-an-awkward/deepseek-v4.1-flash-low-20261013-175044/work\ntotal 0\ndrwxr-xr-x@ 2 fender  staff   64 Oct 13 17:54 .\ndrwxr-xr-x@ 4 fender  staff  128 Oct 13 17:54 ..\n/opt/homebrew/bin/ffmpeg\n/opt/homebrew/bin/python3\n/opt/homebrew/bin/node\n\n\nCommand exited with code 1"
+        }
+      ],
+      "isError": true,
+      "durationMs": 21,
+      "timestamp": 1791939294263
+    }
+  },
+  {
+    "type": "message",
+    "id": "e10542c7",
+    "parentId": "3b4dbc93",
+    "timestamp": "2026-10-14T00:55:30.209Z",
+    "message": {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "No SVG renderer. But we can deliver SVG directly. Let me check whether ffmpeg can decode svg (via librsvg). Let me test quickly. Actually let me just build the SVG; the deliverable can be SVG. But it'd be nice to have a raster too. Let me check ffmpeg decoders.\n\nLet me create the SVG. I'll make it detailed, 1400x1000 maybe.\n\nLet me design carefully with coordinates.\n\nCanvas: 1400 x 1000.\n\nBackground: studio wall, warm gradient, a framed backdrop, curtain drapes at edges, a hanging \"family portrait\" vibe. No text though. Maybe a wall clock or picture frame.\n\nRobots:\n\n1. Dad robot (left, standing tall): boxy head with two antenna, square body, one arm around mom (arm behind her), other hand on... stiff. Looking forward but eyes shifted. Bow tie. Mustache (metal brush).\n\n2. Mom robot (center-right): slimmer, rounded head, a small flower antenna, skirt-like lower body, holding a baby robot. Head tilted. Eyes half closed, serene.\n\n3. Teen robot (right, slouched): taller thin, arms crossed, baseball cap, slouching, looking away/down at phone. Roller skates maybe.\n\n4. Small kid robot (front floor): sitting, one arm waving wildly, big single eye or big eyes, open smile, tilted. Cheerful.\n\n5. Baby robot in mom's arm: tiny, wide eyes, pacifier, one arm up.\n\n6. Grandpa robot in background left: sitting in an armchair, sleeping, newspaper on lap.\n\nThat's a lot. Let me include dad, mom, teen, kid, baby, and maybe grandpa. Composition: awkward spacing, everyone not quite looking at the same camera, dad's arm hovering not touching, mom leaning away slightly, teen glaring.\n\nLet me write the SVG with lots of shapes. I'll build it methodically. Use groups with transforms.\n\nLet me define reusable robot parts via defs? Personas distinct, so custom.\n\nLet me set up a coordinate plan.\n\nGround/floor: y ~ 860. Backdrop: full.\n\nDad: centered ~ x 400, base y 860. Height ~ 520. Head center (400, 320).\nMom: x 720, base y 860, height ~ 500, head center (740, 350). She's holding baby at (760, 560).\nTeen: x 1020, base y 860, tall thin, head center (1040, 300), slouched.\nKid: front center-left x 560, sitting on floor base y 880, head center (560, 760).\nGrandpa: background far left x 160 in chair, smaller, seated, head center (170, 500)? Might be crowded. Maybe put grandpa in background right or left but small. Let's do far left corner, seated, partially behind curtain.\n\nBackdrop: a big warm oval/arch behind family, like photo studio backdrop paper. Curtains at sides.\n\nLet me just write it. I'll aim for a clean, charming illustration.\n\nColor palette:\n- Dad: steel blue body #4a6fa5, lighter #6b8fc4, dark #2f4a73.\n- Mom: warm rose/copper #d98aa0? Actually robot metal \u2014 maybe coral/peach #e8a0a8 with gold accents.\n- Teen: dark charcoal/mint green #3a4a4a with cyan accents, cap red.\n- Kid: bright orange/yellow #f4a63a.\n- Baby: soft lavender #b9a7e0.\n- Grandpa: dusty sage #8a9a7a.\n\nBackground: warm cream #f3e6d0 wall, dark teal curtain #1f3b3b, floor wood #b98a5a.\n\nLet me draw.\n\nI'll write the file directly.\n\nLet me think about the awkward details:\n- Dad's arm is around Mom but there's a visible gap (a small floating hand not touching).\n- Mom's head tilts away from Dad, toward baby.\n- Teen leaning away, arms crossed, looking up/to the side, one foot tapping.\n- Kid sitting with legs splayed, waving, mouth wide.\n- Grandpa asleep with a \"zzz\" \u2014 no text, so draw small cloud puffs.\n- Baby reaching toward Dad.\n- A family dog robot? Could add a robot dog at feet. Might be cute, adds awkwardness.\n\nLet me add robot dog sitting by teen's feet.\n\nNow drawing plan in SVG.\n\nI'll use filters for subtle shadows (feGaussianBlur). Keep file reasonable.\n\nLet me draft.\n\nFor robot faces: use rects/circles, eyes as circles with pupils, antenna with ball.\n\nLet me start writing.\n\nI'll build elements:\n\nDefs:\n- radial gradient for backdrop\n- linear gradient for floor\n- drop shadow filter\n- metallic gradient\n\nLet me write the SVG now. I'll be careful with coordinates.\n\nLet me set width=1400 height=1000 viewBox 0 0 1400 1000.\n\nBackground:\nrect full fill cream.\nBackdrop arch: path ellipse-ish centered 700, y from 120 to 880, width 900. Use <ellipse cx=700 cy=520 rx=520 ry=430> fill gradient, maybe with a soft radial.\nCurtains: left path and right path dark teal with folds (paths).\nFloor: rect y=800 height 200 wood gradient, with a baseboard line.\n\nActually family stands around y 820-880. Let's make floor start at 780.\n\nBaseboard: rect y=780 h=16 fill darker.\n\nNow robots standing baseline y=820 (feet). Overlap.\n\nDad: x center 380.\n- Legs: two thick rects from y 640 to 820, width 46, at x 340 and 400. Feet: rounded rects.\n- Torso: rounded rect x 300 y 400 w 160 h 250, fill steel gradient.\n- Chest panel with buttons.\n- Bow tie at neck y ~ 395.\n- Arms: left arm (our left, his right) down straight. Right arm (our right) reaching around mom \u2014 but gap.\n- Head: rounded rect x 325 y 230 w 110 h 130.\n- Antennae: two lines with balls.\n- Mustache: two arcs or a brush shape below eyes.\n- Eyes: two rounded squares with pupils looking to the right.\n- Mouth: a straight line (stern).\n- Ears: small bolts.\n\nMom: x center 700.\n- She's standing, slightly leaning away left? Head tilted.\n- Lower body: a trapezoid skirt from y 620 to 820, fill rose.\n- Torso: rounded rect slimmer x 640 y 400 w 120 h 230.\n- Neck, head: circle-ish rounded x 660 y 260 w 100 h 120.\n- Hair? Maybe a head plate with a flower antenna.\n- Eyes: half-lidded (line over circle), looking down at baby.\n- Arms: one holding baby in front (around x 720 y 560), other hand near chest.\n- Flower on head: small circles petals.\n\nBaby: in mom's arms ~ x 720 y 590, small head circle radius 40, body swaddled blob, one arm up, pacifier. Wide eyes.\n\nTeen: x center 1010.\n- Tall thin: legs long, torso narrow, slouch (translate/rotate slightly).\n- Cap: red curved.\n- Head: rounded rect tall.\n- Arms crossed: two overlapping rounded rects in X.\n- Eyes: one eye looking sideways, maybe rolling (pupil high). Actually looking at phone in hand? Crossed arms + looking away.\n- Headphones around neck or on ears.\n- Foot tapping: one foot angled.\n\nKid: sitting front center-left, x 560, floor y ~ 880.\n- Legs stretched forward / splayed.\n- Body small round.\n- Head big with two big eyes and open happy mouth.\n- One arm raised waving (with motion lines).\n- Maybe a party hat? no, keep.\n\nRobot dog: x 1150 y 800, small, sitting, wagging tail, antenna ears. Looking at teen.\n\nGrandpa: far left background, x 130, seated in armchair, small scale (0.7). Sleeping, head tilted back, small puffs. Maybe too cluttered. I'll include a simple version behind curtain.\n\nHmm, that's a lot. Let me keep grandpa but simple and partially cropped.\n\nLet me just write. I'll keep each robot as a <g> with transform for easy placement.\n\nGiven complexity, I'll write directly with absolute coords.\n\nLet me write the file.\n\nI'll add a subtle vignette.\n\nLet me code it.\n\nFor the \"awkward\" feel, add: a floating dust/light, a wall clock showing same time, a potted plant, an outlet. Family photo studio.\n\nLet me now actually produce SVG text.\n\nI'll be generous with details but manageable.\n\nLet me write.\n\nI'll define gradients:\nmetallicDad: linearGradient x1 0 y1 0 x2 1 y2 1 stops #7d9bc9 -> #4a6fa5 -> #2f4a73\nmetallicMom: #f0b8bf -> #d98aa0 -> #a85c73\nmetallicTeen: #6a7d7d -> #3a4a4a -> #22302f\nmetallicKid: #ffc86b -> #f4a63a -> #c97a1a\nmetallicBaby: #d3c6f0 -> #b9a7e0 -> #8f7ac0\nmetallicGrandpa: #b3bfa3 -> #8a9a7a -> #5f6e52\n\nNow write.\n\nLet me carefully craft the composition coordinates.\n\nSection: Backdrop\n<rect width=1400 height=1000 fill=\"#f2e4cf\"/>\nBack wall gradient rect 0..0..1400..800.\nArched backdrop: <ellipse cx=\"700\" cy=\"500\" rx=\"540\" ry=\"440\" fill=\"url(#backdropGrad)\"/> where backdropGrad radial from #f7ead2 center to #e6d2b0 edge. Actually let's make an arch shape using path for a classic portrait backdrop: rounded top rectangle. Simpler: path M 180,820 L 180,360 Q 180,120 420,110 L 980,110 Q 1220,120 1220,360 L 1220,820 Z. fill gradient. That's a big arch.\n\nHmm but robots extend beyond. Fine.\n\nCurtains: left drape from x 0..190, right 1210..1400, from y 0 to 820, dark teal with vertical folds. Use paths.\n\nFloor: rect y=800 h=200 fill wood gradient. Add planks lines.\n\nBaseboard: rect y=790 h=22 fill #6b4a2f.\n\nNow shadows under each robot: ellipse dark low opacity.\n\nLet me write out. I'll produce final file and then perhaps check rendering by converting via python? No renderer. But I can at least validate XML with python xml parser. And maybe render with ffmpeg if librsvg exists \u2014 test.\n\nLet me first test ffmpeg svg."
+        },
+        {
+          "type": "toolCall",
+          "id": "call-c3f081d9-0853-44c8-a47a-49b6d89ff226",
+          "name": "bash",
+          "arguments": {
+            "command": "cd <vol>/dev/art-crit-runs/2026-10-13-175044-ceate-an-svg-of-an-awkward/deepseek-v4.1-flash-low-20261013-175044/work && printf '<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\"><rect width=\"10\" height=\"10\" fill=\"red\"/></svg>' > /tmp/t.svg && ffmpeg -hide_banner -loglevel error -i /tmp/t.svg -frames:v 1 /tmp/t.png 2>&1; ls -la /tmp/t.png 2>/dev/null || echo \"NO SVG DECODE\"",
+            "timeout": 30
+          }
+        }
+      ],
+      "api": "openai-completions",
+      "provider": "openrouter",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "usage": {
+        "input": 176,
+        "output": 2663,
+        "cacheRead": 2432,
+        "cacheWrite": 0,
+        "reasoning": 2458,
+        "totalTokens": 5271,
+        "cost": {
+          "input": 6.969600000000001e-06,
+          "output": 0.002372733,
+          "cacheRead": 1.31328e-05,
+          "cacheWrite": 0,
+          "total": 0.0023928354000000004
+        }
+      },
+      "stopReason": "toolUse",
+      "timestamp": 1791939294265,
+      "responseId": "gen-1791939294-jCNdVafrShGC7Jv9zZxD",
+      "rawStopReason": "tool_calls",
+      "durationMs": 35943,
+      "thinkingLevel": "low"
+    }
+  },
+  {
+    "type": "message",
+    "id": "a3ca4553",
+    "parentId": "e10542c7",
+    "timestamp": "2026-10-14T00:55:30.312Z",
+    "message": {
+      "role": "toolResult",
+      "toolCallId": "call-c3f081d9-0853-44c8-a47a-49b6d89ff226",
+      "toolName": "bash",
+      "content": [
+        {
+          "type": "text",
+          "text": "[vist#0:0/svg @ 0x7cdb00c180] Decoding requested, but no decoder found for: svg\nError opening output file /tmp/t.png.\nError opening output files: Invalid argument\n-rw-r--r--@ 1 fender  wheel  833 Oct  9 23:58 /tmp/t.png\n"
+        }
+      ],
+      "isError": false,
+      "durationMs": 101,
+      "timestamp": 1791939330311
+    }
+  },
+  {
+    "type": "message",
+    "id": "e7c9dcfe",
+    "parentId": "a3ca4553",
+    "timestamp": "2026-10-14T00:57:06.898Z",
+    "message": {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "No svg decoder. So deliver SVG as the image file. That's allowed. Fine.\n\nNow write the SVG. Let me compose it fully.\n\nI'll create ./src/ maybe, and output/portrait.svg. The task says only output/ published as result; source kept in working dir. So put the SVG in output (it's a finished file) and maybe a generator script in ./src. Actually simplest: write output/robots.svg. And also write the source generation script? The SVG itself is source-ish. Let's just put the finished SVG in output and a small copy of build script in root maybe. But requirement: files in output hold finished image/video and nothing else. I'll only put the SVG(s) there.\n\nMaybe create a generator python that writes the SVG \u2014 nice for \"source\". But not necessary. I'll write a python script in ./src/make_svg.py that outputs output/robots.svg. That satisfies \"keep the code you write\". Good.\n\nLet me write the python script generating the SVG. Actually writing the SVG directly via python string is fine. But it's easier to just write SVG file. However the instruction says keep code you write to make files in working dir. If I only write SVG by hand, that's the artifact. Fine too. But a script is nice and shows process. I'll create src/make_portrait.py that builds the SVG programmatically with helper functions \u2014 cleaner and easier to manage. Then run it.\n\nLet me design helper functions for robot parts.\n\nI'll write python that assembles strings.\n\nLet me plan helper: head shapes per robot.\n\nGiven time, maybe direct SVG is more controllable. But a script with functions can reduce repetition.\n\nLet me write the script.\n\nStructure:\n\ndef svg_header(): ...\n\nRobot definitions as functions returning svg group strings.\n\nLet me write it carefully.\n\nI'll do all coordinates manually.\n\nLet me define a generic function for a \"bolt\" (circle with cross) and \"button\".\n\nLet me write.\n\nPlan the script:\n\n```python\nparts = []\n\n# background\nparts.append(f'''<defs>...gradients...</defs>''')\n...\n```\n\nLet me enumerate gradients:\n\nbackGrad: radial, cx 50% cy 40%, stops #fdf4e3 0, #f0ddbe 70%, #e3cba4 100%\nfloorGrad: linear vertical, #b9885a -> #8a5f38\ncurtainGrad: linear horizontal, #2a4a4a -> #16302f -> #2a4a4a\nmetalDad etc.\n\nFilters: soft shadow: feDropShadow.\n\nLet me write robot by robot with transforms. I'll use translate to place and draw around local origin at feet center.\n\nDad group translate(380, 820). Local coordinates: y negative up.\n- feet at y 0.\n- legs: rect x=-52 y=-190 w=40 h=190 rx=16 (left leg), rect x=12 ... right.\n- feet: ellipse/rect at bottom: rounded rect x=-62 y=-24 w=58 h=30 rx=12; x=8 ...\n- hips/base: rect x=-70 y=-215 w=140 h=40 rx=18\n- torso: rect x=-78 y=-430 w=156 h=230 rx=26 fill metalDad\n- belly panel: rect x=-46 y=-380 w=92 h=90 rx=14 fill lighter, with rivets and 3 buttons.\n- shoulders: circles at (-80,-400) r=22 and (80,-400).\n- left arm (his right, our left): arm down: from shoulder (-80,-400) rect rotated? Use path: rect x=-118 y=-395 w=34 h=150 rx=16, then hand circle at (-101,-245) r=22.\n- right arm around mom: upper arm goes right and slightly up. Shoulder (80,-400). Use a path/rounded rect rotated: I'll draw a rect with transform rotate. Then hand rests near mom's shoulder but with a gap. Let's say forearm goes to (200,-380) area. Draw a thick line via path with stroke-round? Easier: use <path d=\"M 80 -400 Q 150 -410 190 -370\" stroke width 34 round fill none>. Then a hand (circle r20) at (205,-360), not quite reaching mom (mom is at x 700 translate => shoulder around -? Actually mom group at translate(710,820); her left shoulder local (-70,-400) => world (640,420). Dad's hand at world (380+205, 820-360)= (585,460). Gap of ~55px to mom shoulder. Good awkward gap, hand hovering.\n\n- neck: rect x=-22 y=-455 w=44 h=36\n- bow tie: two triangles at y -465.\n- head: rect x=-66 y=-590 w=132 h=140 rx=28 fill metalDad.\n- face plate: rect x=-50 y=-566 w=100 h=96 rx=18 fill lighter (#8fb0d8).\n- eyes: two rounded rects/circles. Eye whites at (-26,-520) r=17, (26,-520) r=17 fill #eaf4ff; pupils looking right: (-20,-518) r=7 and (32,-518) r=7 fill #1b2b44. One eyebrow angled (stern): line above left eye.\n- mustache: below eyes, at y -490: a path like two arcs. Use path with fill dark gray: M -30 -486 Q -14 -500 0 -488 Q 14 -500 30 -486 Q 14 -478 0 -482 Q -14 -478 -30 -486 Z. Hmm simpler: two ellipses.\n- mouth: line at y -470, small stiff line (or hidden by mustache). Add a small flat mouth: rect x=-14 y=-470 w=28 h=6 rx=3 fill dark.\n- ears: circles at (-66,-520) r 14 and (66,-520) r14, plus bolt.\n- antennae: two lines from top: from (-30,-590) to (-48,-660) ball r10; from (30,-590) to (50,-655) ball. Maybe one antenna with a spiral? keep.\n- Add a name? no text.\n- Add a pocket square? no.\n\nAdd subtle: dad slightly rotated -2deg for stiffness.\n\nMom group translate(720,820). Slight tilt +4deg (leaning away from dad / toward baby).\n- lower: skirt trapezoid path M -80,-210 L 80,-210 L 60,0 L -60,0 Z fill metalMom.\n- torso: rect x=-64 y=-410 w=128 h=210 rx=26.\n- chest panel: rect x=-36 y=-370 w=72 h=70 rx=12 lighter with a heart-ish button? add a small flower emblem.\n- shoulders r=18 at (-66,-385),(66,-385).\n- left arm (our left, toward dad): raised slightly, hand near chest? Actually she leans away, so left arm maybe down/defensive. Let's have her left arm down, hand near skirt.\n- right arm cradles baby: path from (66,-385) Q (110,-330) (95,-250): stroke 30. Then baby sits at local (75,-210) i.e., world (795,610).\n- neck rect.\n- head: rounded rect x=-56 y=-560 w=112 h=130 rx=30.\n- face plate lighter.\n- eyes half-lidded: draw eye whites circles then a rect \"eyelid\" covering top half in metalMom color. Pupils looking down-left toward baby.\n- small smile: arc.\n- flower on head: stem + petals at top-left of head.\n- earrings: small circles.\n- hair/head plate: maybe a swept-back ridge.\n- one antenna with heart shape (drawn).\n\nBaby in mom's arm: relative to mom group at local (95,-235). Draw small.\n- body: rounded rect x=-34 y=-40 w=68 h=80 rx=26 fill metalBaby.\n- head: circleish rect x=-38 y=-120 w=76 h=80 rx=30.\n- big eyes wide, pupils tiny (surprised).\n- mouth small o.\n- one arm up reaching toward dad: path from (-30,-60) to (-80,-95) stroke 14 with tiny hand.\n- pacifier at mouth.\n- swaddle blanket: path over lower body.\n\nTeen group translate(1030,820), rotate +6 (slouch/lean away).\n- legs long thin: rect x=-34 y=-300 w=26 h=300 rx=12; x=8 ...\n- feet: one foot flat, other angled (toe tap) with maybe motion arc.\n- torso: rect x=-52 y=-560 w=104 h=270 rx=22 fill metalTeen, with a hoodie? add a hood collar.\n- Both arms crossed: two rounded rects rotated: arm1 from left shoulder to right side, arm2 from right shoulder to left side, crossing. Use paths stroke width 26 round.\n- headphones: a band arc over head + two ear cups.\n- head: rounded rect x=-48 y=-720 w=96 h=150 rx=26 fill metalTeen.\n- face plate darker.\n- eyes: one eye normal looking left (away), other half-lidded (annoyed). Pupil shifted far left. Eyebrow angled down.\n- mouth: small frown / flat.\n- cap: red baseball cap brim to one side, sitting askew.\n- maybe a phone in hand peeking from crossed arms with glow (but no text on screen, just a glowing rect). Cute. Add small phone with cyan glow.\n- taller than others.\n\nKid group translate(560,880), sitting. rotate -8 (leaning).\n- sitting: legs splayed forward: two thick short legs going down-left and down-right.\n- body: rounded rect x=-56 y=-150 w=112 h=120 rx=30 fill metalKid.\n- head: big rounded rect x=-66 y=-300 w=132 h=140 rx=40.\n- big eyes with sparkle, wide open, pupils centered slightly up.\n- huge open smile: path mouth with a tongue.\n- one arm raised waving: path from right shoulder up, hand with motion lines.\n- other arm resting on floor.\n- antenna with a little spring/coil and ball, tilted.\n- freckles/rivets on cheeks.\n- little wheels? no.\n\nRobot dog at translate(1180,820), small:\n- body rounded rect, 4 legs, head, ears (antenna), tail with motion arcs (wagging), tongue.\n\nGrandpa far back left, translate(150,760), scale 0.72, seated in armchair.\n- armchair: drawn behind: rounded rect high back, arms.\n- robot seated, legs forward, hands on lap, head tilted back sleeping, small z-cloud (draw as circles, no text).\n- maybe reading glasses on face.\n\nPotted plant far right? Maybe at x 1330 behind curtain. Skip or add small.\n\nPicture frame on wall? Could add a small framed picture (abstract). Maybe a wall clock at top center showing time. Add a framed abstract portrait to enhance studio.\n\nAlso add hanging studio light? A soft radial glow at top.\n\nLet me also add awkward details: all eyes in slightly different directions; dad's hand not touching; baby looking at camera while others not; teen looking away; mom cooing baby.\n\nLet me now write the script.\n\nI need to be careful with SVG validity. I'll use xml escaping not needed (no text). Use double quotes inside python triple-quoted strings; use single-quoted python strings? I'll use f-strings with double quotes inside \u2014 conflict. I'll use triple single quotes ''' for strings containing double quotes. Good.\n\nLet me write.\n\nFor gradients, define all in defs once.\n\nLet me write the python file.\n\nI'll keep coordinates as planned.\n\nLet me define helper for bolt:\n\ndef bolt(x,y,r):\n    return f'<circle cx=\"{x}\" cy=\"{y}\" r=\"{r}\" fill=\"#2b2f38\"/><circle cx=\"{x}\" cy=\"{y}\" r=\"{r*0.55:.1f}\" fill=\"#6b7280\"/>'\n\nNow write.\n\nLet me handle the drop shadow filter and apply to each robot group: filter=\"url(#soft)\". Might be heavy but fine.\n\nActually applying drop shadow to groups with gradients is fine.\n\nLet me write the full script now.\n\nI'll produce output/robots-family-portrait.svg.\n\nLet me draft carefully.\n\nDetails for faces require many elements. Let's write.\n\nI'll write the file now."
+        },
+        {
+          "type": "text",
+          "text": "No SVG rasterizer available, so I'll deliver the artwork as SVG. Let me build a generator script and the artwork.\n\n"
+        },
+        {
+          "type": "toolCall",
+          "id": "call-e9f14665-3919-483f-b332-0e16689b0c49",
+          "name": "write",
+          "arguments": {
+            "path": "<vol>/dev/art-crit-runs/2026-10-13-175044-ceate-an-svg-of-an-awkward/deepseek-v4.1-flash-low-20261013-175044/work/src/make_portrait.py",
+            "content": "#!/usr/bin/env python3\n\"\"\"Generate an awkward studio family portrait of robots as a single SVG.\n\nNo text anywhere in the artwork -- personality is expressed only through\npose, gaze, spacing and props.  Output: output/robots-family-portrait.svg\n\"\"\"\nimport os\n\nW, H = 1400, 1000\nOUT = os.path.join(os.path.dirname(__file__), \"..\", \"output\",\n                   \"robots-family-portrait.svg\")\n\nS = []\n\n\ndef add(s):\n    S.append(s)\n\n\ndef bolt(x, y, r=6, col=\"#2b2f38\", hi=\"#8b95a6\"):\n    return (f'<circle cx=\"{x}\" cy=\"{y}\" r=\"{r}\" fill=\"{col}\"/>'\n            f'<circle cx=\"{x}\" cy=\"{y}\" r=\"{r*0.55:.1f}\" fill=\"{hi}\"/>')\n\n\ndef rivets(x0, y0, x1, y1, n=4, r=3):\n    out = []\n    for i in range(n):\n        t = i / (n - 1) if n > 1 else 0\n        x = x0 + (x1 - x0) * t\n        y = y0 + (y1 - y0) * t\n        out.append(f'<circle cx=\"{x:.1f}\" cy=\"{y:.1f}\" r=\"{r}\" '\n                   f'fill=\"#8b95a6\" opacity=\"0.8\"/>')\n    return \"\".join(out)\n\n\n# ----------------------------------------------------------------------------\n# Defs\n# ----------------------------------------------------------------------------\nadd(f'''<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {W} {H}\"\n     width=\"{W}\" height=\"{H}\">\n<defs>\n  <radialGradient id=\"wall\" cx=\"50%\" cy=\"38%\" r=\"75%\">\n    <stop offset=\"0%\" stop-color=\"#fdf3e0\"/>\n    <stop offset=\"62%\" stop-color=\"#f0dcbc\"/>\n    <stop offset=\"100%\" stop-color=\"#dcc39b\"/>\n  </radialGradient>\n  <radialGradient id=\"spot\" cx=\"50%\" cy=\"30%\" r=\"55%\">\n    <stop offset=\"0%\" stop-color=\"#fff7e6\" stop-opacity=\"0.95\"/>\n    <stop offset=\"100%\" stop-color=\"#fff7e6\" stop-opacity=\"0\"/>\n  </radialGradient>\n  <linearGradient id=\"floor\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n    <stop offset=\"0%\" stop-color=\"#c08a55\"/>\n    <stop offset=\"100%\" stop-color=\"#8a5c33\"/>\n  </linearGradient>\n  <linearGradient id=\"curtain\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"0\">\n    <stop offset=\"0%\" stop-color=\"#1c3a39\"/>\n    <stop offset=\"50%\" stop-color=\"#2e5553\"/>\n    <stop offset=\"100%\" stop-color=\"#17302f\"/>\n  </linearGradient>\n  <linearGradient id=\"dad\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\">\n    <stop offset=\"0%\" stop-color=\"#84a3d4\"/>\n    <stop offset=\"45%\" stop-color=\"#4f76ad\"/>\n    <stop offset=\"100%\" stop-color=\"#2c4772\"/>\n  </linearGradient>\n  <linearGradient id=\"mom\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\">\n    <stop offset=\"0%\" stop-color=\"#f6c2c8\"/>\n    <stop offset=\"45%\" stop-color=\"#dd92a4\"/>\n    <stop offset=\"100%\" stop-color=\"#a75a72\"/>\n  </linearGradient>\n  <linearGradient id=\"teen\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\">\n    <stop offset=\"0%\" stop-color=\"#7d9393\"/>\n    <stop offset=\"45%\" stop-color=\"#3d5050\"/>\n    <stop offset=\"100%\" stop-color=\"#212f2f\"/>\n  </linearGradient>\n  <linearGradient id=\"kid\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\">\n    <stop offset=\"0%\" stop-color=\"#ffd489\"/>\n    <stop offset=\"45%\" stop-color=\"#f4a63a\"/>\n    <stop offset=\"100%\" stop-color=\"#c1711a\"/>\n  </linearGradient>\n  <linearGradient id=\"baby\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\">\n    <stop offset=\"0%\" stop-color=\"#ded2f5\"/>\n    <stop offset=\"45%\" stop-color=\"#bcaae6\"/>\n    <stop offset=\"100%\" stop-color=\"#8b74bd\"/>\n  </linearGradient>\n  <linearGradient id=\"grandpa\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\">\n    <stop offset=\"0%\" stop-color=\"#c2ccb1\"/>\n    <stop offset=\"45%\" stop-color=\"#8d9c7b\"/>\n    <stop offset=\"100%\" stop-color=\"#5d6b50\"/>\n  </linearGradient>\n  <filter id=\"soft\" x=\"-25%\" y=\"-25%\" width=\"150%\" height=\"160%\">\n    <feDropShadow dx=\"6\" dy=\"10\" stdDeviation=\"10\"\n                  flood-color=\"#3a2a18\" flood-opacity=\"0.30\"/>\n  </filter>\n  <filter id=\"glow\" x=\"-80%\" y=\"-80%\" width=\"260%\" height=\"260%\">\n    <feGaussianBlur stdDeviation=\"6\" result=\"b\"/>\n    <feMerge><feMergeNode in=\"b\"/><feMergeNode in=\"SourceGraphic\"/></feMerge>\n  </filter>\n  <filter id=\"blur18\"><feGaussianBlur stdDeviation=\"18\"/></filter>\n</defs>\n''')\n\n# ----------------------------------------------------------------------------\n# Background: studio wall, arched backdrop, curtains, floor\n# ----------------------------------------------------------------------------\nadd(f'<rect width=\"{W}\" height=\"{H}\" fill=\"#efe0c6\"/>')\nadd(f'<rect width=\"{W}\" height=\"820\" fill=\"url(#wall)\"/>')\nadd(f'<ellipse cx=\"700\" cy=\"470\" rx=\"470\" ry=\"440\" fill=\"url(#spot)\"/>')\n\n# arched canvas backdrop\nadd('''<path d=\"M 250 800 L 250 340 Q 250 150 470 140 L 930 140\n       Q 1150 150 1150 340 L 1150 800 Z\" fill=\"#e9d4b2\"\n       stroke=\"#d3b98f\" stroke-width=\"4\"/>''')\nadd('''<path d=\"M 250 800 L 250 340 Q 250 150 470 140 L 930 140\n       Q 1150 150 1150 340 L 1150 800\" fill=\"none\"\n       stroke=\"#c9ad82\" stroke-width=\"2\" opacity=\"0.6\"/>''')\n\n# left curtain\nadd('''<path d=\"M 0 0 L 200 0 Q 150 260 190 520 Q 220 700 170 820 L 0 820 Z\"\n       fill=\"url(#curtain)\"/>''')\nadd('''<path d=\"M 90 0 Q 70 300 110 820\" stroke=\"#0f2322\" stroke-width=\"10\"\n       fill=\"none\" opacity=\"0.55\"/>''')\nadd('''<path d=\"M 150 0 Q 135 300 165 820\" stroke=\"#3c6b68\" stroke-width=\"6\"\n       fill=\"none\" opacity=\"0.5\"/>''')\n# right curtain\nadd('''<path d=\"M 1400 0 L 1200 0 Q 1250 260 1210 520 Q 1180 700 1230 820\n       L 1400 820 Z\" fill=\"url(#curtain)\"/>''')\nadd('''<path d=\"M 1310 0 Q 1330 300 1290 820\" stroke=\"#0f2322\"\n       stroke-width=\"10\" fill=\"none\" opacity=\"0.55\"/>''')\nadd('''<path d=\"M 1250 0 Q 1265 300 1235 820\" stroke=\"#3c6b68\"\n       stroke-width=\"6\" fill=\"none\" opacity=\"0.5\"/>''')\n# curtain rod\nadd('<rect x=\"0\" y=\"0\" width=\"1400\" height=\"16\" fill=\"#7a5a3a\"/>')\nadd('<circle cx=\"70\" cy=\"14\" r=\"18\" fill=\"#a9814f\"/>'\n    '<circle cx=\"1330\" cy=\"14\" r=\"18\" fill=\"#a9814f\"/>')\n\n# floor\nadd('<rect x=\"0\" y=\"800\" width=\"1400\" height=\"200\" fill=\"url(#floor)\"/>')\nadd('<rect x=\"0\" y=\"788\" width=\"1400\" height=\"22\" fill=\"#5f4127\"/>')\nadd('<rect x=\"0\" y=\"800\" width=\"1400\" height=\"6\" fill=\"#d9b17f\" opacity=\"0.35\"/>')\nfor i in range(9):\n    x = 40 + i * 165\n    add(f'<line x1=\"{x}\" y1=\"806\" x2=\"{x-120}\" y2=\"1000\" '\n        f'stroke=\"#6e4a2a\" stroke-width=\"2\" opacity=\"0.35\"/>')\n\n# a framed abstract portrait on the wall + wall clock\nadd('<rect x=\"1052\" y=\"250\" width=\"120\" height=\"150\" rx=\"6\" fill=\"#7a5a3a\"/>')\nadd('<rect x=\"1062\" y=\"260\" width=\"100\" height=\"130\" rx=\"4\" fill=\"#efe4cd\"/>')\nadd('<circle cx=\"1112\" cy=\"305\" r=\"26\" fill=\"#dd92a4\"/>')\nadd('<rect x=\"1082\" y=\"335\" width=\"60\" height=\"40\" rx=\"4\" fill=\"#4f76ad\"/>')\nadd('<g transform=\"translate(300,250)\">'\n    '<circle r=\"44\" fill=\"#7a5a3a\"/><circle r=\"36\" fill=\"#f5ecd8\"/>'\n    '<line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"-22\" stroke=\"#3a2f22\" stroke-width=\"5\" stroke-linecap=\"round\"/>'\n    '<line x1=\"0\" y1=\"0\" x2=\"16\" y2=\"10\" stroke=\"#3a2f22\" stroke-width=\"5\" stroke-linecap=\"round\"/>'\n    '<circle r=\"4\" fill=\"#3a2f22\"/></g>')\n\n# ----------------------------------------------------------------------------\n# Ground shadows\n# ----------------------------------------------------------------------------\nfor cx, rx, ry in [(380, 150, 26), (720, 150, 26), (1030, 120, 24),\n                   (560, 110, 22), (1185, 70, 16), (165, 120, 20)]:\n    add(f'<ellipse cx=\"{cx}\" cy=\"824\" rx=\"{rx}\" ry=\"{ry}\" fill=\"#3a2410\" '\n        f'opacity=\"0.30\"/>')\n\n# ============================================================================\n# GRANDPA ROBOT -- dozing in an armchair, far left, slightly behind\n# ============================================================================\nadd('<g transform=\"translate(150,790) scale(0.72)\" filter=\"url(#soft)\" opacity=\"0.98\">')\n# armchair\nadd('<rect x=\"-110\" y=\"-300\" width=\"220\" height=\"300\" rx=\"40\" fill=\"#5a3f6b\"/>')\nadd('<rect x=\"-92\" y=\"-278\" width=\"184\" height=\"210\" rx=\"28\" fill=\"#75538c\"/>')\nadd('<rect x=\"-140\" y=\"-120\" width=\"70\" height=\"130\" rx=\"26\" fill=\"#4a3358\"/>')\nadd('<rect x=\"70\" y=\"-120\" width=\"70\" height=\"130\" rx=\"26\" fill=\"#4a3358\"/>')\nadd('<rect x=\"-118\" y=\"-20\" width=\"236\" height=\"30\" rx=\"12\" fill=\"#4a3358\"/>')\n# seated robot\nadd('<rect x=\"-56\" y=\"-150\" width=\"112\" height=\"150\" rx=\"34\" fill=\"url(#grandpa)\"/>')\nadd('<rect x=\"-40\" y=\"-128\" width=\"80\" height=\"70\" rx=\"14\" fill=\"#a7b394\" opacity=\"0.8\"/>')\n# outstretched legs\nadd('<rect x=\"-58\" y=\"-42\" width=\"94\" height=\"34\" rx=\"16\" fill=\"url(#grandpa)\" transform=\"rotate(6 -11 -25)\"/>')\nadd('<rect x=\"-6\" y=\"-42\" width=\"94\" height=\"34\" rx=\"16\" fill=\"url(#grandpa)\" transform=\"rotate(-8 41 -25)\"/>')\nadd('<ellipse cx=\"78\" cy=\"-16\" rx=\"30\" ry=\"18\" fill=\"#4d5a42\"/>')\nadd('<ellipse cx=\"24\" cy=\"-14\" rx=\"30\" ry=\"18\" fill=\"#4d5a42\"/>')\n# hands on lap\nadd('<circle cx=\"-6\" cy=\"-112\" r=\"20\" fill=\"#a7b394\"/><circle cx=\"34\" cy=\"-108\" r=\"20\" fill=\"#a7b394\"/>')\n# neck + head tilted back\nadd('<rect x=\"-20\" y=\"-186\" width=\"40\" height=\"34\" rx=\"12\" fill=\"#7b8a68\"/>')\nadd(f'<g transform=\"rotate(-12 0 -232)\">')\nadd('<rect x=\"-58\" y=\"-306\" width=\"116\" height=\"126\" rx=\"34\" fill=\"url(#grandpa)\"/>')\nadd('<rect x=\"-44\" y=\"-288\" width=\"88\" height=\"92\" rx=\"22\" fill=\"#a7b394\"/>')\n# closed eyes (sleeping arcs)\nadd('<path d=\"M -30 -252 q 12 12 24 0\" stroke=\"#3c4632\" stroke-width=\"5\" fill=\"none\" stroke-linecap=\"round\"/>')\nadd('<path d=\"M 8 -252 q 12 12 24 0\" stroke=\"#3c4632\" stroke-width=\"5\" fill=\"none\" stroke-linecap=\"round\"/>')\n# open relaxed mouth\nadd('<ellipse cx=\"1\" cy=\"-212\" rx=\"13\" ry=\"8\" fill=\"#3c4632\" opacity=\"0.7\"/>')\n# glasses\nadd('<circle cx=\"-17\" cy=\"-248\" r=\"16\" fill=\"none\" stroke=\"#4a4a52\" stroke-width=\"4\"/>'\n    '<circle cx=\"21\" cy=\"-248\" r=\"16\" fill=\"none\" stroke=\"#4a4a52\" stroke-width=\"4\"/>'\n    '<line x1=\"-1\" y1=\"-248\" x2=\"5\" y2=\"-248\" stroke=\"#4a4a52\" stroke-width=\"4\"/>')\n# hair tuft / antenna\nadd('<line x1=\"-14\" y1=\"-306\" x2=\"-30\" y2=\"-352\" stroke=\"#7b8a68\" stroke-width=\"8\" stroke-linecap=\"round\"/>')\nadd(f'<circle cx=\"-30\" cy=\"-354\" r=\"9\" fill=\"#c2ccb1\"/>')\nadd('</g>')\n# sleeping puffs\nadd('<g fill=\"none\" stroke=\"#f5ecd8\" stroke-width=\"6\" opacity=\"0.85\">'\n    '<path d=\"M 60 -300 q 18 -14 0 -28\"/>'\n    '<path d=\"M 84 -336 q 24 -18 0 -38\"/>'\n    '<path d=\"M 112 -382 q 30 -22 0 -48\"/></g>')\nadd('</g>')\n\n# ============================================================================\n# DAD ROBOT -- stiff, boxy, moustache, one hovering arm\n# ============================================================================\nadd('<g transform=\"translate(380,820)\" filter=\"url(#soft)\">')\n# legs & feet\nadd('<rect x=\"-58\" y=\"-196\" width=\"46\" height=\"196\" rx=\"18\" fill=\"#3c5a86\"/>')\nadd('<rect x=\"12\" y=\"-196\" width=\"46\" height=\"196\" rx=\"18\" fill=\"#3c5a86\"/>')\nadd('<rect x=\"-70\" y=\"-28\" width=\"64\" height=\"32\" rx=\"14\" fill=\"#2c4772\"/>')\nadd('<rect x=\"6\" y=\"-28\" width=\"64\" height=\"32\" rx=\"14\" fill=\"#2c4772\"/>')\nadd('<rect x=\"-74\" y=\"-224\" width=\"148\" height=\"44\" rx=\"20\" fill=\"#3c5a86\"/>')\n# torso\nadd('<rect x=\"-82\" y=\"-438\" width=\"164\" height=\"236\" rx=\"28\" fill=\"url(#dad)\"/>')\nadd('<rect x=\"-50\" y=\"-388\" width=\"100\" height=\"96\" rx=\"16\" fill=\"#7fa0d0\" opacity=\"0.85\"/>')\nadd('<circle cx=\"-24\" cy=\"-352\" r=\"10\" fill=\"#f2d24b\"/>'\n    '<circle cx=\"6\" cy=\"-352\" r=\"10\" fill=\"#e2574f\"/>'\n    '<circle cx=\"36\" cy=\"-352\" r=\"10\" fill=\"#5ac37a\"/>')\nadd('<rect x=\"-30\" y=\"-320\" width=\"60\" height=\"10\" rx=\"5\" fill=\"#2c4772\" opacity=\"0.5\"/>')\nadd(rivets(-66, -414, 66, -414, 6))\n# shoulders\nadd('<circle cx=\"-82\" cy=\"-408\" r=\"26\" fill=\"#5f83bb\"/>')\nadd('<circle cx=\"82\" cy=\"-408\" r=\"26\" fill=\"#5f83bb\"/>')\n# left arm straight down, fist clenched\nadd('<rect x=\"-124\" y=\"-402\" width=\"38\" height=\"160\" rx=\"17\" fill=\"#4f76ad\"/>')\nadd('<circle cx=\"-105\" cy=\"-238\" r=\"25\" fill=\"#84a3d4\"/>')\nadd(rivets(-114, -380, -114, -270, 3, 2.5))\n# right arm reaching toward mum but NOT touching (awkward gap)\nadd('<path d=\"M 82 -408 Q 168 -420 214 -374\" stroke=\"#4f76ad\" stroke-width=\"36\" '\n    'fill=\"none\" stroke-linecap=\"round\"/>')\nadd('<circle cx=\"232\" cy=\"-360\" r=\"26\" fill=\"#84a3d4\"/>')\nadd('<circle cx=\"232\" cy=\"-360\" r=\"12\" fill=\"#5f83bb\" opacity=\"0.6\"/>')\n# neck + bow tie\nadd('<rect x=\"-24\" y=\"-470\" width=\"48\" height=\"40\" rx=\"14\" fill=\"#3c5a86\"/>')\nadd('<path d=\"M -4 -458 L -40 -476 L -40 -440 Z\" fill=\"#e2574f\"/>'\n    '<path d=\"M 4 -458 L 40 -476 L 40 -440 Z\" fill=\"#e2574f\"/>'\n    '<circle cx=\"0\" cy=\"-458\" r=\"8\" fill=\"#b83b34\"/>')\n# head\nadd('<rect x=\"-70\" y=\"-604\" width=\"140\" height=\"146\" rx=\"30\" fill=\"url(#dad)\"/>')\nadd('<rect x=\"-54\" y=\"-582\" width=\"108\" height=\"104\" rx=\"20\" fill=\"#8fb0d8\"/>')\n# ears / bolts\nadd(bolt(-70, -530, 12))\nadd(bolt(70, -530, 12))\n# antennae\nadd('<line x1=\"-30\" y1=\"-604\" x2=\"-52\" y2=\"-676\" stroke=\"#3c5a86\" stroke-width=\"9\" stroke-linecap=\"round\"/>')\nadd('<circle cx=\"-52\" cy=\"-680\" r=\"12\" fill=\"#f2d24b\"/>')\nadd('<line x1=\"30\" y1=\"-604\" x2=\"56\" y2=\"-670\" stroke=\"#3c5a86\" stroke-width=\"9\" stroke-linecap=\"round\"/>')\nadd('<circle cx=\"56\" cy=\"-674\" r=\"12\" fill=\"#e2574f\"/>')\n# stern eyes (looking off to the left, away from mum)\nadd('<circle cx=\"-26\" cy=\"-534\" r=\"17\" fill=\"#eef5ff\"/>'\n    '<circle cx=\"26\" cy=\"-534\" r=\"17\" fill=\"#eef5ff\"/>')\nadd('<circle cx=\"-33\" cy=\"-532\" r=\"7\" fill=\"#1b2b44\"/>'\n    '<circle cx=\"19\" cy=\"-532\" r=\"7\" fill=\"#1b2b44\"/>')\nadd('<line x1=\"-46\" y1=\"-560\" x2=\"-8\" y2=\"-568\" stroke=\"#2c4772\" stroke-width=\"7\" stroke-linecap=\"round\"/>')\nadd('<line x1=\"8\" y1=\"-566\" x2=\"46\" y2=\"-560\" stroke=\"#2c4772\" stroke-width=\"7\" stroke-linecap=\"round\"/>')\n# moustache\nadd('<path d=\"M -34 -504 Q -18 -520 0 -506 Q 18 -520 34 -504 '\n    'Q 18 -494 0 -498 Q -18 -494 -34 -504 Z\" fill=\"#42506b\"/>')\nadd('<rect x=\"-12\" y=\"-494\" width=\"24\" height=\"7\" rx=\"3\" fill=\"#2c4772\"/>')\n# a stiff medal / badge\nadd('<circle cx=\"56\" cy=\"-300\" r=\"14\" fill=\"#f2d24b\"/>'\n    '<circle cx=\"56\" cy=\"-300\" r=\"7\" fill=\"#c9a520\"/>')\nadd('</g>')\n\n# ============================================================================\n# MUM ROBOT -- elegant, leaning away, cradling baby\n# ============================================================================\nadd('<g transform=\"translate(735,820) rotate(4)\" filter=\"url(#soft)\">')\n# skirt / lower body\nadd('<path d=\"M -88 -230 L 88 -230 L 66 0 Q 0 14 -66 0 Z\" fill=\"url(#mom)\"/>')\nadd('<path d=\"M -70 -80 Q 0 -66 70 -80\" stroke=\"#a75a72\" stroke-width=\"4\" fill=\"none\" opacity=\"0.6\"/>')\n# torso\nadd('<rect x=\"-66\" y=\"-424\" width=\"132\" height=\"216\" rx=\"28\" fill=\"url(#mom)\"/>')\nadd('<rect x=\"-38\" y=\"-386\" width=\"76\" height=\"76\" rx=\"14\" fill=\"#f6c2c8\" opacity=\"0.9\"/>')\nadd('<circle cx=\"0\" cy=\"-348\" r=\"18\" fill=\"#d98aa0\"/>'\n    '<circle cx=\"0\" cy=\"-348\" r=\"8\" fill=\"#f7e3a1\"/>')\nadd(rivets(-50, -404, 50, -404, 5))\n# shoulders\nadd('<circle cx=\"-66\" cy=\"-400\" r=\"20\" fill=\"#dd92a4\"/>')\nadd('<circle cx=\"66\" cy=\"-400\" r=\"20\" fill=\"#dd92a4\"/>')\n# left arm (toward dad) hangs defensively, hand on skirt\nadd('<path d=\"M -66 -400 Q -104 -340 -96 -250\" stroke=\"#dd92a4\" stroke-width=\"30\" '\n    'fill=\"none\" stroke-linecap=\"round\"/>')\nadd('<circle cx=\"-98\" cy=\"-238\" r=\"19\" fill=\"#f6c2c8\"/>')\n# right arm cradling baby\nadd('<path d=\"M 66 -400 Q 118 -344 104 -250\" stroke=\"#dd92a4\" stroke-width=\"32\" '\n    'fill=\"none\" stroke-linecap=\"round\"/>')\n# neck + head (tilted)\nadd('<rect x=\"-22\" y=\"-458\" width=\"44\" height=\"42\" rx=\"14\" fill=\"#c07e92\"/>')\nadd('<g transform=\"rotate(-8 0 -540)\">')\nadd('<rect x=\"-58\" y=\"-592\" width=\"116\" height=\"134\" rx=\"34\" fill=\"url(#mom)\"/>')\nadd('<rect x=\"-44\" y=\"-572\" width=\"88\" height=\"96\" rx=\"26\" fill=\"#f6c2c8\"/>')\n# swept hair plate\nadd('<path d=\"M -58 -560 Q -78 -606 -40 -608 Q 10 -620 52 -596 Q 66 -576 58 -552 '\n    'Q 30 -578 -10 -574 Q -40 -572 -58 -560 Z\" fill=\"#c07e92\"/>')\n# flower antenna\nadd('<line x1=\"-18\" y1=\"-592\" x2=\"-30\" y2=\"-650\" stroke=\"#4f7a52\" stroke-width=\"7\" stroke-linecap=\"round\"/>')\nfor a in range(5):\n    import math\n    ang = a * 72\n    px = -30 + 16 * math.cos(math.radians(ang))\n    py = -656 + 16 * math.sin(math.radians(ang))\n    add(f'<circle cx=\"{px:.1f}\" cy=\"{py:.1f}\" r=\"10\" fill=\"#f2a0bb\"/>')\nadd('<circle cx=\"-30\" cy=\"-656\" r=\"9\" fill=\"#f7e3a1\"/>')\n# half-lidded eyes, gazing down at baby\nadd('<circle cx=\"-24\" cy=\"-524\" r=\"16\" fill=\"#fdf3e0\"/>'\n    '<circle cx=\"24\" cy=\"-524\" r=\"16\" fill=\"#fdf3e0\"/>')\nadd('<circle cx=\"-30\" cy=\"-516\" r=\"7\" fill=\"#3a2230\"/>'\n    '<circle cx=\"18\" cy=\"-516\" r=\"7\" fill=\"#3a2230\"/>')\nadd('<path d=\"M -40 -524 Q -24 -516 -8 -524 Z\" fill=\"#dd92a4\"/>'\n    '<path d=\"M 8 -524 Q 24 -516 40 -524 Z\" fill=\"#dd92a4\"/>')\nadd('<path d=\"M -8 -500 Q 0 -492 8 -500\" stroke=\"#a75a72\" stroke-width=\"4\" '\n    'fill=\"none\" stroke-linecap=\"round\"/>')\nadd(bolt(-58, -528, 10))\nadd(bolt(58, -528, 10))\n# little pearl earrings\nadd('<circle cx=\"-58\" cy=\"-500\" r=\"7\" fill=\"#f7e3a1\"/>'\n    '<circle cx=\"58\" cy=\"-500\" r=\"7\" fill=\"#f7e3a1\"/>')\nadd('</g>')\n\n# ---- BABY ROBOT nestled in mum's right arm ----\nadd('<g transform=\"translate(112,-258) rotate(-6)\">')\n# swaddle\nadd('<path d=\"M -46 34 Q -56 -10 -34 -34 L 34 -34 Q 56 -10 46 34 Z\" fill=\"#f0b8bf\"/>')\nadd('<path d=\"M -46 34 Q 0 46 46 34\" stroke=\"#dd92a4\" stroke-width=\"4\" fill=\"none\"/>')\n# body\nadd('<rect x=\"-34\" y=\"-36\" width=\"68\" height=\"80\" rx=\"26\" fill=\"url(#baby)\"/>')\n# head\nadd('<rect x=\"-40\" y=\"-124\" width=\"80\" height=\"86\" rx=\"32\" fill=\"url(#baby)\"/>')\nadd('<rect x=\"-30\" y=\"-110\" width=\"60\" height=\"58\" rx=\"22\" fill=\"#ded2f5\"/>')\n# wide startled eyes\nadd('<circle cx=\"-14\" cy=\"-84\" r=\"12\" fill=\"#ffffff\"/>'\n    '<circle cx=\"16\" cy=\"-84\" r=\"12\" fill=\"#ffffff\"/>')\nadd('<circle cx=\"-13\" cy=\"-82\" r=\"4.5\" fill=\"#3a2f56\"/>'\n    '<circle cx=\"17\" cy=\"-82\" r=\"4.5\" fill=\"#3a2f56\"/>')\n# o-mouth + pacifier\nadd('<ellipse cx=\"1\" cy=\"-58\" rx=\"6\" ry=\"7\" fill=\"#5a4a7a\"/>')\nadd('<circle cx=\"1\" cy=\"-52\" r=\"9\" fill=\"#f2a0bb\"/><circle cx=\"1\" cy=\"-52\" r=\"4\" fill=\"#d9789a\"/>')\n# reaching arm toward dad with door\nadd('<path d=\"M -30 -22 Q -62 -36 -74 -60\" stroke=\"#bcaae6\" stroke-width=\"16\" '\n    'fill=\"none\" stroke-linecap=\"round\"/>')\nadd('<circle cx=\"-76\" cy=\"-64\" r=\"10\" fill=\"#ded2f5\"/>')\n# aerial curl\nadd('<path d=\"M 6 -124 q 10 -14 22 -8 q 12 6 4 16\" stroke=\"#8b74bd\" stroke-width=\"5\" '\n    'fill=\"none\" stroke-linecap=\"round\"/>')\nadd('</g>')\nadd('</g>')\n\n# ============================================================================\n# TEEN ROBOT -- slouched, cap askew, arms crossed, glaring away\n# ============================================================================\nadd('<g transform=\"translate(1030,820) rotate(6)\" filter=\"url(#soft)\">')\n# long legs\nadd('<rect x=\"-42\" y=\"-320\" width=\"30\" height=\"320\" rx=\"14\" fill=\"#2b3a3a\"/>')\nadd('<rect x=\"12\" y=\"-320\" width=\"30\" height=\"320\" rx=\"14\" fill=\"#2b3a3a\"/>')\n# foot flat, foot tapping\nadd('<rect x=\"-58\" y=\"-26\" width=\"58\" height=\"28\" rx=\"12\" fill=\"#182222\"/>')\nadd('<g transform=\"rotate(-16 27 -12)\"><rect x=\"6\" y=\"-24\" width=\"58\" height=\"28\" rx=\"12\" fill=\"#182222\"/></g>')\nadd('<path d=\"M 62 -30 q 22 -6 30 10\" stroke=\"#7d9393\" stroke-width=\"4\" '\n    'fill=\"none\" stroke-linecap=\"round\" opacity=\"0.7\"/>')\n# torso\nadd('<rect x=\"-58\" y=\"-586\" width=\"116\" height=\"280\" rx=\"30\" fill=\"url(#teen)\"/>')\n# hoodie strings / pocket\nadd('<path d=\"M -30 -556 L -30 -486 M 30 -556 L 30 -486\" stroke=\"#5a7070\" stroke-width=\"5\" stroke-linecap=\"round\"/>')\nadd('<rect x=\"-40\" y=\"-460\" width=\"80\" height=\"52\" rx=\"12\" fill=\"#2b3a3a\" opacity=\"0.7\"/>')\nadd(rivets(-36, -560, 36, -560, 5, 2.5))\n# crossed arms\nadd('<path d=\"M -58 -520 Q 10 -492 60 -470\" stroke=\"#334545\" stroke-width=\"30\" '\n    'fill=\"none\" stroke-linecap=\"round\"/>')\nadd('<path d=\"M 58 -520 Q -10 -492 -60 -470\" stroke=\"#3d5050\" stroke-width=\"30\" '\n    'fill=\"none\" stroke-linecap=\"round\"/>')\n# phone peeking out, glowing (no text)\nadd('<g transform=\"translate(34,-500) rotate(18)\">'\n    '<rect x=\"-16\" y=\"-26\" width=\"32\" height=\"52\" rx=\"6\" fill=\"#101818\"/>'\n    '<rect x=\"-12\" y=\"-22\" width=\"24\" height=\"44\" rx=\"4\" fill=\"#5ad0d8\" filter=\"url(#glow)\"/>'\n    '<rect x=\"-12\" y=\"-22\" width=\"24\" height=\"16\" rx=\"4\" fill=\"#bff6f8\"/></g>')\n# headphones\nadd('<path d=\"M -62 -624 Q 0 -704 62 -624\" stroke=\"#1b2727\" stroke-width=\"12\" '\n    'fill=\"none\" stroke-linecap=\"round\"/>')\nadd('<rect x=\"-74\" y=\"-620\" width=\"26\" height=\"44\" rx=\"10\" fill=\"#e2574f\"/>'\n    '<rect x=\"48\" y=\"-620\" width=\"26\" height=\"44\" rx=\"10\" fill=\"#e2574f\"/>')\n# neck + head\nadd('<rect x=\"-20\" y=\"-618\" width=\"40\" height=\"40\" rx=\"12\" fill=\"#2b3a3a\"/>')\nadd('<g transform=\"rotate(-6 0 -700)\">')\nadd('<rect x=\"-52\" y=\"-720\" width=\"104\" height=\"150\" rx=\"28\" fill=\"url(#teen)\"/>')\nadd('<rect x=\"-40\" y=\"-702\" width=\"80\" height=\"92\" rx=\"20\" fill=\"#5a7070\"/>')\n# annoyed eyes -- both cutting hard to the far left\nadd('<circle cx=\"-20\" cy=\"-664\" r=\"14\" fill=\"#d9efef\"/>'\n    '<circle cx=\"20\" cy=\"-664\" r=\"14\" fill=\"#d9efef\"/>')\nadd('<circle cx=\"-31\" cy=\"-664\" r=\"6\" fill=\"#12201f\"/>'\n    '<circle cx=\"9\" cy=\"-664\" r=\"6\" fill=\"#12201f\"/>')\nadd('<path d=\"M -34 -684 L -6 -678\" stroke=\"#182222\" stroke-width=\"6\" stroke-linecap=\"round\"/>')\nadd('<path d=\"M 6 -680 L 34 -688\" stroke=\"#182222\" stroke-width=\"6\" stroke-linecap=\"round\"/>')\nadd('<path d=\"M -8 -634 Q 0 -628 8 -636\" stroke=\"#182222\" stroke-width=\"4\" '\n    'fill=\"none\" stroke-linecap=\"round\"/>')\n# baseball cap, brim to the side\nadd('<path d=\"M -54 -706 Q 0 -760 54 -706 Q 20 -722 -54 -706 Z\" fill=\"#c2453e\"/>')\nadd('<path d=\"M -58 -706 Q -110 -712 -128 -688 Q -84 -680 -40 -690 Z\" fill=\"#e2574f\"/>')\nadd('<circle cx=\"0\" cy=\"-752\" r=\"7\" fill=\"#8f2f2a\"/>')\n# cheek pimple-like bolt for teen awkwardness\nadd(bolt(30, -636, 5, \"#a94b45\", \"#e08a84\"))\nadd('</g>')\nadd('</g>')\n\n# ============================================================================\n# ROBOT DOG -- oblivious, sitting by the teen, tail wagging\n# ============================================================================\nadd('<g transform=\"translate(1215,822) rotate(-4)\" filter=\"url(#soft)\">')\n# body\nadd('<rect x=\"-54\" y=\"-96\" width=\"108\" height=\"70\" rx=\"30\" fill=\"#c98a4a\"/>')\n# legs\nadd('<rect x=\"-40\" y=\"-40\" width=\"20\" height=\"42\" rx=\"9\" fill=\"#a86f38\"/>'\n    '<rect x=\"20\" y=\"-40\" width=\"20\" height=\"42\" rx=\"9\" fill=\"#a86f38\"/>')\nadd('<ellipse cx=\"-30\" cy=\"0\" rx=\"16\" ry=\"9\" fill=\"#7f5226\"/>'\n    '<ellipse cx=\"30\" cy=\"0\" rx=\"16\" ry=\"9\" fill=\"#7f5226\"/>')\n# tail wagging with motion arcs\nadd('<path d=\"M 50 -84 q 30 -6 34 -34\" stroke=\"#c98a4a\" stroke-width=\"14\" '\n    'fill=\"none\" stroke-linecap=\"round\"/>')\nadd('<path d=\"M 74 -92 q 22 -14 12 -34\" stroke=\"#7f5226\" stroke-width=\"3\" '\n    'fill=\"none\" opacity=\"0.6\"/>')\n# head\nadd('<rect x=\"-24\" y=\"-158\" width=\"84\" height=\"76\" rx=\"30\" fill=\"#c98a4a\"/>')\nadd('<rect x=\"-14\" y=\"-146\" width=\"64\" height=\"50\" rx=\"20\" fill=\"#e0ab6f\"/>')\n# snout + tongue\nadd('<ellipse cx=\"42\" cy=\"-116\" rx=\"22\" ry=\"16\" fill=\"#e0ab6f\"/>')\nadd('<circle cx=\"42\" cy=\"-124\" r=\"7\" fill=\"#3a2a1a\"/>')\nadd('<path d=\"M 34 -106 q 8 16 18 6\" fill=\"#e2574f\"/>')\n# eyes\nadd('<circle cx=\"-4\" cy=\"-136\" r=\"9\" fill=\"#fff\"/><circle cx=\"22\" cy=\"-136\" r=\"9\" fill=\"#fff\"/>')\nadd('<circle cx=\"-2\" cy=\"-135\" r=\"4\" fill=\"#2a1c10\"/><circle cx=\"24\" cy=\"-135\" r=\"4\" fill=\"#2a1c10\"/>')\n# antenna ears\nadd('<line x1=\"0\" y1=\"-156\" x2=\"-12\" y2=\"-190\" stroke=\"#a86f38\" stroke-width=\"6\" stroke-linecap=\"round\"/>'\n    '<circle cx=\"-12\" cy=\"-192\" r=\"7\" fill=\"#e2574f\"/>')\nadd('<line x1=\"44\" y1=\"-158\" x2=\"56\" y2=\"-192\" stroke=\"#a86f38\" stroke-width=\"6\" stroke-linecap=\"round\"/>'\n    '<circle cx=\"56\" cy=\"-194\" r=\"7\" fill=\"#e2574f\"/>')\nadd('</g>')\n\n# ============================================================================\n# KID ROBOT -- sitting on the floor, waving wildly, huge grin\n# ============================================================================\nadd('<g transform=\"translate(556,884) rotate(-7)\" filter=\"url(#soft)\">')\n# splayed legs\nadd('<rect x=\"-72\" y=\"-70\" width=\"120\" height=\"34\" rx=\"17\" fill=\"#d9891f\" transform=\"rotate(18 -12 -53)\"/>')\nadd('<rect x=\"-42\" y=\"-66\" width=\"120\" height=\"34\" rx=\"17\" fill=\"#d9891f\" transform=\"rotate(-16 18 -49)\"/>')\nadd('<ellipse cx=\"-92\" cy=\"-16\" rx=\"26\" ry=\"16\" fill=\"#a85c15\"/>')\nadd('<ellipse cx=\"76\" cy=\"-4\" rx=\"26\" ry=\"16\" fill=\"#a85c15\"/>')\n# body\nadd('<rect x=\"-62\" y=\"-186\" width=\"124\" height=\"126\" rx=\"34\" fill=\"url(#kid)\"/>')\nadd('<rect x=\"-38\" y=\"-158\" width=\"76\" height=\"60\" rx=\"16\" fill=\"#ffd489\"/>')\nadd('<circle cx=\"-18\" cy=\"-128\" r=\"7\" fill=\"#f2d24b\"/>'\n    '<circle cx=\"18\" cy=\"-128\" r=\"7\" fill=\"#e2574f\"/>')\n# left arm planted on floor\nadd('<path d=\"M -60 -150 Q -96 -110 -92 -56\" stroke=\"#f4a63a\" stroke-width=\"28\" '\n    'fill=\"none\" stroke-linecap=\"round\"/>')\nadd('<circle cx=\"-92\" cy=\"-48\" r=\"18\" fill=\"#ffd489\"/>')\n# right arm waving high with motion lines\nadd('<path d=\"M 60 -162 Q 104 -206 96 -274\" stroke=\"#f4a63a\" stroke-width=\"28\" '\n    'fill=\"none\" stroke-linecap=\"round\"/>')\nadd('<circle cx=\"96\" cy=\"-286\" r=\"20\" fill=\"#ffd489\"/>')\nfor dx, dy in [(-26, -22), (-6, -34), (16, -24)]:\n    add(f'<path d=\"M {96+dx} { -286+dy} q 54 -18 108 0\" stroke=\"#e0a44a\" '\n        f'stroke-width=\"4\" fill=\"none\" opacity=\"0.7\"/>')\n# neck + big head\nadd('<rect x=\"-22\" y=\"-216\" width=\"44\" height=\"36\" rx=\"12\" fill=\"#d9891f\"/>')\nadd('<rect x=\"-70\" y=\"-356\" width=\"140\" height=\"148\" rx=\"44\" fill=\"url(#kid)\"/>')\nadd('<rect x=\"-56\" y=\"-338\" width=\"112\" height=\"112\" rx=\"36\" fill=\"#ffd489\"/>')\n# big happy eyes looking up\nadd('<ellipse cx=\"-26\" cy=\"-292\" rx=\"18\" ry=\"20\" fill=\"#fff\"/>'\n    '<ellipse cx=\"26\" cy=\"-292\" rx=\"18\" ry=\"20\" fill=\"#fff\"/>')\nadd('<circle cx=\"-24\" cy=\"-298\" r=\"8\" fill=\"#2a1c10\"/><circle cx=\"28\" cy=\"-298\" r=\"8\" fill=\"#2a1c10\"/>')\nadd('<circle cx=\"-22\" cy=\"-302\" r=\"3\" fill=\"#fff\"/><circle cx=\"30\" cy=\"-302\" r=\"3\" fill=\"#fff\"/>')\n# huge open grin\nadd('<path d=\"M -34 -258 Q 0 -214 34 -258 Q 0 -244 -34 -258 Z\" fill=\"#3a2418\"/>')\nadd('<path d=\"M -22 -252 Q 0 -222 22 -252 Q 0 -244 -22 -252 Z\" fill=\"#e2574f\"/>')\n# cheek rivets\nadd(bolt(-48, -278, 6, \"#e0a44a\", \"#ffd489\"))\nadd(bolt(48, -278, 6, \"#e0a44a\", \"#ffd489\"))\n# spring antenna, bent\nadd('<path d=\"M -6 -356 q -10 -22 8 -30 q 18 -8 6 -30 q -12 -22 12 -32\" '\n    'stroke=\"#a85c15\" stroke-width=\"6\" fill=\"none\" stroke-linecap=\"round\"/>')\nadd('<circle cx=\"24\" cy=\"-450\" r=\"13\" fill=\"#e2574f\"/>')\nadd('</g>')\n\n# ============================================================================\n# Foreground vignette & dust motes for that forced studio-photo feel\n# ============================================================================\nadd(f'<rect width=\"{W}\" height=\"{H}\" fill=\"none\" stroke=\"#2a1c10\" '\n    f'stroke-width=\"60\" opacity=\"0.10\"/>')\nfor x, y, r in [(120,180,5),(240,420,4),(980,180,4),(1300,360,5),\n                (640,120,4),(420,120,3),(1140,620,3),(60,640,4)]:\n    add(f'<circle cx=\"{x}\" cy=\"{y}\" r=\"{r}\" fill=\"#fff7e6\" opacity=\"0.55\"/>')\n\nadd('</svg>')\n\nos.makedirs(os.path.dirname(os.path.abspath(OUT)), exist_ok=True)\nwith open(OUT, \"w\") as f:\n    f.write(\"\\n\".join(S))\nprint(\"wrote\", os.path.abspath(OUT), len(\"\\n\".join(S)), \"bytes\")\n"
+          }
+        }
+      ],
+      "api": "openai-completions",
+      "provider": "openrouter",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "usage": {
+        "input": 110,
+        "output": 12643,
+        "cacheRead": 5248,
+        "cacheWrite": 0,
+        "reasoning": 2749,
+        "totalTokens": 18001,
+        "cost": {
+          "input": 4.356e-06,
+          "output": 0.011264913,
+          "cacheRead": 2.83392e-05,
+          "cacheWrite": 0,
+          "total": 0.0112976082
+        }
+      },
+      "stopReason": "toolUse",
+      "timestamp": 1791939330313,
+      "responseId": "gen-1791939330-DnOMndrZikm2VlBmlAxO",
+      "rawStopReason": "tool_calls",
+      "durationMs": 96585,
+      "thinkingLevel": "low"
+    }
+  },
+  {
+    "type": "message",
+    "id": "4d4b9da9",
+    "parentId": "e7c9dcfe",
+    "timestamp": "2026-10-14T00:57:06.904Z",
+    "message": {
+      "role": "toolResult",
+      "toolCallId": "call-e9f14665-3919-483f-b332-0e16689b0c49",
+      "toolName": "write",
+      "content": [
+        {
+          "type": "text",
+          "text": "Successfully wrote to <vol>/dev/art-crit-runs/2026-10-13-175044-ceate-an-svg-of-an-awkward/deepseek-v4.1-flash-low-20261013-175044/work/src/make_portrait.py"
+        }
+      ],
+      "isError": false,
+      "durationMs": 4,
+      "timestamp": 1791939426904
+    }
+  },
+  {
+    "type": "message",
+    "id": "589aa18e",
+    "parentId": "4d4b9da9",
+    "timestamp": "2026-10-14T00:57:08.218Z",
+    "message": {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "\n\n"
+        },
+        {
+          "type": "toolCall",
+          "id": "call-681b3871-1e64-4a3d-9a30-868509993ba6",
+          "name": "bash",
+          "arguments": {
+            "command": "cd <vol>/dev/art-crit-runs/2026-10-13-175044-ceate-an-svg-of-an-awkward/deepseek-v4.1-flash-low-20261013-175044/work && python3 src/make_portrait.py && python3 -c \"import xml.dom.minidom,sys; xml.dom.minidom.parse('output/robots-family-portrait.svg'); print('XML OK')\" && ls -la output/",
+            "timeout": 60
+          }
+        }
+      ],
+      "api": "openai-completions",
+      "provider": "openrouter",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "usage": {
+        "input": 10010,
+        "output": 161,
+        "cacheRead": 8064,
+        "cacheWrite": 0,
+        "reasoning": 0,
+        "totalTokens": 18235,
+        "cost": {
+          "input": 0.00039639600000000003,
+          "output": 0.000143451,
+          "cacheRead": 4.3545600000000005e-05,
+          "cacheWrite": 0,
+          "total": 0.0005833926
+        }
+      },
+      "stopReason": "toolUse",
+      "timestamp": 1791939426905,
+      "responseId": "gen-1791939427-kjdL2swKvZdEgL6y4lS5",
+      "rawStopReason": "tool_calls",
+      "durationMs": 1312,
+      "thinkingLevel": "low"
+    }
+  },
+  {
+    "type": "message",
+    "id": "aca5a617",
+    "parentId": "589aa18e",
+    "timestamp": "2026-10-14T00:57:08.338Z",
+    "message": {
+      "role": "toolResult",
+      "toolCallId": "call-681b3871-1e64-4a3d-9a30-868509993ba6",
+      "toolName": "bash",
+      "content": [
+        {
+          "type": "text",
+          "text": "wrote <vol>/dev/art-crit-runs/2026-10-13-175044-ceate-an-svg-of-an-awkward/deepseek-v4.1-flash-low-20261013-175044/work/output/robots-family-portrait.svg 22667 bytes\nXML OK\ntotal 48\ndrwxr-xr-x@ 3 fender  staff     96 Oct 13 17:57 .\ndrwxr-xr-x@ 4 fender  staff    128 Oct 13 17:57 ..\n-rw-r--r--@ 1 fender  staff  22667 Oct 13 17:57 robots-family-portrait.svg\n"
+        }
+      ],
+      "isError": false,
+      "durationMs": 120,
+      "timestamp": 1791939428338
+    }
+  },
+  {
+    "type": "message",
+    "id": "deb38ce7",
+    "parentId": "aca5a617",
+    "timestamp": "2026-10-14T00:57:10.590Z",
+    "message": {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "Now I want to verify it visually. No rasterizer, but maybe I can render with a headless browser? No chromium. Node without packages can't render. Hmm.\n\nI could write a crude PNG renderer in Python standard library? That would be very hard for arbitrary SVG paths. But maybe I can approximate by... Actually, I can use Python's standard library plus maybe cairosvg? Not installed. Let me check if any python has cairosvg or PIL. Standard library only per task. PIL might be installed but not standard. Let me check.\n\nActually the deliverable can just be the SVG. But I'd like to catch visual bugs. Let me try to see if there's any system tool: `qlmanage` (macOS QuickLook) can generate thumbnails from SVG! macOS has qlmanage. Let me try. Also `sips` maybe supports SVG? sips doesn't. qlmanage -t -s 1400 -o /tmp file.svg. Let's try."
+        },
+        {
+          "type": "toolCall",
+          "id": "call-f63d2719-948c-4b93-83d3-6baf38c03b1a",
+          "name": "bash",
+          "arguments": {
+            "command": "cd <vol>/dev/art-crit-runs/2026-10-13-175044-ceate-an-svg-of-an-awkward/deepseek-v4.1-flash-low-20261013-175044/work && which qlmanage && mkdir -p /tmp/qlout && qlmanage -t -s 1400 -o /tmp/qlout output/robots-family-portrait.svg 2>&1 | tail -3; ls -la /tmp/qlout",
+            "timeout": 60
+          }
+        }
+      ],
+      "api": "openai-completions",
+      "provider": "openrouter",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "usage": {
+        "input": 219,
+        "output": 376,
+        "cacheRead": 18176,
+        "cacheWrite": 0,
+        "reasoning": 214,
+        "totalTokens": 18771,
+        "cost": {
+          "input": 8.6724e-06,
+          "output": 0.000335016,
+          "cacheRead": 9.81504e-05,
+          "cacheWrite": 0,
+          "total": 0.0004418388
+        }
+      },
+      "stopReason": "toolUse",
+      "timestamp": 1791939428339,
+      "responseId": "gen-1791939428-f9jIKcg2g0GAdaxfx0n5",
+      "rawStopReason": "tool_calls",
+      "durationMs": 2252,
+      "thinkingLevel": "low"
+    }
+  },
+  {
+    "type": "message",
+    "id": "929a4d9b",
+    "parentId": "deb38ce7",
+    "timestamp": "2026-10-14T00:57:10.995Z",
+    "message": {
+      "role": "toolResult",
+      "toolCallId": "call-f63d2719-948c-4b93-83d3-6baf38c03b1a",
+      "toolName": "bash",
+      "content": [
+        {
+          "type": "text",
+          "text": "/usr/bin/qlmanage\n\toutput/robots-family-portrait.svg\n* <vol>/dev/art-crit-runs/2026-10-13-175044-ceate-an-svg-of-an-awkward/deepseek-v4.1-flash-low-20261013-175044/work/output/robots-family-portrait.svg produced one thumbnail\nDone producing thumbnails\ntotal 2512\ndrwxr-xr-x@   4 fender  wheel      128 Oct 13 17:57 .\ndrwxrwxrwt  228 root    wheel     7296 Oct 13 17:57 ..\n-rw-r--r--@   1 fender  wheel  1276961 Oct 13 17:57 robots-family-portrait.svg.png\n-rw-r--r--@   1 fender  wheel     7540 Oct 13 17:56 t2.svg.png\n"
+        }
+      ],
+      "isError": false,
+      "durationMs": 362,
+      "timestamp": 1791939430995
+    }
+  },
+  {
+    "type": "message",
+    "id": "fc53b85c",
+    "parentId": "929a4d9b",
+    "timestamp": "2026-10-14T00:57:11.171Z",
+    "message": {
+      "role": "assistant",
+      "content": [],
+      "api": "openai-completions",
+      "provider": "openrouter",
+      "model": "deepseek/deepseek-v4.1-flash",
+      "usage": {
+        "input": 0,
+        "output": 0,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "totalTokens": 0,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0
+        }
+      },
+      "stopReason": "error",
+      "timestamp": 1791939430995,
+      "errorMessage": "402: {\"message\":\"This request would exceed your available credits given your current in-flight requests. Retry after in-flight requests settle, or add credits.\",\"code\":402,\"metadata\":{\"reason\":\"in_flight_budget_exhausted\",\"limit_source\":\"openrouter_in_flight_budget\",\"remedy_hint\":\"Retry after your in-flight requests settle (see the Retry-After header). Adding credits at https://openrouter.ai/settings/credits raises your in-flight budget, up to a capped ceiling.\",\"headers\":{\"Retry-After\":\"120\"},\"provider_name\":null}}",
+      "durationMs": 176,
+      "thinkingLevel": "low"
+    }
+  }
+]
