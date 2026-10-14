@@ -3,7 +3,7 @@
     "slug": "ceate-an-svg-of-an-awkward",
     "title": "Awkward Robot Family",
     "kind": "media",
-    "n_runs": 69,
+    "n_runs": 70,
     "models": [
       "anthropic/claude-haiku-5-5",
       "anthropic/claude-opus-5-5",
@@ -25,8 +25,8 @@
       "openrouter/z-ai/glm-5.3-prime",
       "xai/grok-4.7"
     ],
-    "updated": "2026-10-14T00:57:47Z",
-    "thumb": "data/ceate-an-svg-of-an-awkward/runs/inkling-free-low-20261013-175044/media/family.svg"
+    "updated": "2026-10-14T00:58:11Z",
+    "thumb": "data/ceate-an-svg-of-an-awkward/runs/inkling-free-medium-20261013-175044/media/portrait.svg"
   },
   {
     "slug": "16bit-eiffel-tower",
