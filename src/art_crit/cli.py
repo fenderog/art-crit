@@ -54,8 +54,9 @@ def build_parser():
     run = sub.add_parser("run", parents=[common], help="run agents locally, then import")
     run.add_argument("prompt", nargs="?", help="the task prompt")
     run.add_argument("-f", "--prompt-file", type=Path)
-    run.add_argument("-m", "--model", dest="models", action="append", default=[], help="[HARNESS:]MODEL[:LEVELS], repeatable (no prefix = pi); see `art-crit models -H HARNESS`")
+    run.add_argument("-m", "--model", dest="models", action="append", default=[], help="[HARNESS:]MODEL[:LEVELS], repeatable (no prefix = pi); see `art-crit models -H HARNESS`; omit -m/--set to pick interactively")
     run.add_argument("-s", "--set", dest="sets", action="append", default=[], help="a model set: a NAME from art-crit.toml [sets], or a FILE with one MODEL[:LEVELS] per line; repeatable, combines with -m")
+    run.add_argument("-i", "--pick", action="store_true", help="interactively pick harnesses, models and levels (implied when no -m/--set is given)")
     run.add_argument("-e", "--effort", help="default LEVELS for every model without a suffix")
     run.add_argument("-k", "--kind", choices=list(KINDS), help="what the agents produce (default: the page's kind, else godot)")
     run.add_argument("-p", "--page", help="page slug (default: from the prompt); an existing page with no PROMPT reuses its prompt")
@@ -144,6 +145,7 @@ def main(argv=None):
                 yes=args.yes,
                 dry_run=args.dry_run,
                 resume=args.resume,
+                pick=args.pick,
             )
         if args.command == "models":
             return cmd_models(HARNESSES[args.harness](), args.search)

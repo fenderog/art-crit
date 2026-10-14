@@ -22,6 +22,32 @@ def parse_duration(text):
     return n * {"s": 1, "m": 60, "h": 3600}[unit]
 
 
+def expand_levels(spec, supported, model):
+    """spec: 'all' | 'off' | 'a..b' | 'a,b,c'. supported: this model's levels, in LEVEL_ORDER.
+    Raises CritError naming the supported levels when a requested one isn't supported."""
+    if spec == "all":
+        return [level for level in supported if level != "off"]
+    if spec == "off":
+        if "off" not in supported:
+            raise CritError(f"{model}: level 'off' not supported (supported: {', '.join(supported)})")
+        return ["off"]
+    if ".." in spec:
+        a, b = spec.split("..", 1)
+        for level in (a, b):
+            if level not in LEVEL_INDEX:
+                raise CritError(f"{model}: unknown level {level!r} (LEVEL_ORDER: {', '.join(LEVEL_ORDER)})")
+        lo, hi = LEVEL_INDEX[a], LEVEL_INDEX[b]
+        wanted = list(LEVEL_ORDER[min(lo, hi) : max(lo, hi) + 1])
+    else:
+        wanted = [s.strip() for s in spec.split(",") if s.strip()]
+    unsupported = [level for level in wanted if level not in supported]
+    if unsupported:
+        raise CritError(
+            f"{model}: level(s) {', '.join(unsupported)} not supported (supported: {', '.join(supported)})"
+        )
+    return [level for level in wanted if level != "off" or spec == "off"]
+
+
 def iso_from_ms(ms):
     return datetime.fromtimestamp(ms / 1000, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 

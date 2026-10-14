@@ -50,6 +50,10 @@ A few things worth knowing:
 - `-m MODEL[:LEVELS]` repeats. Levels look like `low,high`, `low..max`, `all`, or `off`.
   Leave the suffix off and you get every level except `off`. `-e LEVELS` sets the fallback for
   models without one.
+- Leave `-m`/`--set` out (or add `-i/--pick` to select on top of them) and it asks before planning:
+  pick a harness, then its models, then the levels for each one. In the model list, numbers select and
+  any other text is a fuzzy search (`claudeop55`, `g6sol`) that filters and renumbers the list.
+  The picks become ordinary `-m` specs, so the plan and the up-front validation are exactly the same.
 - Models and levels are validated up front, so a typo fails before you spend anything.
   `art-crit models [SEARCH]` shows what's available.
 - You'll see the plan and confirm it. `-n/--dry-run` prints the plan and stops.

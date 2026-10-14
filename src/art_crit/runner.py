@@ -29,7 +29,8 @@ from .config import RunRequest
 from .harness import HARNESSES, add_tool_durations, split_harness
 from .importer import cmd_import
 from .kinds import KINDS
-from .util import LEVEL_INDEX, LEVEL_ORDER, CritError, iso_from_ms, make_run_id, parse_duration, title_from_slug
+from .picker import pick_models
+from .util import CritError, expand_levels, iso_from_ms, make_run_id, parse_duration, title_from_slug
 
 # batch.json run states that mean "this agent hasn't produced a finished result yet".
 UNFINISHED = ("queued", "running")
@@ -99,32 +100,6 @@ def parse_model_spec(spec, known):
     close = difflib.get_close_matches(name, known, n=3, cutoff=0.6)
     hint = f" (did you mean: {', '.join(close)}?)" if close else ""
     raise CritError(f"unknown model {name!r}{hint}; see `art-crit models`")
-
-
-def expand_levels(spec, supported, model):
-    """spec: 'all' | 'off' | 'a..b' | 'a,b,c'. supported: this model's levels, in LEVEL_ORDER.
-    Raises CritError naming the supported levels when a requested one isn't supported."""
-    if spec == "all":
-        return [level for level in supported if level != "off"]
-    if spec == "off":
-        if "off" not in supported:
-            raise CritError(f"{model}: level 'off' not supported (supported: {', '.join(supported)})")
-        return ["off"]
-    if ".." in spec:
-        a, b = spec.split("..", 1)
-        for level in (a, b):
-            if level not in LEVEL_INDEX:
-                raise CritError(f"{model}: unknown level {level!r} (LEVEL_ORDER: {', '.join(LEVEL_ORDER)})")
-        lo, hi = LEVEL_INDEX[a], LEVEL_INDEX[b]
-        wanted = list(LEVEL_ORDER[min(lo, hi) : max(lo, hi) + 1])
-    else:
-        wanted = [s.strip() for s in spec.split(",") if s.strip()]
-    unsupported = [level for level in wanted if level not in supported]
-    if unsupported:
-        raise CritError(
-            f"{model}: level(s) {', '.join(unsupported)} not supported (supported: {', '.join(supported)})"
-        )
-    return [level for level in wanted if level != "off" or spec == "off"]
 
 
 class Harnesses(dict):
@@ -646,10 +621,12 @@ def execute(config, request, batch_dir, harnesses, verify=True):
         print_failure_summary(batch_dir, runs, publisher.errors if publisher else None)
 
 
-def cmd_run(config, request, *, yes=False, dry_run=False, resume=None, verify=True, harnesses=None):
+def cmd_run(config, request, *, yes=False, dry_run=False, resume=None, verify=True, harnesses=None, pick=False):
     harnesses = harnesses if harnesses is not None else Harnesses()
     root = config.root
 
+    if resume and pick:
+        raise CritError("--pick can't be combined with --resume: the batch already chose its models")
     if resume:
         batch_dir = Path(resume)
         stored = read_batch(batch_dir).get("request")
@@ -668,8 +645,15 @@ def cmd_run(config, request, *, yes=False, dry_run=False, resume=None, verify=Tr
         prompt = existing.get("prompt") or ""
     if not prompt:
         raise CritError("PROMPT or --prompt-file is required (or --page with an existing page, to reuse its prompt)")
-    if not request.model_specs and not request.model_sets:
-        raise CritError("at least one -m MODEL or --set is required")
+    # No -m/--set (or -i/--pick): ask which harnesses, models and levels to run. The picks become
+    # ordinary -m specs, so planning below validates them exactly like a hand-typed spec.
+    if pick or not (request.model_specs or request.model_sets):
+        if not sys.stdin.isatty():
+            raise CritError("--pick needs an interactive stdin" if pick
+                            else "at least one -m MODEL or --set is required")
+        request.model_specs += pick_models(harnesses)
+        if not request.model_specs:
+            raise CritError("no models were picked (or pass -m MODEL / --set)")
     slug = page or slug_from_prompt(prompt)
     existing = page_json(root, slug)
     page_exists = existing is not None

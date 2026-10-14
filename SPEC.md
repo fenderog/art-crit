@@ -226,6 +226,7 @@ art-crit run PROMPT | -f/--prompt-file FILE
                         the -m specs, exactly as if given with -m. An unknown name that isn't a file is an error
                         listing the defined sets.
     -e, --effort LEVELS default LEVELS for every model without a suffix (-m or set entry)
+    -i, --pick          pick harnesses, models (by number or a fuzzy search) and levels interactively (implied when no -m/--set is given; needs a tty)
     -p, --page SLUG     add to this page (default: slug of the prompt's first 6 words, max 40 chars). For an existing
                         page, PROMPT can be left out: its prompt (page.json) and kind are reused.
     -c, --change-prompt allow a PROMPT that differs from the existing page's (after path cleaning); without it that's
@@ -243,6 +244,17 @@ art-crit run -r/--resume DIR  finish an interrupted batch (see Resume)
 `LEVEL_ORDER = off, minimal, low, medium, high, xhigh, max`. Every requested level is checked against the harness's
 list for that model **before anything starts**; an unknown model or unsupported level is an error that names the
 supported levels (pi silently clamps unsupported levels, so this check is what keeps labels honest).
+
+With no `-m`/`--set` (or with `-i/--pick`, which adds to the specs already given), and only on a tty, `art-crit run`
+asks interactively (`src/art_crit/picker.py`): a numbered **harness menu** (empty = pi, the default), then that
+harness's models, then a levels prompt per picked model (default `all`, accepting the same LEVELS syntax). In the
+model list, numbers, ranges or `all` select from the listing shown; any other text is an **fzf-style fuzzy search**
+(letters and digits in order, separators ignored, so `claudeop55` and `g6sol` match; hits that start a word and runs
+of consecutive hits rank higher) that re-lists just its matches, renumbered, and an empty answer brings the full list
+back (or picks nothing while it is shown). The picks become ordinary harness-prefixed `-m` specs, so planning
+validates them exactly like a hand-typed spec. A harness whose model list can't be read, and a model whose levels
+can't be, are reported and skipped; a selection and a levels spec are re-asked until they parse. On a non-tty (e.g. a
+script), no `-m`/`--set` is the usual error.
 
 `art-crit.toml`:
 ```toml
@@ -265,7 +277,7 @@ so bad input fails before a batch dir exists; `from_dict` ignores unknown keys. 
 plain error for every command.
 
 ### Flow
-1. **Plan**: resolve models + levels, print the harness (name + version), page (new/existing), prompt, the numbered
+1. **Plan**: resolve models + levels (asking on a tty when none were given, see `-i/--pick`), print the harness (name + version), page (new/existing), prompt, the numbered
    model × effort list and the batch dir. Ask `Start? [y/N]` (stdin not a tty and no `--yes` → error). `--dry-run` stops after printing.
 2. **Batch dir**: `<run.dir>/<YYYY-MM-DD-HHMMSS>-<page slug>/` with `batch.json`, `prompt.md` and one run directory per
    model × effort (see "Run directory"). Run ids are assigned here from the batch's start time; each run's `state` in

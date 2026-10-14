@@ -40,6 +40,9 @@ src/art_crit/          CLI, standard library only (argparse, json, subprocess, t
   harness.py        Harness interface + Pi, ClaudeCode, Agy, GrokBuild, MuseCode, Codex (streams -> pi-format session) + metrics parsers
   runner.py         `art-crit run`: plan -> run agents in parallel -> collect -> kind step (finalize + verify) -> import;
                     `RunDir` = <batch>/<run id>/{run.json,work/,harness/,output/}
+  picker.py         no -m/--set (or -i/--pick): the interactive harness -> models -> levels menu; models are picked
+                    by number or an fzf-style fuzzy search (`fuzzy_score`/`fuzzy_matches`); the picks become ordinary
+                    -m specs, so planning validates them like a hand-typed spec
   pi_ext/           art-crit-shipped pi extensions loaded with explicit `-e` (work under `-ne`):
                     `openrouter_routing.ts`, loaded for every OpenRouter run: logs the serving upstream + real
                     cost to `ART_CRIT_ROUTE_LOG`, and pins the upstream from `ART_CRIT_OPENROUTER_ROUTING` (`MODEL@slug`)
@@ -75,6 +78,7 @@ uv run art-crit run --dry-run "prompt" -m openai-codex/gpt-6-sol:low   # plan on
 uv run art-crit run --dry-run --kind media "an SVG pelican" -m openai-codex/gpt-6-sol:low
 uv run art-crit run --dry-run --kind web "a three.js horse" -m openai-codex/gpt-6-sol:low   # needs esbuild + npm
 uv run art-crit run --dry-run "prompt" --set cheap   # a model set from art-crit.toml [sets] (or a file path)
+uv run art-crit run --dry-run "prompt"                # no -m/--set: pick harness, models and levels interactively (-i/--pick)
 uv run art-crit run --dry-run --page <slug> -m MODEL:LEVEL   # add runs to an existing page (reuses its prompt + kind)
 uv run art-crit run --dry-run "prompt" -m openrouter/deepseek/deepseek-v4.1-flash@deepinfra:low   # pin the OpenRouter upstream
 uv run art-crit models gpt-6             # models + effort levels from pi
