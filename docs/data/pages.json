@@ -3,7 +3,7 @@
     "slug": "ceate-an-svg-of-an-awkward",
     "title": "Awkward Robot Family",
     "kind": "media",
-    "n_runs": 73,
+    "n_runs": 74,
     "models": [
       "anthropic/claude-haiku-5-5",
       "anthropic/claude-opus-5-5",
@@ -25,7 +25,7 @@
       "openrouter/z-ai/glm-5.3-prime",
       "xai/grok-4.7"
     ],
-    "updated": "2026-10-14T01:00:40Z",
+    "updated": "2026-10-14T01:01:27Z",
     "thumb": "data/ceate-an-svg-of-an-awkward/runs/inkling-free-high-20261013-175044/media/awkward_family_portrait.svg"
   },
   {

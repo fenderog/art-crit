@@ -1,0 +1,46 @@
+{
+  "id": "deepseek-v4.1-flash-max-20261013-175044",
+  "page": "ceate-an-svg-of-an-awkward",
+  "model": "openrouter/deepseek/deepseek-v4.1-flash",
+  "effort": "max",
+  "kind": "media",
+  "started_at": "2026-10-14T00:55:23Z",
+  "batch": "2026-10-13-175044-ceate-an-svg-of-an-awkward",
+  "harness": {
+    "name": "pi",
+    "version": "1.2.0"
+  },
+  "state": "failed",
+  "error": "402: {\"message\":\"This request requires more credits, or fewer max_tokens. You requested up to 926846 tokens, but can only afford 723720. To increase, visit https://openrouter.ai/settings/credits and a",
+  "route": {
+    "requested": null,
+    "served": [
+      "Morph"
+    ],
+    "cost_usd": 0.03773357,
+    "pi_cost_usd": 0.046215739799999996
+  },
+  "metrics": {
+    "duration_ms": 364812,
+    "cost_usd": 0.03773357,
+    "tool_calls": 13,
+    "turns": 17,
+    "tokens_total": 67616,
+    "tokens_input": 18709,
+    "tokens_output": 48907,
+    "tokens_reasoning": 32157,
+    "tokens_cache_read": 351616
+  },
+  "thumb": null,
+  "output": null,
+  "session": {
+    "conversation": "session/conversation.json",
+    "stderr": "session/stderr.txt"
+  },
+  "source": {
+    "root": "source/",
+    "files": [
+      "src/build_portrait.py"
+    ]
+  }
+}
