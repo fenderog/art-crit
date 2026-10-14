@@ -3353,6 +3353,46 @@
       "rank": null
     },
     {
+      "id": "kimi-k3-batch-high-20261013-192248",
+      "page": "ceate-an-svg-of-an-awkward",
+      "model": "openrouter/moonshotai/kimi-k3:batch",
+      "effort": "high",
+      "kind": "media",
+      "started_at": "2026-10-14T02:22:49Z",
+      "batch": "2026-10-13-192248-ceate-an-svg-of-an-awkward",
+      "harness": {
+        "name": "pi",
+        "version": "1.2.0"
+      },
+      "state": "failed",
+      "error": "404: {\"message\":\"moonshotai/kimi-k3:batch cannot be used with the chat/completions endpoint (adapter DeepInfraBatchAdapter).\",\"code\":404}",
+      "route": {
+        "requested": null,
+        "served": [],
+        "cost_usd": null,
+        "pi_cost_usd": 0.0
+      },
+      "metrics": {
+        "duration_ms": 870,
+        "cost_usd": 0.0,
+        "tool_calls": 0,
+        "turns": 1,
+        "tokens_total": 0,
+        "tokens_input": 0,
+        "tokens_output": 0,
+        "tokens_reasoning": 0,
+        "tokens_cache_read": 0
+      },
+      "thumb": null,
+      "output": null,
+      "session": {
+        "conversation": "session/conversation.json",
+        "stderr": "session/stderr.txt"
+      },
+      "source": null,
+      "rank": null
+    },
+    {
       "id": "kimi-k3-batch-max-20261013-192248",
       "page": "ceate-an-svg-of-an-awkward",
       "model": "openrouter/moonshotai/kimi-k3:batch",
