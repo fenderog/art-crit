@@ -1,0 +1,61 @@
+{
+  "id": "mimo-v2.6-pro-high-20261013-201612",
+  "page": "ceate-an-svg-of-an-awkward",
+  "model": "openrouter/xiaomi/mimo-v2.6-pro",
+  "effort": "high",
+  "kind": "media",
+  "started_at": "2026-10-14T03:16:13Z",
+  "batch": "2026-10-13-201612-ceate-an-svg-of-an-awkward",
+  "harness": {
+    "name": "pi",
+    "version": "1.2.0"
+  },
+  "state": "failed",
+  "error": "400: {\"message\":\"Provider returned error\",\"code\":400,\"metadata\":{\"raw\":\"{\\\"error\\\":{\\\"message\\\":\\\"Too many images in request: 43 > 4\\\",\\\"type\\\":\\\"invalid_request_error\\\",\\\"param\\\":null,\\\"code\\\":null}}",
+  "route": {
+    "requested": null,
+    "served": [
+      "DeepInfra",
+      "GMICloud"
+    ],
+    "cost_usd": 2.2539907888,
+    "pi_cost_usd": 2.228114338
+  },
+  "metrics": {
+    "duration_ms": 4493820,
+    "cost_usd": 2.2539907888,
+    "tool_calls": 110,
+    "turns": 97,
+    "tokens_total": 4992839,
+    "tokens_input": 4846423,
+    "tokens_output": 146416,
+    "tokens_reasoning": 86133,
+    "tokens_cache_read": 4658480
+  },
+  "thumb": null,
+  "output": null,
+  "session": {
+    "conversation": "session/conversation.json",
+    "stderr": "session/stderr.txt"
+  },
+  "source": {
+    "root": "source/",
+    "files": [
+      "build_tmp/_r.svg",
+      "build_tmp/pngread.py",
+      "build_tmp/q1.svg",
+      "build_tmp/q2.svg",
+      "build_tmp/q3.svg",
+      "build_tmp/q4.svg",
+      "build_tmp/render_view.py",
+      "build_tmp/s1.svg",
+      "build_tmp/s2.svg",
+      "build_tmp/s3.svg",
+      "build_tmp/s4.svg",
+      "build_tmp/s5.svg",
+      "build_tmp/s6.svg",
+      "src/build.sh",
+      "src/robot-family-portrait.svg"
+    ]
+  }
+}
