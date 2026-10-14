@@ -3361,6 +3361,46 @@
       },
       "source": null,
       "rank": null
+    },
+    {
+      "id": "step-5-preview-high-20261013-175044",
+      "page": "ceate-an-svg-of-an-awkward",
+      "model": "openrouter/stepfun/step-5-preview",
+      "effort": "high",
+      "kind": "media",
+      "started_at": "2026-10-14T00:57:19Z",
+      "batch": "2026-10-13-175044-ceate-an-svg-of-an-awkward",
+      "harness": {
+        "name": "pi",
+        "version": "1.2.0"
+      },
+      "state": "failed",
+      "error": "402: {\"message\":\"This request would exceed your available credits given your current in-flight requests. Retry after in-flight requests settle, or add credits.\",\"code\":402,\"metadata\":{\"reason\":\"in_fli",
+      "route": {
+        "requested": null,
+        "served": [],
+        "cost_usd": null,
+        "pi_cost_usd": 0.0
+      },
+      "metrics": {
+        "duration_ms": 555,
+        "cost_usd": 0.0,
+        "tool_calls": 0,
+        "turns": 1,
+        "tokens_total": 0,
+        "tokens_input": 0,
+        "tokens_output": 0,
+        "tokens_reasoning": 0,
+        "tokens_cache_read": 0
+      },
+      "thumb": null,
+      "output": null,
+      "session": {
+        "conversation": "session/conversation.json",
+        "stderr": "session/stderr.txt"
+      },
+      "source": null,
+      "rank": null
     }
   ]
 }
