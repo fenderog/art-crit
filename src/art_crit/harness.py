@@ -1,4 +1,4 @@
-"""The agent-program interface (`art-crit run` drives one of these): Pi, ClaudeCode, Agy, GrokBuild and MuseCode. Also the
+"""The agent-program interface (`art-crit run` drives one of these): Pi, ClaudeCode, Agy, GrokBuild, MuseCode and Codex. Also the
 pure session parsers: metrics + state (see SPEC.md "Metrics" and "Harness interface").
 
 Every harness hands the runner the same things: a command line, a session in pi's format
@@ -1072,7 +1072,188 @@ def convert_agy_stream(events, brief, level):
     return entries
 
 
-HARNESSES = {"pi": Pi, "claude-code": ClaudeCode, "agy": Agy, "grok-build": GrokBuild, "muse-code": MuseCode}
+class Codex(Harness):
+    """OpenAI's Codex CLI (`codex exec --json`). The stdout JSONL stream is the session; models and
+    effort levels come from `codex debug models`. Cost is not reported (0 = unreported)."""
+
+    name = "codex"
+    tag = "cx"
+    TOOL_ITEMS = ("command_execution", "file_change", "mcp_tool_call", "collab_tool_call", "web_search")
+
+    def __init__(self, binary="codex"):
+        self.binary = binary
+        self._catalog = None
+
+    def version(self):
+        try:
+            r = subprocess.run([self.binary, "--version"], capture_output=True, text=True, timeout=15)
+        except (OSError, subprocess.TimeoutExpired) as e:
+            raise CritError(f"cannot run {self.binary} --version: {e}")
+        if r.returncode:
+            raise CritError(f"{self.binary} --version failed: {r.stderr.strip()}")
+        parts = r.stdout.strip().split()
+        return parts[1] if len(parts) > 1 else parts[0]  # codex-cli 0.162.1
+
+    def catalog(self):
+        """{model slug: effort levels in LEVEL_ORDER} from `codex debug models` (listed models only;
+        `ultra` isn't in LEVEL_ORDER, so it's dropped). Cached per instance: planning asks often."""
+        if self._catalog is None:
+            try:
+                r = subprocess.run([self.binary, "debug", "models"], capture_output=True, text=True, timeout=30)
+            except (OSError, subprocess.TimeoutExpired) as e:
+                raise CritError(f"cannot run {self.binary} debug models: {e}")
+            if r.returncode:
+                raise CritError(f"{self.binary} debug models failed: {r.stderr.strip()}")
+            try:
+                rows = json.loads(r.stdout).get("models") or []
+            except (ValueError, AttributeError):
+                rows = []
+            found = {}
+            for row in rows:
+                tiers = {v.get("effort") for v in row.get("supported_reasoning_levels") or [] if isinstance(v, dict)}
+                levels = [level for level in LEVEL_ORDER if level in tiers]
+                if row.get("slug") and levels and row.get("visibility") in (None, "list"):
+                    found[row["slug"]] = levels
+            self._catalog = found
+        return self._catalog
+
+    def models(self):
+        return list(self.catalog())
+
+    def levels(self, model):
+        return self.catalog()[model]
+
+    def display_model(self, model):
+        return f"openai/{model}"
+
+    def command(self, model, level, brief, session_dir):
+        # No approvals or sandbox (like the other harnesses); user config and execpolicy rules are
+        # left out for reproducibility, the session isn't persisted (events.jsonl is the session).
+        return [self.binary, "exec", "--json", "--ephemeral", "--ignore-user-config", "--ignore-rules",
+                "--skip-git-repo-check", "--dangerously-bypass-approvals-and-sandbox",
+                "-m", model, "-c", f'model_reasoning_effort="{level}"', brief]
+
+    def session_file(self, session_dir):
+        path = Path(session_dir) / "events.jsonl"
+        return path if path.is_file() else None
+
+    def session_entries(self, session_dir, brief, level):
+        path = self.session_file(session_dir)
+        return convert_codex_stream(read_jsonl(path), brief, level) if path else None
+
+    def metrics(self, session_dir, level=None):
+        path = self.session_file(session_dir)
+        return codex_metrics(read_jsonl(path), level) if path else None
+
+
+def _codex_usage(u):
+    """Codex's input_tokens includes cached ones; pi's `input` doesn't."""
+    cache_read = u.get("cached_input_tokens") or 0
+    cache_write = u.get("cache_write_input_tokens") or 0
+    usage = {"input": max(0, (u.get("input_tokens") or 0) - cache_read - cache_write),
+             "output": u.get("output_tokens") or 0, "cacheRead": cache_read, "cacheWrite": cache_write}
+    usage["totalTokens"] = sum(usage.values())
+    return usage
+
+
+def codex_metrics(events, level=None):
+    """Metrics from a codex exec stream (parse_session()'s shape): tokens summed over each
+    `turn.completed` usage, turns = turns started, cost unreported (0). Failed = a `turn.failed`/
+    `error` event, or no completed turn at all."""
+    done = [e for e in events if e.get("type") == "turn.completed"]
+    failed = next((e for e in events if e.get("type") in ("turn.failed", "error")), None)
+    usage = [_codex_usage(e.get("usage") or {}) for e in done]
+    tokens = {k: sum(u[k] for u in usage) for k in ("input", "output", "cacheRead", "cacheWrite")}
+    tokens["reasoning"] = sum((e.get("usage") or {}).get("reasoning_output_tokens") or 0 for e in done)
+    tokens["total"] = tokens["input"] + tokens["output"]
+    error = None
+    if failed:
+        error = str(((failed.get("error") or {}).get("message") or failed.get("message") or "codex error"))[:200]
+    elif not done:
+        error = "no final result from codex"
+    return {
+        "thinking_level": level,
+        "turns": max(sum(1 for e in events if e.get("type") == "turn.started"), len(done)),
+        "tool_calls": sum(1 for e in events if e.get("type") == "item.completed"
+                          and (e.get("item") or {}).get("type") in Codex.TOOL_ITEMS),
+        "tokens": tokens,
+        "cost_usd": 0.0,
+        "ended_in_error": bool(failed) or not done,
+        "error_message": error,
+    }
+
+
+def _codex_tool(item):
+    """A completed codex tool item -> (pi toolCall, toolResult text, isError)."""
+    kind, item_id = item.get("type"), item.get("id")
+    status = item.get("status")
+    if kind == "command_execution":
+        call = {"type": "toolCall", "id": item_id, "name": "bash", "arguments": {"command": item.get("command", "")}}
+        return call, item.get("aggregated_output") or "", status != "completed" or (item.get("exit_code") or 0) != 0
+    if kind == "file_change":
+        call = {"type": "toolCall", "id": item_id, "name": "file_change", "arguments": {"changes": item.get("changes") or []}}
+        return call, f"{status}: " + ", ".join(f"{c.get('kind')} {c.get('path')}" for c in item.get("changes") or []), status != "completed"
+    if kind == "mcp_tool_call":
+        call = {"type": "toolCall", "id": item_id, "name": item.get("tool") or "mcp_tool",
+                "arguments": item.get("arguments") if isinstance(item.get("arguments"), dict) else {"arguments": item.get("arguments")}}
+        err = (item.get("error") or {}).get("message")
+        result = item.get("result") or {}
+        texts = [c.get("text", "") for c in result.get("content") or [] if isinstance(c, dict)]
+        text = err or "\n".join(t for t in texts if t) or json.dumps(result.get("structured_content") or "")
+        return call, text, status != "completed" or bool(err)
+    args = {"query": item.get("query")} if kind == "web_search" else {
+        k: item[k] for k in ("tool", "prompt", "receiver_thread_ids") if k in item}
+    call = {"type": "toolCall", "id": item_id, "name": item.get("tool") or kind, "arguments": args}
+    return call, json.dumps({k: v for k, v in item.items() if k not in ("id", "type")}), status == "failed"
+
+
+def convert_codex_stream(events, brief, level):
+    """A `codex exec --json` stream -> pi-format session entries (see SPEC.md "Harness interface").
+    Only `item.completed` items count (started/updated are the same item in flight); a tool item
+    becomes one assistant toolCall plus its toolResult. The stream carries no timestamps or model id."""
+    entries = [{"type": "session", "cwd": ""}, {"type": "model_change", "provider": "openai", "modelId": None},
+               {"type": "thinking_level_change", "thinkingLevel": level},
+               {"type": "message", "message": {"role": "user", "content": [{"type": "text", "text": brief}]}}]
+    pending = []
+
+    def flush(usage=None):
+        if pending:
+            entries.append({"type": "message", "message": {
+                "role": "assistant", "content": list(pending), "usage": usage or _codex_usage({}),
+                "stopReason": "toolUse" if any(b["type"] == "toolCall" for b in pending) else "stop"}})
+            pending.clear()
+
+    for e in events:
+        kind = e.get("type")
+        if kind == "item.completed":
+            item = e.get("item") or {}
+            itype = item.get("type")
+            if itype == "reasoning" and item.get("text"):
+                pending.append({"type": "thinking", "thinking": item["text"]})
+            elif itype == "agent_message" and item.get("text"):
+                pending.append({"type": "text", "text": item["text"]})
+            elif itype in Codex.TOOL_ITEMS:
+                call, text, is_error = _codex_tool(item)
+                pending.append(call)
+                flush()
+                entries.append({"type": "message", "message": {"role": "toolResult", "toolCallId": call["id"],
+                                "content": [{"type": "text", "text": text}], "isError": is_error}})
+            elif itype == "error":
+                flush()
+                entries.append({"type": "message", "message": {"role": "assistant", "content": [
+                    {"type": "text", "text": str(item.get("message") or "error")}], "stopReason": "error"}})
+        elif kind == "turn.completed":
+            flush(_codex_usage(e.get("usage") or {}))
+        elif kind in ("turn.failed", "error"):
+            flush()
+            message = (e.get("error") or {}).get("message") or e.get("message") or "codex error"
+            entries.append({"type": "message", "message": {"role": "assistant", "content": [
+                {"type": "text", "text": str(message)}], "stopReason": "error"}})
+    flush()
+    return entries
+
+
+HARNESSES = {"pi": Pi, "claude-code": ClaudeCode, "agy": Agy, "grok-build": GrokBuild, "muse-code": MuseCode, "codex": Codex}
 
 
 def split_harness(spec):

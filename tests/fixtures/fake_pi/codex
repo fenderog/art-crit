@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+"""A fake `codex` (Codex CLI) binary for testing `art-crit run` without calling a real model.
+
+  codex --version
+  codex debug models   (a canned catalog: listed + hidden models, an `ultra` tier art-crit drops)
+  codex exec --json ... BRIEF   (prints a canned exec JSONL stream and writes a tiny project, or
+                                 ./output/ for a media brief)
+
+Knobs (env vars): FAKE_CODEX_ERROR=1 (the turn fails), FAKE_CODEX_ARGV=<path> (write argv there).
+"""
+import json
+import os
+import sys
+from pathlib import Path
+
+
+def emit(obj):
+    print(json.dumps(obj))
+    sys.stdout.flush()
+
+
+def main():
+    args = sys.argv[1:]
+    if "--version" in args:
+        print("codex-cli 9.9.9-fake")
+        return
+    if args[:2] == ["debug", "models"]:
+        levels = lambda *names: [{"effort": n, "description": ""} for n in names]
+        print(json.dumps({"models": [
+            {"slug": "gpt-6-sol", "visibility": "list",
+             "supported_reasoning_levels": levels("low", "medium", "high", "xhigh", "max", "ultra")},
+            {"slug": "gpt-6-luna", "visibility": "list",
+             "supported_reasoning_levels": levels("low", "medium", "high")},
+            {"slug": "gpt-hidden", "visibility": "hide",
+             "supported_reasoning_levels": levels("low")},
+        ]}))
+        return
+    if args[:1] != ["exec"]:
+        print(f"fake codex: unrecognized invocation: {args}", file=sys.stderr)
+        sys.exit(2)
+    if os.environ.get("FAKE_CODEX_ARGV"):
+        Path(os.environ["FAKE_CODEX_ARGV"]).write_text(json.dumps(args))
+    brief = args[-1]
+
+    if "./output/" in brief:
+        Path("output").mkdir(exist_ok=True)
+        Path("output/circle.svg").write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>')
+        written = "output/circle.svg"
+    else:
+        Path("project.godot").write_text("config_version=5\n")
+        Path("scripts").mkdir(exist_ok=True)
+        Path("scripts/main.gd").write_text("extends Node\n")
+        written = "project.godot"
+
+    emit({"type": "thread.started", "thread_id": "thread-fake"})
+    emit({"type": "turn.started"})
+    emit({"type": "item.completed", "item": {"id": "item_1", "type": "reasoning", "text": "Plan the files."}})
+    emit({"type": "item.started", "item": {"id": "item_2", "type": "command_execution",
+          "command": "ls", "aggregated_output": "", "exit_code": None, "status": "in_progress"}})
+    emit({"type": "item.completed", "item": {"id": "item_2", "type": "command_execution",
+          "command": "ls", "aggregated_output": written, "exit_code": 0, "status": "completed"}})
+    emit({"type": "item.completed", "item": {"id": "item_3", "type": "file_change",
+          "changes": [{"path": written, "kind": "add"}], "status": "completed"}})
+    emit({"type": "item.completed", "item": {"id": "item_4", "type": "agent_message", "text": "Done: built it."}})
+    if os.environ.get("FAKE_CODEX_ERROR"):
+        emit({"type": "turn.failed", "error": {"message": "model error"}})
+    else:
+        emit({"type": "turn.completed", "usage": {"input_tokens": 130, "cached_input_tokens": 100,
+              "cache_write_input_tokens": 10, "output_tokens": 30, "reasoning_output_tokens": 7}})
+
+
+if __name__ == "__main__":
+    main()

@@ -15,7 +15,7 @@ import pytest
 
 from art_crit.cli import main
 from art_crit.config import Config, RunRequest
-from art_crit.harness import GrokBuild, MuseCode, Pi, agy_metrics, convert_agy_stream, convert_claude_stream, convert_muse_export, muse_metrics
+from art_crit.harness import Codex, GrokBuild, MuseCode, Pi, agy_metrics, codex_metrics, convert_agy_stream, convert_claude_stream, convert_codex_stream, convert_muse_export, muse_metrics
 from art_crit.runner import assign_run_ids, expand_levels, parse_duration, plan_runs
 from art_crit.util import CritError
 
@@ -1005,6 +1005,73 @@ def test_muse_models_come_from_the_cached_catalog(tmp_path, monkeypatch):
 def test_muse_model_listing(capsys):
     assert main(["models", "--harness", "muse-code", "muse-wonder"]) == 0
     assert "muse-wonder-1.0-contributor: minimal, low, medium, high, xhigh, max" in capsys.readouterr().out
+
+
+# --- Codex harness -----------------------------------------------------------------------------------
+
+
+def test_codex_planning():
+    assert plan_for(["codex:gpt-6-sol:low,max"]) == [
+        ("codex", "gpt-6-sol", "low"), ("codex", "gpt-6-sol", "max")]
+    with pytest.raises(CritError, match="xhigh not supported"):
+        plan_for(["codex:gpt-6-luna:xhigh"])
+    with pytest.raises(CritError, match="unknown model 'gpt-hidden'"):
+        plan_for(["codex:gpt-hidden:low"])  # hidden catalog rows aren't listed
+
+
+def test_codex_runs_and_publishes_transcript(run_root, tmp_path, monkeypatch):
+    argv_path = tmp_path / "argv.json"
+    monkeypatch.setenv("FAKE_CODEX_ARGV", str(argv_path))
+    assert main(["run", "--yes", "--kind", "media", "draw a circle", "-m", "codex:gpt-6-sol:high",
+                 "--root", str(run_root)]) == 0
+    [run] = json.loads((run_root / "docs/data/draw-a-circle/page.json").read_text())["runs"]
+    assert run["harness"]["name"] == "codex" and run["model"] == "openai/gpt-6-sol"
+    assert run["state"] == "complete" and run["output"]["ok"] is True
+    assert "-cx-" in run["id"]
+    # input excludes cached + cache-write tokens (130-100-10); reasoning is part of output
+    assert run["metrics"]["tokens_total"] == 50 and run["metrics"]["tokens_reasoning"] == 7
+    assert run["metrics"]["turns"] == 1 and run["metrics"]["tool_calls"] == 2
+    assert run["metrics"]["cost_usd"] == 0
+    argv = json.loads(argv_path.read_text())
+    assert argv[argv.index("-m") + 1] == "gpt-6-sol"
+    assert 'model_reasoning_effort="high"' in argv and "--json" in argv and "--ephemeral" in argv
+    assert "--dangerously-bypass-approvals-and-sandbox" in argv
+    run_dir = run_root / "docs/data/draw-a-circle/runs" / run["id"]
+    assert not (run_dir / "session/events.jsonl").exists()  # the raw stream is never published
+    msgs = [e["message"] for e in json.loads((run_dir / "session/conversation.json").read_text()) if e["type"] == "message"]
+    assert [m["role"] for m in msgs] == ["user", "assistant", "toolResult", "assistant", "toolResult", "assistant"]
+    assert msgs[1]["content"][0]["type"] == "thinking"
+    call = msgs[1]["content"][1]
+    assert call["name"] == "bash" and call["arguments"] == {"command": "ls"}
+    assert msgs[2]["toolCallId"] == call["id"] and msgs[2]["isError"] is False
+    assert msgs[3]["content"][0]["name"] == "file_change"
+    assert msgs[5]["content"][0]["text"] == "Done: built it."
+    assert msgs[5]["usage"]["input"] == 20 and msgs[5]["usage"]["cacheRead"] == 100
+
+
+def test_codex_failed_turn_fails_the_run(run_root, monkeypatch):
+    monkeypatch.setenv("FAKE_CODEX_ERROR", "1")
+    assert main(["run", "--yes", "--kind", "media", "broken circle", "-m", "codex:gpt-6-luna:low",
+                 "--root", str(run_root)]) == 0
+    [run] = json.loads((run_root / "docs/data/broken-circle/page.json").read_text())["runs"]
+    assert run["state"] == "failed" and "model error" in run["error"]
+
+
+def test_codex_missing_result_fails_instead_of_publishing_success(tmp_path):
+    (tmp_path / "events.jsonl").write_text(json.dumps({"type": "turn.started"}) + "\n")
+    m = Codex().metrics(tmp_path, "low")
+    assert m["ended_in_error"] and "no final result" in m["error_message"]
+    entries = convert_codex_stream([{"type": "turn.started"}], "brief", "low")
+    assert [e["type"] for e in entries] == ["session", "model_change", "thinking_level_change", "message"]
+
+
+def test_codex_command_and_model_listing(tmp_path, capsys):
+    cmd = Codex().command("gpt-6-sol", "low", "brief", tmp_path)
+    assert cmd[:2] == ["codex", "exec"] and cmd[-1] == "brief"
+    assert main(["models", "--harness", "codex", "gpt-6"]) == 0
+    out = capsys.readouterr().out
+    assert "gpt-6-sol: low, medium, high, xhigh, max" in out  # `ultra` dropped: not in LEVEL_ORDER
+    assert "gpt-hidden" not in out
 
 
 # --- Claude Code harness ---------------------------------------------------------------------------
