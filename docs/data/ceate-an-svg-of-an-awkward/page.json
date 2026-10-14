@@ -5,7 +5,7 @@
   "prompt": "Ceate an SVG of an awkward family portrait of robots. Give each robot a distinct personality, and suggest their relationships through poses and composition. No text.",
   "final_prompt": "Ceate an SVG of an awkward family portrait of robots. Give each robot a distinct personality, and suggest their relationships through poses and composition. No text.\n\nDeliver the result as image and/or video files, working in the current directory.\n- Save the finished files in ./output/. Only what is in ./output/ is published as the result, so\n  ./output/ holds those finished image/video files and nothing else.\n- Formats: images as .png, .jpg, .webp, .gif or .svg; videos as .mp4 or .webm. At most 8 files,\n  each under 2 MB; videos at most 10 seconds.\n- Tools available on this machine: python3 3.15.0 (standard library only), node 26.11.1 (no npm packages), ffmpeg 9.0.2, ffprobe 9.0.2. Don't install packages or download anything.\n- Keep the code you write to make the files in the working directory (its root, or a subdirectory\n  like ./src/, but not in ./output/): it's published as the source. Delete intermediate files such\n  as rendered frames when you're done.\n- Only create or edit files inside the current directory.\n- Finish with a short summary of what you made.\n",
   "created": "2026-10-13T22:37:53Z",
-  "updated": "2026-10-14T02:22:49Z",
+  "updated": "2026-10-14T01:41:47Z",
   "runs": [
     {
       "id": "claude-opus-5-5-cc-low-20261013-153749",
@@ -3310,126 +3310,6 @@
           "src/render_video.py"
         ]
       },
-      "rank": null
-    },
-    {
-      "id": "kimi-k3-batch-low-20261013-192248",
-      "page": "ceate-an-svg-of-an-awkward",
-      "model": "openrouter/moonshotai/kimi-k3:batch",
-      "effort": "low",
-      "kind": "media",
-      "started_at": "2026-10-14T02:22:49Z",
-      "batch": "2026-10-13-192248-ceate-an-svg-of-an-awkward",
-      "harness": {
-        "name": "pi",
-        "version": "1.2.0"
-      },
-      "state": "failed",
-      "error": "404: {\"message\":\"moonshotai/kimi-k3:batch cannot be used with the chat/completions endpoint (adapter DeepInfraBatchAdapter).\",\"code\":404}",
-      "route": {
-        "requested": null,
-        "served": [],
-        "cost_usd": null,
-        "pi_cost_usd": 0.0
-      },
-      "metrics": {
-        "duration_ms": 450,
-        "cost_usd": 0.0,
-        "tool_calls": 0,
-        "turns": 1,
-        "tokens_total": 0,
-        "tokens_input": 0,
-        "tokens_output": 0,
-        "tokens_reasoning": 0,
-        "tokens_cache_read": 0
-      },
-      "thumb": null,
-      "output": null,
-      "session": {
-        "conversation": "session/conversation.json",
-        "stderr": "session/stderr.txt"
-      },
-      "source": null,
-      "rank": null
-    },
-    {
-      "id": "kimi-k3-batch-high-20261013-192248",
-      "page": "ceate-an-svg-of-an-awkward",
-      "model": "openrouter/moonshotai/kimi-k3:batch",
-      "effort": "high",
-      "kind": "media",
-      "started_at": "2026-10-14T02:22:49Z",
-      "batch": "2026-10-13-192248-ceate-an-svg-of-an-awkward",
-      "harness": {
-        "name": "pi",
-        "version": "1.2.0"
-      },
-      "state": "failed",
-      "error": "404: {\"message\":\"moonshotai/kimi-k3:batch cannot be used with the chat/completions endpoint (adapter DeepInfraBatchAdapter).\",\"code\":404}",
-      "route": {
-        "requested": null,
-        "served": [],
-        "cost_usd": null,
-        "pi_cost_usd": 0.0
-      },
-      "metrics": {
-        "duration_ms": 870,
-        "cost_usd": 0.0,
-        "tool_calls": 0,
-        "turns": 1,
-        "tokens_total": 0,
-        "tokens_input": 0,
-        "tokens_output": 0,
-        "tokens_reasoning": 0,
-        "tokens_cache_read": 0
-      },
-      "thumb": null,
-      "output": null,
-      "session": {
-        "conversation": "session/conversation.json",
-        "stderr": "session/stderr.txt"
-      },
-      "source": null,
-      "rank": null
-    },
-    {
-      "id": "kimi-k3-batch-max-20261013-192248",
-      "page": "ceate-an-svg-of-an-awkward",
-      "model": "openrouter/moonshotai/kimi-k3:batch",
-      "effort": "max",
-      "kind": "media",
-      "started_at": "2026-10-14T02:22:49Z",
-      "batch": "2026-10-13-192248-ceate-an-svg-of-an-awkward",
-      "harness": {
-        "name": "pi",
-        "version": "1.2.0"
-      },
-      "state": "failed",
-      "error": "404: {\"message\":\"moonshotai/kimi-k3:batch cannot be used with the chat/completions endpoint (adapter DeepInfraBatchAdapter).\",\"code\":404}",
-      "route": {
-        "requested": null,
-        "served": [],
-        "cost_usd": null,
-        "pi_cost_usd": 0.0
-      },
-      "metrics": {
-        "duration_ms": 452,
-        "cost_usd": 0.0,
-        "tool_calls": 0,
-        "turns": 1,
-        "tokens_total": 0,
-        "tokens_input": 0,
-        "tokens_output": 0,
-        "tokens_reasoning": 0,
-        "tokens_cache_read": 0
-      },
-      "thumb": null,
-      "output": null,
-      "session": {
-        "conversation": "session/conversation.json",
-        "stderr": "session/stderr.txt"
-      },
-      "source": null,
       "rank": null
     }
   ]
