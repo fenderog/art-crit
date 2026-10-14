@@ -81,17 +81,19 @@ at low, medium, high, xhigh, or max. Runs are single agents with file and shell 
 no subagents, web access, skills, scheduling, CLAUDE.md, memory, plugins, hooks, or MCP servers.
 It uses your login, and cost is Claude Code's API-price estimate, subscription included.
 
-[Antigravity CLI](https://www.agy.dev/docs/cli/headless/) (`agy`), [Grok Build](https://github.com/xai-org/grok-build) (`grok`) and Muse Code (`muse`) can also run headlessly:
+[Antigravity CLI](https://www.agy.dev/docs/cli/headless/) (`agy`), [Grok Build](https://github.com/xai-org/grok-build) (`grok`), Muse Code (`muse`) and Codex (`codex`) can also run headlessly:
 
 ```sh
 uv run art-crit models -H agy gemini
 uv run art-crit models -H grok-build grok-4.7
 uv run art-crit models -H muse-code muse-spark
+uv run art-crit models -H codex gpt-6
 uv run art-crit run --kind media "draw a circle" -m agy:gemini-3.8-flash:high -m grok-build:grok-4.7:low
 uv run art-crit run --kind media "draw a circle" -m muse-code:muse-spark-1.3-contributor:high
+uv run art-crit run --kind media "draw a circle" -m codex:gpt-6-sol:high
 ```
 
-Agy's model slugs already encode effort: `agy:gemini-3.8-flash:high` selects `gemini-3.8-flash-high`. Agy does not report cost (shown as 0, **unknown**, not free). Grok reports cost when the server supplies it; a missing cost is also shown as 0. Grok disables subagents and web and restricts built-in tools; MCP meta-tools may still load from your configuration. Agy does not offer a safe-mode/tool allowlist, so for strict comparisons run it with an isolated CLI profile. Muse Code runs without approval prompts or sandbox but with web tools and background reminder agents off; for models with published [Meta API rates](https://dev.meta.ai/docs/pricing-rate-limits), cost is an API-equivalent estimate marked `~` (not subscription spend). Muse Wonder Full and Wonder Contributor have no published API rate: their cost uses Wonder Standard's rate as a **proxy**, marked `≈` (not Full's real price). Models with no known rate show 0, meaning unknown, not free. Re-import older Muse run directories to estimate their already-recorded token usage. Its model list is the catalog `muse` caches (open `/model` in `muse` to refresh it), and its transcript appears when the run finishes, so live progress shows 0 until then.
+Agy's model slugs already encode effort: `agy:gemini-3.8-flash:high` selects `gemini-3.8-flash-high`. Agy does not report cost (shown as 0, **unknown**, not free). Grok reports cost when the server supplies it; a missing cost is also shown as 0. Grok disables subagents and web and restricts built-in tools; MCP meta-tools may still load from your configuration. Agy does not offer a safe-mode/tool allowlist, so for strict comparisons run it with an isolated CLI profile. Muse Code runs without approval prompts or sandbox but with web tools and background reminder agents off; for models with published [Meta API rates](https://dev.meta.ai/docs/pricing-rate-limits), cost is an API-equivalent estimate marked `~` (not subscription spend). Muse Wonder Full and Wonder Contributor have no published API rate: their cost uses Wonder Standard's rate as a **proxy**, marked `≈` (not Full's real price). Models with no known rate show 0, meaning unknown, not free. Re-import older Muse run directories to estimate their already-recorded token usage. Its model list is the catalog `muse` caches (open `/model` in `muse` to refresh it), and its transcript appears when the run finishes, so live progress shows 0 until then. Codex runs with approvals and sandbox bypassed and your `~/.codex` config/rules ignored; its model list comes live from `codex debug models` (the `ultra` effort tier isn't offered, it isn't one of art-crit's levels), and it does not report cost (0, **unknown**, not free).
 
 ### Pinning an OpenRouter provider
 
@@ -300,7 +302,7 @@ You should see `403` (the Worker refusing a request without the site's Origin) a
   install once from the repo root: `uv tool install --editable '.[verify]'`. It stays linked to
   this checkout, so edits apply without reinstalling. Commands act on the current directory (or `--root`).
 - [pi](https://github.com/earendil-works/pi) for default runs; [Claude Code](https://claude.com/claude-code)
-  (`claude`, logged in) for `claude-code:` models; `agy` for `agy:`, `grok` for `grok-build:` and `muse` (logged in) for `muse-code:` models.
+  (`claude`, logged in) for `claude-code:` models; `agy` for `agy:`, `grok` for `grok-build:`, `muse` (logged in) for `muse-code:` models and `codex` (logged in) for `codex:` models.
 - `godot` on PATH with matching web export templates (games).
 - `ffmpeg` + `ffprobe` on PATH (media).
 - `esbuild` + `npm` on PATH (web): `brew install esbuild node`.

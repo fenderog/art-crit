@@ -37,7 +37,7 @@ src/art_crit/          CLI, standard library only (argparse, json, subprocess, t
   clean.py          session cleaning, path rewrites, secret scan/redact
   site.py           rebuild page.json (with runs) / pages.json (+ each run's rank from ranking.json), rm, list, engine GC
   serve.py          `art-crit serve` (GitHub-Pages-like) + the local-only ranking API (PUT api/rank)
-  harness.py        Harness interface + Pi, ClaudeCode, Agy, GrokBuild, MuseCode (streams -> pi-format session) + metrics parsers
+  harness.py        Harness interface + Pi, ClaudeCode, Agy, GrokBuild, MuseCode, Codex (streams -> pi-format session) + metrics parsers
   runner.py         `art-crit run`: plan -> run agents in parallel -> collect -> kind step (finalize + verify) -> import;
                     `RunDir` = <batch>/<run id>/{run.json,work/,harness/,output/}
   pi_ext/           art-crit-shipped pi extensions loaded with explicit `-e` (work under `-ne`):
@@ -82,6 +82,7 @@ uv run art-crit models --harness claude-code   # Claude Code's (from the table i
 uv run art-crit models --harness agy           # live agy models (effort is part of its slug)
 uv run art-crit models --harness grok-build    # live grok models, effort menu from harness.py
 uv run art-crit models --harness muse-code     # muse models + levels (a table in harness.py)
+uv run art-crit models --harness codex         # codex models + levels (live from `codex debug models`)
 uv run art-crit run --dry-run "prompt" -m claude-code:opus:high -m openai-codex/gpt-6-sol:high   # mixed harnesses
 uv run art-crit import <run-dir|batch-dir> --page <slug>   # publish runs written by `art-crit run`
 uv run art-crit run --no-publish "prompt" -m MODEL:LEVEL   # import locally only; run publishes each run by default (ADR-0019)
@@ -179,6 +180,9 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   `top_level_turn.run_origin` count; the agent runs with `--disable-reminders` so no background agent adds usage. It
   runs with approval and sandbox off but the workspace untrusted (no `--yolo`: that also enables delegation); user-level
   Muse rules and skills may still load.
+- **Codex (`codex exec --json`):** models/levels are live from `codex debug models` (`visibility: list` only;
+  `ultra` is dropped, not in LEVEL_ORDER), cached per `Codex` instance because planning asks repeatedly. Only
+  (there's no `--reasoning-effort` flag); cost is unreported (0). `codex model-profile show <anything>`
 - **Model ids and levels of Claude Code aren't listed by any command:** the table lives in `ClaudeCode.MODELS`/
   `ALIASES` (harness.py), mirroring the CLI's own alias map; update it when models change. Levels are per model: the CLI
   silently clamps what a model doesn't take, and the recorded `thinking_level` is the *requested* one, so only list
@@ -262,8 +266,7 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
 
 ## Open ideas (not built)
 
-- More harnesses, e.g. Codex (`codex exec --json`): implement `Harness` in harness.py (convert its session to
-  pi's format like `convert_claude_stream`), add it to `HARNESSES`, and a fake binary in tests/fixtures/fake_pi/.
+- More harnesses: implement `Harness` in harness.py (convert its session to pi's format like
 - Running agents in a VM with the user's own image. Swap out the "start one agent" step in
   `runner.run_agent`.
 - Native image/video models (gpt-image, Imagen, Veo, Sora...): not an agent loop, so they'd need a
