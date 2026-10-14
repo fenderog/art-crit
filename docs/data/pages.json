@@ -3,7 +3,7 @@
     "slug": "ceate-an-svg-of-an-awkward",
     "title": "Awkward Robot Family",
     "kind": "media",
-    "n_runs": 63,
+    "n_runs": 59,
     "models": [
       "anthropic/claude-haiku-5-5",
       "anthropic/claude-opus-5-5",
@@ -16,12 +16,11 @@
       "openai-codex/gpt-6.1-sol",
       "openrouter/deepseek/deepseek-v4.1-flash",
       "openrouter/thinkingmachines/inkling:free",
-      "openrouter/xiaomi/mimo-v2.6-pro",
       "openrouter/z-ai/glm-5.3",
       "openrouter/z-ai/glm-5.3-flashx",
       "xai/grok-4.7"
     ],
-    "updated": "2026-10-14T04:31:06Z",
+    "updated": "2026-10-14T03:35:22Z",
     "thumb": "data/ceate-an-svg-of-an-awkward/runs/gpt-6.1-sol-xhigh-20261013-201757/media/awkward-family.png"
   },
   {
