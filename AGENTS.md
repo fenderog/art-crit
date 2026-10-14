@@ -186,7 +186,10 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   Muse rules and skills may still load.
 - **Codex (`codex exec --json`):** models/levels are live from `codex debug models` (`visibility: list` only;
   `ultra` is dropped, not in LEVEL_ORDER), cached per `Codex` instance because planning asks repeatedly. Only
+  `item.completed` items count (`item.started`/`item.updated` repeat the item); the stream has no timestamps
+  and no model id, so converted entries have neither. Effort goes via `-c model_reasoning_effort="LEVEL"`
   (there's no `--reasoning-effort` flag); cost is unreported (0). `codex model-profile show <anything>`
+  echoes any name back, so it proves nothing about whether a model exists.
 - **Model ids and levels of Claude Code aren't listed by any command:** the table lives in `ClaudeCode.MODELS`/
   `ALIASES` (harness.py), mirroring the CLI's own alias map; update it when models change. Levels are per model: the CLI
   silently clamps what a model doesn't take, and the recorded `thinking_level` is the *requested* one, so only list
@@ -271,6 +274,7 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
 ## Open ideas (not built)
 
 - More harnesses: implement `Harness` in harness.py (convert its session to pi's format like
+  `convert_claude_stream`), add it to `HARNESSES`, and a fake binary in tests/fixtures/fake_pi/.
 - Running agents in a VM with the user's own image. Swap out the "start one agent" step in
   `runner.run_agent`.
 - Native image/video models (gpt-image, Imagen, Veo, Sora...): not an agent loop, so they'd need a
