@@ -1,0 +1,46 @@
+{
+  "id": "deepseek-v4.1-flash-high-20261013-175044",
+  "page": "ceate-an-svg-of-an-awkward",
+  "model": "openrouter/deepseek/deepseek-v4.1-flash",
+  "effort": "high",
+  "kind": "media",
+  "started_at": "2026-10-14T00:54:50Z",
+  "batch": "2026-10-13-175044-ceate-an-svg-of-an-awkward",
+  "harness": {
+    "name": "pi",
+    "version": "1.2.0"
+  },
+  "state": "failed",
+  "error": "402: {\"message\":\"This request would exceed your available credits given your current in-flight requests. Retry after in-flight requests settle, or add credits.\",\"code\":402,\"metadata\":{\"reason\":\"in_fli",
+  "route": {
+    "requested": null,
+    "served": [
+      "Morph"
+    ],
+    "cost_usd": 0.013366944,
+    "pi_cost_usd": 0.0161765856
+  },
+  "metrics": {
+    "duration_ms": 134626,
+    "cost_usd": 0.013366944,
+    "tool_calls": 11,
+    "turns": 12,
+    "tokens_total": 22560,
+    "tokens_input": 5616,
+    "tokens_output": 16944,
+    "tokens_reasoning": 8248,
+    "tokens_cache_read": 158720
+  },
+  "thumb": null,
+  "output": null,
+  "session": {
+    "conversation": "session/conversation.json",
+    "stderr": "session/stderr.txt"
+  },
+  "source": {
+    "root": "source/",
+    "files": [
+      "src/portrait.svg"
+    ]
+  }
+}
