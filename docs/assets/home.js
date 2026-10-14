@@ -1,8 +1,10 @@
 import { el, getJSON, showMessage } from "./dom.js";
 import { modelParts, vendorOf, vendorName, vendorMark } from "./runs.js";
 import { kindUi } from "./output.js";
+import { setupRequests } from "./requests.js";
 
 const cards = document.getElementById("cards");
+setupRequests(document.getElementById("hero-actions"), document.getElementById("requests")); // local only
 
 try {
   const pages = await getJSON("data/pages.json");

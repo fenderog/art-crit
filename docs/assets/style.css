@@ -254,6 +254,77 @@ a:hover > .model .model-name { text-decoration: underline; text-underline-offset
 }
 .card-foot { margin-top: auto; padding-top: 10px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 8px; }
 
+/* ---- prompt requests (requests.js; local only) ---- */
+.hero-actions { display: flex; gap: 8px; margin-top: 24px; }
+.hero-actions[hidden], .requests[hidden] { display: none; }
+.btn-sm { padding: 4px 12px; font-size: 13px; }
+.btn-ghost { background: transparent; color: var(--ink); }
+.btn-ghost:hover { background: var(--hover); }
+.requests { margin: -16px 0 48px; }
+.requests-where { font-size: 12.5px; }
+.request-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 16px; }
+/* a request is a sticky note: marigold-tinted paper, the same hairline card shape */
+.request-card {
+  display: flex; flex-direction: column; gap: 10px; min-width: 0; padding: 18px 20px; border-radius: var(--r);
+  background: color-mix(in srgb, var(--marigold) 12%, var(--surface)); border: 1px solid color-mix(in srgb, var(--marigold) 35%, var(--line));
+}
+.request-top { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-3); }
+.request-date { margin-left: auto; font-variant-numeric: tabular-nums; }
+.request-set { font-family: var(--mono); font-size: 12px; }
+.request-title { margin: 0; font-size: 1.05rem; letter-spacing: -0.01em; }
+.request-prompt {
+  margin: 0; font-family: var(--serif); font-size: 1.02rem; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden;
+}
+.request-note { margin: 0; font-size: 13px; color: var(--ink-2); }
+pre.request-cmd {
+  margin: 0; padding: 9px 12px; border-radius: var(--r-sm); background: var(--surface); border: 1px solid var(--line);
+  font-size: 12px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink-2);
+}
+.request-actions { display: flex; align-items: center; gap: 14px; margin-top: auto; }
+.request-actions .request-remove { color: var(--ink-3); font-size: 13px; }
+.request-actions .request-remove:hover { color: var(--bad); }
+
+.request-dialog {
+  width: min(620px, calc(100vw - 24px)); max-height: calc(100vh - 48px); padding: 0; overflow: auto;
+  border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); color: var(--ink); box-shadow: var(--shadow-float);
+}
+.request-dialog::backdrop { background: var(--overlay); }
+.request-form { display: flex; flex-direction: column; gap: 16px; padding: 22px 24px 24px; }
+.dialog-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: -8px; }
+.dialog-head h2 { font-size: 1.5rem; letter-spacing: -0.02em; }
+.dialog-lede { margin: 0; font-family: var(--serif); color: var(--ink-2); font-size: 1rem; line-height: 1.5; }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.field-label { font-size: 13px; font-weight: 600; color: var(--ink); padding: 0; }
+.field-label .muted { font-weight: 400; }
+.field input[type="text"], .field textarea, .field select {
+  width: 100%; font: 15px/1.5 var(--font); color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line-strong); border-radius: var(--r-sm); padding: 8px 11px; transition: border-color var(--ease), box-shadow var(--ease);
+}
+.field textarea { resize: vertical; }
+.field input[type="text"]:focus, .field textarea:focus, .field select:focus {
+  outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.field-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.kind-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.kind-option { position: relative; cursor: pointer; }
+.kind-option input { position: absolute; opacity: 0; pointer-events: none; }
+.kind-option-body {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 6px; height: 100%; padding: 10px 12px;
+  border: 1px solid var(--line-strong); border-radius: var(--r-sm); transition: border-color var(--ease), background var(--ease);
+}
+.kind-option:hover .kind-option-body { border-color: var(--ink-3); }
+.kind-option input:checked + .kind-option-body { border-color: var(--accent); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent); }
+.kind-option input:focus-visible + .kind-option-body { outline: 2px solid var(--accent); outline-offset: 2px; }
+.kind-desc { font-size: 12.5px; line-height: 1.4; color: var(--ink-2); }
+.form-error { margin: 0; color: var(--bad); font-size: 13.5px; }
+.form-error:empty { display: none; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
+@media (max-width: 560px) {
+  .kind-options, .field-row { grid-template-columns: minmax(0, 1fr); }
+  .request-form { padding: 18px 16px 20px; }
+}
+
 /* ---- prompt: the page's editorial moment, set in the serif ---- */
 .prompt-box {
   position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
