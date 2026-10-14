@@ -123,6 +123,18 @@ def test_cross_site_writes_are_refused(served):
     assert not (docs / "data/demo/ranking.json").exists()
 
 
+def test_writes_need_a_loopback_host(served):
+    """DNS rebinding: a site that points its own name at 127.0.0.1 sends matching Host and Origin headers."""
+    docs, base = served
+    port = base.rsplit(":", 1)[1].rstrip("/")
+    evil = {"Host": f"evil.example:{port}", "Origin": f"http://evil.example:{port}"}
+    status, body = _put(base + "api/rank?p=demo", {"ranks": {HIGH: 1}}, evil)
+    assert status == 403 and "loopback" in body["error"]
+    assert not (docs / "data/demo/ranking.json").exists()
+    status, _ = _put(base + "api/rank?p=demo", {"ranks": {HIGH: 1}}, {"Host": f"localhost:{port}", "Origin": f"http://localhost:{port}"})
+    assert status == 200
+
+
 def test_rm_drops_the_removed_run_from_the_ranking(served):
     docs, base = served
     _put(base + "api/rank?p=demo", {"ranks": {HIGH: 1, LOW: 2}})

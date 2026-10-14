@@ -240,7 +240,9 @@ then pushes new data to GitHub, which triggers a Pages deployment automatically.
 
 Pages doesn't support a custom-domain **path**, so `cloudflare/router.mjs` runs as a Worker on
 only `fenderog.com/art-crit` and `fenderog.com/art-crit/*`, stripping the prefix and streaming the
-engine decompressed; it also supports video range requests for Safari. Its config is `cloudflare/wrangler.jsonc`; redeploy the router after edits with
+engine decompressed; it also supports video range requests for Safari, and serves everything under `data/` (model-made
+games, pages and SVGs) with the viewer's iframe sandbox as a CSP header, so a raw output URL opened directly can't act on
+the site's origin. Its config is `cloudflare/wrangler.jsonc`; redeploy the router after edits with
 `npx wrangler deploy --config cloudflare/wrangler.jsonc` (Wrangler login required). The apex
 has proxied DNS for the routes but no website at `/`. The Pages subdomain isn't meant for playing
 Godot games. See [ADR-0021](adr/0021-cloudflare-pages-subpath.md) for the rationale.
@@ -273,7 +275,14 @@ working on a newer schema, but not the other way round. The schema is safe to re
 ### Rate limiting (recommended)
 
 GitHub accounts are free, so put a limit in front of the writes. It runs before the Worker, so blocked requests cost nothing.
-In the Cloudflare dashboard open `fenderog.com` → Security → WAF → Rate limiting rules → Create rule (the menu has moved
+Check whether one exists with `cf rulesets list -z fenderog.com` (a `http_ratelimit` phase ruleset). To add it from the
+CLI in one go (a Free zone requires `cf.colo.id` among the characteristics):
+
+```sh
+cf rulesets entrypoint update http_ratelimit -z fenderog.com --name "art-crit rate limits" --rules '[{"action":"block","description":"art-crit votes writes","enabled":true,"expression":"(http.host eq \"fenderog.com\" and starts_with(http.request.uri.path, \"/art-crit/api/\") and not (http.request.method eq \"GET\" and http.request.uri.path eq \"/art-crit/api/votes\"))","ratelimit":{"characteristics":["ip.src","cf.colo.id"],"period":10,"requests_per_period":30,"mitigation_timeout":10}}]'
+```
+
+Or in the Cloudflare dashboard open `fenderog.com` → Security → WAF → Rate limiting rules → Create rule (the menu has moved
 before; search for "rate limiting"), and set:
 
 - Rule name: `art-crit votes writes`

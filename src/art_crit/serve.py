@@ -6,7 +6,9 @@ controls when served by `art-crit serve`):
   PUT api/rank?p=<slug>         body {"ranks": {"<run id>": 1, ...}}  (null/missing = unranked)
     -> writes docs/data/<slug>/ranking.json and rebuilds, so page.json carries each run's rank.
 Writes need Content-Type: application/json (so another site can't send one without a CORS
-preflight, which this server doesn't answer) and, when present, a same-host Origin."""
+preflight, which this server doesn't answer), a loopback Host (a site that rebinds its own name to
+127.0.0.1 would otherwise pass the Origin check, since both headers carry its name) and, when
+present, a same-host Origin."""
 
 import functools
 import http.server
@@ -20,6 +22,7 @@ from urllib.parse import parse_qs, urlsplit
 from . import site
 
 SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
+LOOPBACK = {"127.0.0.1", "localhost", "::1"}
 
 
 def save_ranking(docs_root, slug, ranks):
@@ -78,6 +81,8 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
         url = urlsplit(self.path)
         if not url.path.endswith("/api/rank"):
             return self._json(404, {"error": "not found"})
+        if urlsplit("//" + self.headers.get("Host", "")).hostname not in LOOPBACK:
+            return self._json(403, {"error": "writes are only accepted on a loopback address"})
         origin = self.headers.get("Origin")
         if origin and urlsplit(origin).netloc != self.headers.get("Host"):
             return self._json(403, {"error": "cross-origin write refused"})

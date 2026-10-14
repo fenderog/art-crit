@@ -452,7 +452,8 @@ The page owner ranks runs in the browser; there is no CLI command for it. Only `
   id is a run of the page, and that each rank is a whole number from 1 to the number of runs (ties allowed; `null`
   = unranked), writes `data/<slug>/ranking.json`, then rebuilds. Errors are `400 {"error": ...}`.
 - Cross-site writes are refused: the request must be `Content-Type: application/json` (so another site can't send it
-  without a CORS preflight, which the server doesn't answer) → else 415, and an `Origin` header, when present, must
+  without a CORS preflight, which the server doesn't answer) → else 415, a loopback `Host` (127.0.0.1, localhost or ::1;
+  a DNS-rebinding site sends its own name in both Host and Origin) → else 403, and an `Origin` header, when present, must
   match the `Host` → else 403.
 - `rebuild` copies each run's rank into `page.json.runs` (`rank`, `null` when unranked) and drops `ranking.json` entries
   for runs that no longer exist (e.g. after `art-crit rm`).
@@ -487,7 +488,8 @@ Cookies are `__Secure-` prefixed, `HttpOnly; Secure; SameSite=Lax`, `Path=/art-c
 login state (10 minutes) are JSON payloads signed with HMAC-SHA-256 (`SESSION_SECRET`) and typed so one can't stand in for
 the other. Writes (`PUT`, `POST`) need a valid session (401), an `Origin` header equal to the request's own origin (403;
 sandboxed game frames send `null`), `Content-Type: application/json` (415), a body under 2 KiB (413), and a page and run
-that exist in the published `page.json` (404 for the page, 400 for the run or a bad slug/medal/flag). Errors are
+that exist in the published `page.json` (404 for the page, which must come back as `application/json`, 400 for the run
+or a bad slug/medal/flag). Errors are
 `{"error": ...}`; no response sets CORS headers. Without D1 and the three secrets (`GITHUB_CLIENT_ID`,
 `GITHUB_CLIENT_SECRET`, `SESSION_SECRET`) every route but 404 answers 503.
 
@@ -516,7 +518,11 @@ and fetches static files from `art-crit.pages.dev` with `/art-crit` removed. For
 URLs it fetches the `.wasm.gz` Pages asset and streams the decompressed bytes with
 `Content-Type: application/wasm` and `Access-Control-Allow-Origin: *` (the iframe's origin is
 opaque). Pages ignores MP4 `Range` requests, so the Worker synthesizes HTTP 206 responses for
-normalized videos (≤2 MiB) to support Safari. No other path is routed; static requests forward no visitor credentials. `/art-crit/api/*` is the
+normalized videos (≤2 MiB) to support Safari. Every response under `data/` (model-made games, packaged pages, SVGs)
+carries `Content-Security-Policy: sandbox allow-scripts allow-pointer-lock`, the viewer's iframe sandbox as a header: a
+direct visit to a raw output URL gets an opaque origin too, so it can't use the site's cookies or call the votes API
+(ADR-0004). `docs/404.html` makes Pages answer missing paths with 404 instead of `index.html` + 200 (it is plain, with no
+assets, because it is served at any depth). No other path is routed; static requests forward no visitor credentials. `/art-crit/api/*` is the
 votes API (see Community votes). The apex has a
 proxied DNS record to make Worker routes active, but no site at `/`. GitHub Pages can stay online
 at its old URL during migration; the Pages subdomain isn't the supported URL for playing games.

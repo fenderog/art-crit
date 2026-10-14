@@ -119,7 +119,8 @@ async function sessionUser(request, env) {
 async function pageRuns(pages, slug) {
   if (typeof slug !== "string" || !SLUG.test(slug)) throw new HttpError(400, "bad page slug"); // (an array would pass the regex)
   const res = await fetch(`${pages}/data/${slug}/page.json`, { cf: { cacheTtl: 60 } });
-  if (!res.ok) throw new HttpError(404, `no such page: ${slug}`);
+  // Pages answers a missing file with index.html (200) when docs/404.html is absent, so a page is only one if it's JSON.
+  if (!res.ok || !(res.headers.get("Content-Type") ?? "").startsWith("application/json")) throw new HttpError(404, `no such page: ${slug}`);
   return new Set((await res.json()).runs.map((r) => r.id));
 }
 

@@ -86,6 +86,14 @@ response = await router.fetch(new Request('https://fenderog.com/art-crit/video.m
 }));
 assert.equal(response.status, 200);
 assert.equal((await request('/art-crit-other/')).status, 404);
+// Model-made files under data/ get the viewer's sandbox as a header too, so a direct visit has an opaque origin.
+response = await request('/art-crit/data/horse/runs/r1/game/index.html');
+assert.equal(response.headers.get('content-security-policy'), 'sandbox allow-scripts allow-pointer-lock');
+assert.equal(await response.text(), 'ok');
+response = await router.fetch(new Request('https://fenderog.com/art-crit/data/horse/runs/r1/media/clip.mp4', { headers: { Range: 'bytes=0-1' } }));
+assert.equal(response.status, 206);
+assert.equal(response.headers.get('content-security-policy'), 'sandbox allow-scripts allow-pointer-lock');
+assert.equal((await request('/art-crit/page.html')).headers.get('content-security-policy'), null);
 """
     subprocess.run(["node", "--input-type=module", "-e", script], check=True, cwd=Path(__file__).resolve().parents[1])
 

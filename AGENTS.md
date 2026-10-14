@@ -100,7 +100,9 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   point `--root` at a throwaway copy of the site so live data isn't touched. (ADR-0009)
 - **Game iframes must never get `allow-same-origin`.** `sandboxedGame()` in `docs/assets/output.js` is the
   only place games are embedded. The compare cards' ↗ pop-out opens `play.html` (which uses it), never the raw
-  entry URL; run and expanded-table fullscreen links also go through `play.html`. (ADR-0004)
+  entry URL; run and expanded-table fullscreen links also go through `play.html`. The Worker serves everything under
+  `data/` with that sandbox as a CSP header (`router.mjs`), so a raw output URL opened directly gets an opaque origin
+  too; keep its flags equal to `sandboxedGame()`'s. (ADR-0004)
 - **Web pages are verified the way they're shown:** offline, inside the site's sandbox (`Web.verify`, `verify_page(..., sandboxed=True)`).
   Don't relax that to a plain page load; it's what guarantees a packaged page has no outside dependencies. (ADR-0013)
 - **Model-made SVGs are only shown with `<img>`** (`mediaElement()` in output.js), which never runs their
@@ -125,7 +127,7 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   compresses oversized engines; esbuild only packages model-made web pages, ADR-0013, ADR-0021); the user checks for this. Prefer small
   functions and small diffs, and don't add dependencies without asking. (ADR-0002)
 - **Rankings are only written by `art-crit serve` on the user's machine** (`PUT api/rank`, which refuses cross-site
-  writes); the Worker answers 404 for it. (ADR-0010)
+  writes and any non-loopback `Host`, against DNS rebinding); the Worker answers 404 for it. (ADR-0010)
 - **Community votes are the one thing the published site writes**, through the Worker's `/art-crit/api/*` into D1
   (ADR-0022). Writes need a session cookie *and* an `Origin` equal to the site's own; don't loosen either, add CORS
   headers to the API, or add another write path. Only GitHub ids are stored (never tokens), and votes are not in git.
@@ -247,6 +249,10 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
 - **Safari needs HTTP Range requests to play mp4.** Cloudflare Pages returned 200 (not 206) for a live MP4 Range
   request. The subpath Worker synthesizes 206 for our ≤2 MiB normalized videos; `art-crit serve` (Python's
   http.server) still doesn't support ranges, so preview videos in Chrome.
+- **Pages answers a missing file with `index.html` and 200 unless `docs/404.html` exists.** Keep that file: without it the
+  viewer and the votes API parse HTML as JSON (the API answered 500 for an unknown slug). It is plain (no assets) because
+  it is served at any depth. HSTS and the API rate limit are zone settings, not code: check them with
+  `cf zones settings get security_header -z fenderog.com` and `cf rulesets list -z fenderog.com`.
 - **Cloudflare Pages limits files to 25 MiB:** `cloudflare/prepare.py` stages all Godot engines as deterministic
   `.wasm.gz`; `cloudflare/router.mjs` streams them decompressed at `.wasm` URLs. Pages `_headers` cannot be relied on
   to force `Content-Encoding: gzip` (confirmed by a live probe). The `cf` CLI manages Pages projects but `cf pages deploy`

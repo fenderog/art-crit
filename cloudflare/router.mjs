@@ -5,6 +5,11 @@ import { handleApi } from "./votes.mjs";
 // /art-crit/api/* is the votes API (votes.mjs), the only part of the site that isn't static.
 const PAGES = "https://art-crit.pages.dev";
 const ENGINE = /^\/engines\/[a-f0-9]{12}\/godot\.wasm$/;
+// Everything under data/ is model-made (games, packaged pages, SVGs). The viewer embeds it in a sandboxed iframe; this
+// header gives a direct visit the same opaque origin, so the file can't act on the site's origin (its cookies, the
+// votes API) if someone opens or shares its raw URL (ADR-0004). The flags match the iframe's, so embedding is unchanged.
+const DATA = /^\/data\//;
+const SANDBOX = "sandbox allow-scripts allow-pointer-lock";
 
 export default {
   async fetch(request, env) {
@@ -32,31 +37,11 @@ export default {
     }
     const response = await fetch(upstream.toString(), { headers });
     if (!ENGINE.test(path)) {
-      // Pages currently ignores Range on MP4s. Our normalized videos are ≤2 MiB;
-      // synthesize a partial response for Safari without buffering larger assets.
-      const range = request.headers.get("Range");
-      if (request.method === "GET" && range && response.status === 200 &&
-          response.headers.get("Content-Type")?.startsWith("video/")) {
-        const length = Number(response.headers.get("Content-Length"));
-        if (length > 0 && length <= 2 * 1024 * 1024 &&
-            (!request.headers.has("If-Range") || request.headers.get("If-Range") === response.headers.get("ETag"))) {
-          const match = /^bytes=(\d*)-(\d*)$/.exec(range);
-          if (match && (match[1] || match[2])) {
-            const start = match[1] ? Number(match[1]) : Math.max(0, length - Number(match[2]));
-            const end = match[1] ? (match[2] ? Math.min(Number(match[2]), length - 1) : length - 1) : length - 1;
-            if (start >= length || end < start) {
-              return new Response(null, { status: 416, headers: { "Content-Range": `bytes */${length}` } });
-            }
-            const bytes = await response.arrayBuffer();
-            const partialHeaders = new Headers(response.headers);
-            partialHeaders.set("Content-Range", `bytes ${start}-${end}/${length}`);
-            partialHeaders.set("Content-Length", String(end - start + 1));
-            partialHeaders.set("Accept-Ranges", "bytes");
-            return new Response(bytes.slice(start, end + 1), { status: 206, headers: partialHeaders });
-          }
-        }
-      }
-      return response;
+      const served = await serveStatic(request, response);
+      if (!DATA.test(path)) return served;
+      const sandboxed = new Response(served.body, served);
+      sandboxed.headers.set("Content-Security-Policy", SANDBOX);
+      return sandboxed;
     }
     if (response.status !== 200) return response;
     const wasmHeaders = new Headers({
@@ -68,3 +53,32 @@ export default {
     return new Response(response.body.pipeThrough(new DecompressionStream("gzip")), { status: 200, headers: wasmHeaders });
   },
 };
+
+// A static file from Pages as is, except that Range requests for small videos get a synthesized 206.
+async function serveStatic(request, response) {
+  // Pages currently ignores Range on MP4s. Our normalized videos are ≤2 MiB;
+  // synthesize a partial response for Safari without buffering larger assets.
+  const range = request.headers.get("Range");
+  if (request.method === "GET" && range && response.status === 200 &&
+      response.headers.get("Content-Type")?.startsWith("video/")) {
+    const length = Number(response.headers.get("Content-Length"));
+    if (length > 0 && length <= 2 * 1024 * 1024 &&
+        (!request.headers.has("If-Range") || request.headers.get("If-Range") === response.headers.get("ETag"))) {
+      const match = /^bytes=(\d*)-(\d*)$/.exec(range);
+      if (match && (match[1] || match[2])) {
+        const start = match[1] ? Number(match[1]) : Math.max(0, length - Number(match[2]));
+        const end = match[1] ? (match[2] ? Math.min(Number(match[2]), length - 1) : length - 1) : length - 1;
+        if (start >= length || end < start) {
+          return new Response(null, { status: 416, headers: { "Content-Range": `bytes */${length}` } });
+        }
+        const bytes = await response.arrayBuffer();
+        const partialHeaders = new Headers(response.headers);
+        partialHeaders.set("Content-Range", `bytes ${start}-${end}/${length}`);
+        partialHeaders.set("Content-Length", String(end - start + 1));
+        partialHeaders.set("Accept-Ranges", "bytes");
+        return new Response(bytes.slice(start, end + 1), { status: 206, headers: partialHeaders });
+      }
+    }
+  }
+  return response;
+}

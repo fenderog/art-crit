@@ -12,6 +12,8 @@ const env = () => ({ DB: memoryD1(), GITHUB_CLIENT_ID: "client-id", GITHUB_CLIEN
 globalThis.fetch = async (url, options = {}) => {
   url = String(url);
   if (url === "https://art-crit.pages.dev/data/demo/page.json") return Response.json({ runs: RUNS.map((id) => ({ id })) });
+  // Without docs/404.html, Pages answers a missing file with index.html and 200.
+  if (url === "https://art-crit.pages.dev/data/spa/page.json") return new Response("<!doctype html>", { headers: { "Content-Type": "text/html; charset=utf-8" } });
   if (url.startsWith("https://art-crit.pages.dev/data/")) return new Response("missing", { status: 404 });
   if (url === "https://github.com/login/oauth/access_token") {
     const body = JSON.parse(options.body);
@@ -95,6 +97,7 @@ test("votes are public to read and zeroed for every run of the page", async () =
   assert.deepEqual(Object.keys(body.totals), RUNS);
   assert.deepEqual(body.totals["run-a"], { hearts: 0, gold: 0, silver: 0, bronze: 0 });
   assert.equal((await call(e, "/votes?p=missing")).status, 404);
+  assert.equal((await call(e, "/votes?p=spa")).status, 404); // a 200 that isn't JSON is a missing page too, not a 500
   assert.equal((await call(e, "/votes?p=Bad_Slug")).status, 400);
   assert.equal((await call(e, "/votes")).status, 400);
 });

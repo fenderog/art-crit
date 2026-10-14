@@ -38,6 +38,9 @@ There is exactly one way to show each type of output:
   window), which boots at once because opening the window was the click. It shows output only through
   `sandboxedGame()` / `mediaGallery()`, so it is not a new unsandboxed entry point.
 - Tests check that the fixture SVG's embedded script never runs and that games are embedded in a sandboxed iframe.
+- The site never links to a raw output URL, but anyone can open or share one. Since 2026-10-14 the Worker (0021) serves
+  everything under `data/` with `Content-Security-Policy: sandbox allow-scripts allow-pointer-lock`, the same flags as
+  the iframe, so a direct visit has an opaque origin as well and can't use the site's cookies or the votes API (0022).
 
 ## Alternatives considered
 
