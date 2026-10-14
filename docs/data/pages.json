@@ -3,7 +3,7 @@
     "slug": "ceate-an-svg-of-an-awkward",
     "title": "Awkward Robot Family",
     "kind": "media",
-    "n_runs": 47,
+    "n_runs": 48,
     "models": [
       "anthropic/claude-haiku-5-5",
       "anthropic/claude-opus-5-5",
@@ -18,7 +18,7 @@
       "openrouter/z-ai/glm-5.3-prime",
       "xai/grok-4.7"
     ],
-    "updated": "2026-10-14T00:54:45Z",
+    "updated": "2026-10-14T00:54:47Z",
     "thumb": "data/ceate-an-svg-of-an-awkward/runs/gemini-3.8-flash-agy-high-20261013-153749/media/awkward_robot_family_portrait.poster.jpg"
   },
   {
