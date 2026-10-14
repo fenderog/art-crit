@@ -1086,7 +1086,7 @@ def test_no_vote_controls_where_there_is_no_vote_api(site, page):
 def test_signed_out_visitors_see_totals_and_sign_in_to_vote(site, page):
     vote_api(page, others={HIGH_ID: {"hearts": 7, "gold": 2}})
     page.goto(f"{site}page.html?p=demo")
-    expect(card(page, HIGH_ID).locator(".votes-label")).to_have_text("Community")
+    expect(card(page, HIGH_ID).locator(".votes-label")).to_have_text("Community votes")
     expect(heart(page, HIGH_ID).locator(".vote-n")).to_have_text("7")
     expect(medal(page, HIGH_ID, "gold").locator(".vote-n")).to_have_text("2")
     expect(page.locator(".auth")).to_have_text("Sign in with GitHub")
