@@ -1,0 +1,467 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" width="1200" height="900">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3a6ea5"/>
+      <stop offset="0.55" stop-color="#6f93b8"/>
+      <stop offset="1" stop-color="#9fc0dd"/>
+    </linearGradient>
+    <linearGradient id="carpet" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7d9db3"/>
+      <stop offset="1" stop-color="#54778e"/>
+    </linearGradient>
+    <radialGradient id="vig" cx="0.5" cy="0.46" r="0.72">
+      <stop offset="0" stop-color="#0f192d" stop-opacity="0"/>
+      <stop offset="0.72" stop-color="#0f192d" stop-opacity="0"/>
+      <stop offset="1" stop-color="#0f192d" stop-opacity="0.30"/>
+    </radialGradient>
+  </defs>
+
+  <!-- ======================= BACKDROP ======================= -->
+  <rect x="0" y="0" width="1200" height="900" fill="url(#bg)"/>
+  <ellipse cx="260" cy="180" rx="420" ry="260" fill="#ffffff" opacity="0.07"/>
+  <ellipse cx="880" cy="300" rx="330" ry="240" fill="#ffffff" opacity="0.05"/>
+  <ellipse cx="620" cy="520" rx="500" ry="220" fill="#16283f" opacity="0.08"/>
+  <ellipse cx="980" cy="150" rx="240" ry="150" fill="#16283f" opacity="0.07"/>
+
+  <!-- floor -->
+  <rect x="0" y="760" width="1200" height="140" fill="url(#carpet)"/>
+  <rect x="0" y="756" width="1200" height="8" fill="#dfeaf2" opacity="0.55"/>
+  <ellipse cx="560" cy="850" rx="520" ry="60" fill="#ffffff" opacity="0.06"/>
+
+  <!-- laser streaks -->
+  <g stroke-linecap="round">
+    <g opacity="0.16">
+      <line x1="60" y1="40" x2="1200" y2="90" stroke="#3fd3e0" stroke-width="9"/>
+      <line x1="60" y1="40" x2="1200" y2="240" stroke="#e94f9b" stroke-width="14"/>
+      <line x1="60" y1="40" x2="1200" y2="420" stroke="#f5c86b" stroke-width="9"/>
+      <line x1="60" y1="40" x2="1200" y2="600" stroke="#9d6ef0" stroke-width="11"/>
+      <line x1="60" y1="40" x2="1200" y2="745" stroke="#3fd3e0" stroke-width="8"/>
+      <line x1="60" y1="40" x2="940" y2="745" stroke="#e94f9b" stroke-width="9"/>
+      <line x1="60" y1="40" x2="700" y2="745" stroke="#f5c86b" stroke-width="8"/>
+      <line x1="60" y1="40" x2="460" y2="745" stroke="#9d6ef0" stroke-width="10"/>
+      <line x1="60" y1="40" x2="230" y2="745" stroke="#3fd3e0" stroke-width="9"/>
+      <line x1="60" y1="40" x2="1200" y2="40" stroke="#e94f9b" stroke-width="6"/>
+      <line x1="60" y1="40" x2="700" y2="0" stroke="#3fd3e0" stroke-width="6"/>
+      <line x1="60" y1="40" x2="330" y2="0" stroke="#f5c86b" stroke-width="5"/>
+    </g>
+    <g opacity="0.6">
+      <line x1="60" y1="40" x2="1200" y2="90" stroke="#3fd3e0" stroke-width="2.5"/>
+      <line x1="60" y1="40" x2="1200" y2="240" stroke="#e94f9b" stroke-width="4"/>
+      <line x1="60" y1="40" x2="1200" y2="420" stroke="#f5c86b" stroke-width="2.5"/>
+      <line x1="60" y1="40" x2="1200" y2="600" stroke="#9d6ef0" stroke-width="3.5"/>
+      <line x1="60" y1="40" x2="1200" y2="745" stroke="#3fd3e0" stroke-width="2"/>
+      <line x1="60" y1="40" x2="940" y2="745" stroke="#e94f9b" stroke-width="2.5"/>
+      <line x1="60" y1="40" x2="700" y2="745" stroke="#f5c86b" stroke-width="2"/>
+      <line x1="60" y1="40" x2="460" y2="745" stroke="#9d6ef0" stroke-width="3"/>
+      <line x1="60" y1="40" x2="230" y2="745" stroke="#3fd3e0" stroke-width="2.5"/>
+      <line x1="60" y1="40" x2="1200" y2="40" stroke="#e94f9b" stroke-width="1.5"/>
+      <line x1="60" y1="40" x2="700" y2="0" stroke="#3fd3e0" stroke-width="1.5"/>
+      <line x1="60" y1="40" x2="330" y2="0" stroke="#f5c86b" stroke-width="1.2"/>
+    </g>
+  </g>
+  <!-- the one laser that escapes onto the carpet (the dog has noticed) -->
+  <line x1="60" y1="40" x2="990" y2="812" stroke="#e94f9b" stroke-width="10" stroke-linecap="round" opacity="0.16"/>
+  <line x1="60" y1="40" x2="990" y2="812" stroke="#e94f9b" stroke-width="3" stroke-linecap="round" opacity="0.55"/>
+
+  <!-- potted plant, studio prop -->
+  <g>
+    <ellipse cx="1115" cy="832" rx="52" ry="10" fill="#16283f" opacity="0.18"/>
+    <g fill="#4f7d4a" stroke="#3d6139" stroke-width="2">
+      <ellipse cx="1115" cy="688" rx="13" ry="58" transform="rotate(-26 1115 746)"/>
+      <ellipse cx="1115" cy="682" rx="12" ry="62" transform="rotate(-8 1115 744)"/>
+      <ellipse cx="1115" cy="680" rx="12" ry="64" transform="rotate(12 1115 744)"/>
+      <ellipse cx="1115" cy="688" rx="11" ry="56" transform="rotate(30 1115 746)"/>
+    </g>
+    <ellipse cx="1108" cy="668" rx="10" ry="40" fill="#66975c" transform="rotate(-18 1108 708)"/>
+    <rect x="1074" y="752" width="82" height="16" rx="6" fill="#c98a63" stroke="#8f5a3d" stroke-width="2"/>
+    <path d="M1082,768 L1148,768 L1140,830 L1090,830 Z" fill="#b0714f" stroke="#8f5a3d" stroke-width="2"/>
+    <line x1="1090" y1="796" x2="1140" y2="796" stroke="#8f5a3d" stroke-width="2" opacity="0.6"/>
+  </g>
+
+  <!-- contact shadows -->
+  <g fill="#16283f" opacity="0.18">
+    <ellipse cx="180" cy="806" rx="78" ry="13"/>
+    <ellipse cx="402" cy="806" rx="92" ry="13"/>
+    <ellipse cx="582" cy="806" rx="102" ry="14"/>
+    <ellipse cx="798" cy="804" rx="88" ry="12"/>
+    <ellipse cx="482" cy="864" rx="72" ry="11"/>
+    <ellipse cx="906" cy="840" rx="84" ry="10"/>
+  </g>
+
+  <!-- ======================= GRANDPA (far left, slightly apart, waving) ======================= -->
+  <g>
+    <!-- cane -->
+    <line x1="232" y1="688" x2="252" y2="800" stroke="#8a6f4a" stroke-width="6" stroke-linecap="round"/>
+    <line x1="220" y1="686" x2="244" y2="682" stroke="#8a6f4a" stroke-width="6" stroke-linecap="round"/>
+    <!-- legs & feet -->
+    <rect x="156" y="740" width="19" height="56" rx="6" fill="#6e5a44"/>
+    <rect x="188" y="740" width="19" height="56" rx="6" fill="#6e5a44"/>
+    <rect x="148" y="790" width="32" height="15" rx="7" fill="#4c4133"/>
+    <rect x="184" y="790" width="32" height="15" rx="7" fill="#4c4133"/>
+    <!-- hump -->
+    <ellipse cx="166" cy="552" rx="58" ry="24" fill="#7d8258"/>
+    <!-- torso / cardigan -->
+    <rect x="128" y="556" width="94" height="192" rx="18" fill="#7d8258" stroke="#5f6440" stroke-width="3"/>
+    <line x1="128" y1="610" x2="222" y2="610" stroke="#6a7048" stroke-width="2.5" opacity="0.7"/>
+    <line x1="128" y1="660" x2="222" y2="660" stroke="#6a7048" stroke-width="2.5" opacity="0.7"/>
+    <line x1="153" y1="556" x2="153" y2="748" stroke="#6a7048" stroke-width="2.5" opacity="0.7"/>
+    <line x1="197" y1="556" x2="197" y2="748" stroke="#6a7048" stroke-width="2.5" opacity="0.7"/>
+    <circle cx="175" cy="632" r="4" fill="#4c4f39"/>
+    <circle cx="175" cy="688" r="4" fill="#4c4f39"/>
+    <!-- rust patch -->
+    <path d="M132,576 L162,566 L170,592 L140,600 Z" fill="#96684a" opacity="0.9"/>
+    <path d="M204,700 L222,704 L216,728 L202,722 Z" fill="#96684a" opacity="0.9"/>
+    <!-- left arm: tired little wave -->
+    <path d="M138,576 L116,640" stroke="#6d7250" stroke-width="15" stroke-linecap="round" fill="none"/>
+    <path d="M116,640 L102,590" stroke="#6d7250" stroke-width="13" stroke-linecap="round" fill="none"/>
+    <circle cx="101" cy="581" r="9" fill="#b5a48c" stroke="#8a7a66" stroke-width="2"/>
+    <rect x="88" y="556" width="6" height="20" rx="3" fill="#b5a48c" stroke="#8a7a66" stroke-width="1.5"/>
+    <rect x="97" y="552" width="6" height="22" rx="3" fill="#b5a48c" stroke="#8a7a66" stroke-width="1.5"/>
+    <rect x="106" y="556" width="6" height="20" rx="3" fill="#b5a48c" stroke="#8a7a66" stroke-width="1.5"/>
+    <!-- right arm holding cane -->
+    <path d="M214,576 L240,642" stroke="#6d7250" stroke-width="15" stroke-linecap="round" fill="none"/>
+    <path d="M240,642 L232,694" stroke="#6d7250" stroke-width="13" stroke-linecap="round" fill="none"/>
+    <circle cx="232" cy="692" r="9" fill="#b5a48c" stroke="#8a7a66" stroke-width="2"/>
+    <!-- head (tilted forward, stooped) -->
+    <g transform="rotate(-7 175 548)">
+      <path d="M175,486 L172,478 L178,472 L172,466 L178,460 L175,452" stroke="#8a7a66" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+      <circle cx="175" cy="449" r="5" fill="#c94f4f"/>
+      <circle cx="175" cy="522" r="36" fill="#b5a48c" stroke="#8a7a66" stroke-width="3"/>
+      <circle cx="139" cy="522" r="8" fill="#8a7a66"/>
+      <circle cx="211" cy="522" r="8" fill="#8a7a66"/>
+      <circle cx="139" cy="522" r="2.5" fill="#5c5040"/>
+      <circle cx="211" cy="522" r="2.5" fill="#5c5040"/>
+      <!-- glasses -->
+      <circle cx="162" cy="518" r="11" fill="#cfe6ee" fill-opacity="0.75" stroke="#3a3a3a" stroke-width="2.5"/>
+      <circle cx="188" cy="518" r="11" fill="#cfe6ee" fill-opacity="0.75" stroke="#3a3a3a" stroke-width="2.5"/>
+      <line x1="173" y1="516" x2="177" y2="516" stroke="#3a3a3a" stroke-width="2.5"/>
+      <line x1="156" y1="512" x2="160" y2="524" stroke="#ffffff" stroke-width="2" opacity="0.8"/>
+      <circle cx="162" cy="519" r="3" fill="#2c2418"/>
+      <circle cx="188" cy="519" r="3" fill="#2c2418" opacity="0.45"/>
+      <!-- nose, mustache, mouth -->
+      <rect x="170" y="528" width="10" height="9" rx="3" fill="#8a7a66"/>
+      <rect x="148" y="541" width="20" height="7" rx="3.5" fill="#9a8f80" transform="rotate(9 158 544)"/>
+      <rect x="182" y="541" width="20" height="7" rx="3.5" fill="#9a8f80" transform="rotate(-9 192 544)"/>
+      <rect x="164" y="552" width="22" height="9" rx="4.5" fill="#6e5a48"/>
+      <line x1="171" y1="552" x2="171" y2="561" stroke="#4c4133" stroke-width="2"/>
+      <line x1="179" y1="552" x2="179" y2="561" stroke="#4c4133" stroke-width="2"/>
+    </g>
+  </g>
+
+  <!-- ======================= MOM (cream, pearls, stiffly poised) ======================= -->
+  <g>
+    <!-- legs -->
+    <rect x="380" y="688" width="16" height="98" rx="6" fill="#e3d7bf"/>
+    <rect x="406" y="688" width="16" height="98" rx="6" fill="#e3d7bf"/>
+    <rect x="368" y="778" width="34" height="18" rx="8" fill="#c94f4f"/>
+    <rect x="400" y="778" width="34" height="18" rx="8" fill="#c94f4f"/>
+    <rect x="368" y="782" width="34" height="6" fill="#a83a3a"/>
+    <rect x="400" y="782" width="34" height="6" fill="#a83a3a"/>
+    <!-- dress -->
+    <path d="M368,438 L432,438 L444,560 L472,694 Q400,712 328,694 L356,560 Z" fill="#f0e6d2" stroke="#d9cbb0" stroke-width="3"/>
+    <path d="M420,448 L444,560 L472,694 Q440,703 414,705 L400,448 Z" fill="#ddcfb4" opacity="0.55"/>
+    <line x1="368" y1="600" x2="432" y2="600" stroke="#d9cbb0" stroke-width="2.5" opacity="0.7"/>
+    <circle cx="400" cy="560" r="4" fill="#d9cbb0"/>
+    <!-- neck & collar -->
+    <rect x="392" y="392" width="16" height="50" fill="#e8dcc4"/>
+    <path d="M378,438 L400,452 L422,438 L416,430 L400,440 L384,430 Z" fill="#ffffff" stroke="#d9cbb0" stroke-width="2"/>
+    <!-- pearls -->
+    <g fill="#ffffff" stroke="#d9cfc0" stroke-width="1.5">
+      <circle cx="376" cy="450" r="5"/>
+      <circle cx="388" cy="454" r="5.5"/>
+      <circle cx="400" cy="456" r="6"/>
+      <circle cx="412" cy="454" r="5.5"/>
+      <circle cx="424" cy="450" r="5"/>
+    </g>
+    <!-- head -->
+    <rect x="368" y="310" width="64" height="85" rx="30" fill="#f3ecdd" stroke="#d9cbb0" stroke-width="3"/>
+    <!-- hair: glossy helmet + bun -->
+    <path d="M366,352 Q364,300 400,296 Q436,300 434,352 Q434,318 400,314 Q366,318 366,352 Z" fill="#d9b98a" stroke="#b8956a" stroke-width="2.5"/>
+    <path d="M368,346 Q370,316 400,312 Q384,322 378,346 Z" fill="#eccfa4" opacity="0.8"/>
+    <circle cx="438" cy="312" r="16" fill="#d9b98a" stroke="#b8956a" stroke-width="2.5"/>
+    <path d="M430,300 Q440,294 448,300" stroke="#b8956a" stroke-width="3" fill="none"/>
+    <!-- earrings -->
+    <circle cx="368" cy="374" r="4" fill="#e8c66a" stroke="#b8956a" stroke-width="1.5"/>
+    <circle cx="432" cy="374" r="4" fill="#e8c66a" stroke="#b8956a" stroke-width="1.5"/>
+    <!-- eyes: wide, polite, slightly too open -->
+    <circle cx="386" cy="362" r="7" fill="#2d2d33"/>
+    <circle cx="414" cy="362" r="7" fill="#2d2d33"/>
+    <circle cx="388" cy="360" r="2" fill="#ffffff"/>
+    <circle cx="416" cy="360" r="2" fill="#ffffff"/>
+    <path d="M379,355 Q386,351 393,355" stroke="#4a3a28" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <path d="M407,355 Q414,351 421,355" stroke="#4a3a28" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <line x1="378" y1="348" x2="382" y2="344" stroke="#4a3a28" stroke-width="2" stroke-linecap="round"/>
+    <line x1="386" y1="346" x2="388" y2="342" stroke="#4a3a28" stroke-width="2" stroke-linecap="round"/>
+    <line x1="394" y1="348" x2="392" y2="344" stroke="#4a3a28" stroke-width="2" stroke-linecap="round"/>
+    <line x1="406" y1="348" x2="410" y2="344" stroke="#4a3a28" stroke-width="2" stroke-linecap="round"/>
+    <line x1="414" y1="346" x2="416" y2="342" stroke="#4a3a28" stroke-width="2" stroke-linecap="round"/>
+    <line x1="422" y1="348" x2="420" y2="344" stroke="#4a3a28" stroke-width="2" stroke-linecap="round"/>
+    <!-- smile + blush -->
+    <path d="M392,384 Q400,391 408,384" stroke="#b06a6a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <circle cx="376" cy="380" r="6" fill="#f0a3a3" opacity="0.4"/>
+    <circle cx="424" cy="380" r="6" fill="#f0a3a3" opacity="0.4"/>
+    <!-- left arm: hanging down, hand offered to the kid -->
+    <path d="M372,460 L370,528" stroke="#e8dcc4" stroke-width="14" stroke-linecap="round" fill="none"/>
+    <path d="M370,528 L428,584" stroke="#e8dcc4" stroke-width="12" stroke-linecap="round" fill="none"/>
+    <circle cx="432" cy="588" r="9" fill="#f3ecdd" stroke="#d9cbb0" stroke-width="2"/>
+  </g>
+
+  <!-- ======================= DAD (center-back, big forced grin, thumbs up) ======================= -->
+  <g>
+    <!-- legs & boots -->
+    <rect x="545" y="568" width="26" height="205" rx="10" fill="#9fb0bb"/>
+    <rect x="589" y="568" width="26" height="205" rx="10" fill="#9fb0bb"/>
+    <circle cx="558" cy="672" r="4" fill="#6e7d89"/>
+    <circle cx="602" cy="672" r="4" fill="#6e7d89"/>
+    <rect x="536" y="772" width="42" height="28" rx="9" fill="#4e5a64"/>
+    <rect x="582" y="772" width="42" height="28" rx="9" fill="#4e5a64"/>
+    <rect x="536" y="790" width="42" height="10" rx="5" fill="#39424c"/>
+    <rect x="582" y="790" width="42" height="10" rx="5" fill="#39424c"/>
+    <!-- torso -->
+    <rect x="525" y="360" width="110" height="200" rx="20" fill="#b6c4cf" stroke="#8b9aa6" stroke-width="3"/>
+    <!-- belt -->
+    <rect x="525" y="550" width="110" height="18" rx="7" fill="#4e5a64"/>
+    <rect x="566" y="552" width="28" height="14" rx="3" fill="#d8a03c"/>
+    <!-- chest plate + vents -->
+    <rect x="548" y="398" width="64" height="54" rx="10" fill="#c8d4dc" stroke="#93a3af" stroke-width="2.5"/>
+    <line x1="558" y1="410" x2="602" y2="410" stroke="#93a3af" stroke-width="2.5"/>
+    <line x1="558" y1="422" x2="602" y2="422" stroke="#93a3af" stroke-width="2.5"/>
+    <line x1="558" y1="434" x2="602" y2="434" stroke="#93a3af" stroke-width="2.5"/>
+    <!-- pocket square -->
+    <path d="M532,384 L552,384 L545,398 L540,392 L536,397 Z" fill="#ffffff" stroke="#93a3af" stroke-width="1.5"/>
+    <!-- buttons -->
+    <circle cx="580" cy="512" r="4" fill="#6e7d89"/>
+    <circle cx="580" cy="534" r="4" fill="#6e7d89"/>
+    <!-- collar + tie -->
+    <rect x="568" y="338" width="24" height="26" fill="#8b9aa6"/>
+    <path d="M556,360 L580,360 L580,376 L562,372 Z" fill="#ffffff" stroke="#93a3af" stroke-width="2"/>
+    <path d="M604,360 L580,360 L580,376 L598,372 Z" fill="#ffffff" stroke="#93a3af" stroke-width="2"/>
+    <polygon points="572,372 588,372 580,386" fill="#a52e24"/>
+    <polygon points="570,386 590,386 599,468 580,490 561,468" fill="#c0392b" stroke="#96271c" stroke-width="2.5"/>
+    <line x1="574" y1="392" x2="570" y2="458" stroke="#96271c" stroke-width="2" opacity="0.7"/>
+    <line x1="586" y1="392" x2="590" y2="458" stroke="#96271c" stroke-width="2" opacity="0.7"/>
+    <!-- right arm: enthusiastic thumbs-up -->
+    <circle cx="529" cy="384" r="13" fill="#b6c4cf" stroke="#8b9aa6" stroke-width="3"/>
+    <path d="M527,384 L500,448" stroke="#a5b4bf" stroke-width="17" stroke-linecap="round" fill="none"/>
+    <path d="M500,448 L472,432" stroke="#a5b4bf" stroke-width="15" stroke-linecap="round" fill="none"/>
+    <rect x="458" y="414" width="26" height="24" rx="9" fill="#b6c4cf" stroke="#8b9aa6" stroke-width="2.5"/>
+    <rect x="473" y="396" width="10" height="22" rx="5" fill="#b6c4cf" stroke="#8b9aa6" stroke-width="2.5" transform="rotate(-14 478 407)"/>
+    <line x1="464" y1="430" x2="466" y2="422" stroke="#8b9aa6" stroke-width="2"/>
+    <line x1="470" y1="431" x2="472" y2="424" stroke="#8b9aa6" stroke-width="2"/>
+    <!-- head -->
+    <rect x="540" y="262" width="80" height="76" rx="18" fill="#b6c4cf" stroke="#8b9aa6" stroke-width="3"/>
+    <rect x="540" y="314" width="80" height="24" rx="12" fill="#97a6b2" opacity="0.55"/>
+    <line x1="552" y1="276" x2="608" y2="276" stroke="#8b9aa6" stroke-width="2.5" opacity="0.7"/>
+    <circle cx="540" cy="300" r="9" fill="#8b9aa6"/>
+    <circle cx="620" cy="300" r="9" fill="#8b9aa6"/>
+    <circle cx="540" cy="300" r="3" fill="#5c6b77"/>
+    <circle cx="620" cy="300" r="3" fill="#5c6b77"/>
+    <!-- bent antenna -->
+    <path d="M580,262 L580,246 L564,236" stroke="#6e7d89" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+    <circle cx="561" cy="234" r="6" fill="#d0483e" stroke="#96271c" stroke-width="2"/>
+    <!-- brows: raised way too high -->
+    <rect x="553" y="279" width="24" height="7" rx="3.5" fill="#5b6a76" transform="rotate(-14 565 282)"/>
+    <rect x="603" y="279" width="24" height="7" rx="3.5" fill="#5b6a76" transform="rotate(14 615 282)"/>
+    <!-- eyes -->
+    <circle cx="566" cy="300" r="9" fill="#ffffff" stroke="#5b6a76" stroke-width="2.5"/>
+    <circle cx="594" cy="300" r="9" fill="#ffffff" stroke="#5b6a76" stroke-width="2.5"/>
+    <circle cx="568" cy="302" r="4.5" fill="#2c3540"/>
+    <circle cx="592" cy="302" r="4.5" fill="#2c3540"/>
+    <circle cx="570" cy="299" r="1.6" fill="#ffffff"/>
+    <circle cx="594" cy="299" r="1.6" fill="#ffffff"/>
+    <!-- sweat drop -->
+    <path d="M630,266 C635,275 634,283 630,283 C626,283 625,275 630,266 Z" fill="#9fd4f2" stroke="#6fa8c9" stroke-width="1.5"/>
+    <!-- huge forced grin with teeth grid -->
+    <rect x="550" y="313" width="60" height="25" rx="12" fill="#6e3a3a"/>
+    <rect x="555" y="316" width="50" height="9" rx="4.5" fill="#ffffff"/>
+    <line x1="567" y1="316" x2="567" y2="325" stroke="#6e3a3a" stroke-width="2"/>
+    <line x1="579" y1="316" x2="579" y2="325" stroke="#6e3a3a" stroke-width="2"/>
+    <line x1="591" y1="316" x2="591" y2="325" stroke="#6e3a3a" stroke-width="2"/>
+    <line x1="555" y1="325.5" x2="605" y2="325.5" stroke="#6e3a3a" stroke-width="2"/>
+  </g>
+
+  <!-- ======================= TEEN (hoodie, arms crossed, leaning away) ======================= -->
+  <g transform="rotate(3 792 795)">
+    <!-- legs -->
+    <rect x="756" y="652" width="24" height="122" rx="10" fill="#3a4150"/>
+    <rect x="800" y="652" width="24" height="122" rx="10" fill="#3a4150"/>
+    <circle cx="768" cy="700" r="3.5" fill="#566072"/>
+    <circle cx="812" cy="700" r="3.5" fill="#566072"/>
+    <!-- sneakers -->
+    <rect x="746" y="774" width="48" height="22" rx="9" fill="#e8e4dc" stroke="#b8b2a4" stroke-width="2"/>
+    <rect x="746" y="788" width="48" height="8" rx="4" fill="#8f897c"/>
+    <g transform="rotate(24 792 794)">
+      <rect x="786" y="774" width="48" height="22" rx="9" fill="#e8e4dc" stroke="#b8b2a4" stroke-width="2"/>
+      <rect x="786" y="788" width="48" height="8" rx="4" fill="#8f897c"/>
+    </g>
+    <!-- hoodie torso -->
+    <rect x="736" y="548" width="112" height="108" rx="26" fill="#343b49" stroke="#262c38" stroke-width="3"/>
+    <line x1="792" y1="548" x2="792" y2="610" stroke="#5a6a7e" stroke-width="2.5"/>
+    <circle cx="792" cy="614" r="3" fill="#8b939b"/>
+    <!-- kangaroo pocket -->
+    <path d="M758,612 L826,612 L822,650 L762,650 Z" fill="#2e3542" stroke="#262c38" stroke-width="2.5"/>
+    <!-- phone in pocket, glowing -->
+    <ellipse cx="781" cy="622" rx="27" ry="14" fill="#9fd8ff" opacity="0.3"/>
+    <g transform="rotate(-6 781 623)">
+      <rect x="764" y="616" width="34" height="14" rx="3" fill="#1f242e" stroke="#5a6a7e" stroke-width="2"/>
+      <rect x="767" y="618.5" width="28" height="9" rx="2" fill="#9fd8ff" opacity="0.9"/>
+    </g>
+    <!-- crossed arms -->
+    <rect x="742" y="600" width="100" height="24" rx="12" fill="#3f4756" stroke="#262c38" stroke-width="2.5" transform="rotate(-7 792 612)"/>
+    <rect x="740" y="582" width="100" height="24" rx="12" fill="#464e5e" stroke="#262c38" stroke-width="2.5" transform="rotate(7 790 594)"/>
+    <circle cx="836" cy="591" r="10" fill="#566072" stroke="#262c38" stroke-width="2.5"/>
+    <line x1="828" y1="600" x2="834" y2="606" stroke="#262c38" stroke-width="2"/>
+    <line x1="826" y1="594" x2="834" y2="600" stroke="#262c38" stroke-width="2"/>
+    <!-- hood -->
+    <path d="M782,410 L812,410 L797,392 Z" fill="#343b49"/>
+    <rect x="730" y="408" width="130" height="150" rx="42" fill="#343b49" stroke="#262c38" stroke-width="3"/>
+    <!-- face plate -->
+    <rect x="750" y="430" width="90" height="86" rx="26" fill="#5a6a7e" stroke="#262c38" stroke-width="3"/>
+    <!-- phone glow from below -->
+    <ellipse cx="795" cy="506" rx="32" ry="13" fill="#9fd8ff" opacity="0.35"/>
+    <!-- annoyed flat eyes -->
+    <rect x="758" y="460" width="24" height="6" rx="3" fill="#1d222b" transform="rotate(-7 770 463)"/>
+    <rect x="806" y="458" width="24" height="6" rx="3" fill="#1d222b" transform="rotate(7 818 461)"/>
+    <!-- unimpressed mouth -->
+    <line x1="780" y1="492" x2="810" y2="490" stroke="#39404d" stroke-width="4" stroke-linecap="round"/>
+    <!-- earbud + wire -->
+    <circle cx="752" cy="472" r="4.5" fill="#e94f9b"/>
+    <path d="M752,472 C764,502 742,542 754,588 C760,608 770,612 778,616" stroke="#e94f9b" stroke-width="2" fill="none" opacity="0.85"/>
+    <!-- drawstrings -->
+    <line x1="770" y1="518" x2="765" y2="556" stroke="#cfd6df" stroke-width="3.5" stroke-linecap="round"/>
+    <circle cx="764" cy="559" r="3.5" fill="#cfd6df"/>
+    <line x1="818" y1="518" x2="824" y2="558" stroke="#e94f9b" stroke-width="3.5" stroke-linecap="round"/>
+    <circle cx="825" cy="561" r="3.5" fill="#e94f9b"/>
+  </g>
+
+  <!-- ======================= KID (front, propeller cap, one eye mid-blink, gap grin) ======================= -->
+  <g>
+    <!-- legs: mismatched casings -->
+    <rect x="446" y="784" width="22" height="58" rx="8" fill="#e05a4e"/>
+    <rect x="492" y="784" width="22" height="58" rx="8" fill="#39b8a8"/>
+    <rect x="438" y="842" width="34" height="16" rx="7" fill="#3a3f4a"/>
+    <rect x="486" y="842" width="34" height="16" rx="7" fill="#3a3f4a"/>
+    <!-- torso + overalls -->
+    <rect x="437" y="688" width="86" height="96" rx="22" fill="#f2c14e" stroke="#d8a03c" stroke-width="3"/>
+    <line x1="452" y1="692" x2="462" y2="704" stroke="#4a6fa5" stroke-width="8" stroke-linecap="round"/>
+    <line x1="508" y1="692" x2="498" y2="704" stroke="#4a6fa5" stroke-width="8" stroke-linecap="round"/>
+    <rect x="458" y="700" width="44" height="42" rx="9" fill="#4a6fa5" stroke="#3a5a8a" stroke-width="2.5"/>
+    <circle cx="466" cy="710" r="3.5" fill="#e05a4e"/>
+    <circle cx="494" cy="710" r="3.5" fill="#e05a4e"/>
+    <circle cx="480" cy="748" r="8" fill="#d8a03c" stroke="#b8862e" stroke-width="2"/>
+    <line x1="480" y1="748" x2="486" y2="743" stroke="#b8862e" stroke-width="2"/>
+    <!-- right arm: gripping the leash -->
+    <path d="M516,712 L540,736" stroke="#e0b23e" stroke-width="13" stroke-linecap="round" fill="none"/>
+    <circle cx="542" cy="738" r="8.5" fill="#f2c14e" stroke="#d8a03c" stroke-width="2"/>
+    <!-- left arm: telescoping up to mom's hand -->
+    <path d="M444,710 L436,656" stroke="#e0b23e" stroke-width="14" stroke-linecap="round" fill="none"/>
+    <path d="M436,656 L430,616" stroke="#e0b23e" stroke-width="10" stroke-linecap="round" fill="none"/>
+    <circle cx="429" cy="602" r="8" fill="#f2c14e" stroke="#d8a03c" stroke-width="2"/>
+    <!-- head -->
+    <circle cx="480" cy="645" r="42" fill="#f2c14e" stroke="#d8a03c" stroke-width="3"/>
+    <path d="M444,622 A42,42 0 0 1 516,622" fill="#ffffff" opacity="0.25"/>
+    <circle cx="440" cy="645" r="5" fill="#d8a03c"/>
+    <circle cx="520" cy="645" r="5" fill="#d8a03c"/>
+    <!-- propeller cap -->
+    <path d="M438,645 A42,42 0 0 1 522,645 Z" fill="#e05a4e" stroke="#b8433a" stroke-width="2.5"/>
+    <path d="M438,645 A42,42 0 0 1 480,603 L480,645 Z" fill="#f5f0e8" stroke="#b8433a" stroke-width="2.5"/>
+    <line x1="442" y1="643" x2="518" y2="643" stroke="#b8433a" stroke-width="3"/>
+    <line x1="480" y1="603" x2="480" y2="590" stroke="#3a3f4a" stroke-width="3.5"/>
+    <ellipse cx="480" cy="592" rx="34" ry="6" fill="#f5c86b" stroke="#c98a2e" stroke-width="2.5" transform="rotate(-6 480 592)"/>
+    <!-- eyes: one wide open, one mid-blink -->
+    <circle cx="496" cy="640" r="10.5" fill="#ffffff" stroke="#2c3540" stroke-width="2.5"/>
+    <circle cx="498" cy="642" r="5.5" fill="#2c3540"/>
+    <circle cx="500" cy="639" r="2" fill="#ffffff"/>
+    <path d="M450,642 Q462,652 474,642" stroke="#2c3540" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <line x1="456" y1="646" x2="455" y2="652" stroke="#2c3540" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="468" y1="646" x2="469" y2="652" stroke="#2c3540" stroke-width="2.5" stroke-linecap="round"/>
+    <!-- gap-tooth grin -->
+    <rect x="452" y="668" width="56" height="22" rx="11" fill="#57292e"/>
+    <rect x="456" y="670" width="48" height="8" rx="4" fill="#ffffff"/>
+    <rect x="474" y="668" width="10" height="12" fill="#57292e"/>
+    <!-- blush -->
+    <circle cx="444" cy="662" r="7" fill="#f0a3a3" opacity="0.4"/>
+    <circle cx="516" cy="662" r="7" fill="#f0a3a3" opacity="0.4"/>
+  </g>
+
+  <!-- ======================= OVERLAY ARMS (hover hands, drawn over neighbors) ======================= -->
+  <!-- mom's hover-hand over dad's shoulder -->
+  <g>
+    <path d="M430,462 L474,432" stroke="#e8dcc4" stroke-width="14" stroke-linecap="round" fill="none"/>
+    <path d="M474,432 L516,348" stroke="#e8dcc4" stroke-width="12" stroke-linecap="round" fill="none"/>
+    <g transform="rotate(-18 528 342)">
+      <rect x="514" y="336" width="28" height="13" rx="6.5" fill="#f3ecdd" stroke="#d9cbb0" stroke-width="2.5"/>
+      <line x1="523" y1="341" x2="523" y2="349" stroke="#d9cbb0" stroke-width="2"/>
+      <line x1="531" y1="341" x2="531" y2="349" stroke="#d9cbb0" stroke-width="2"/>
+    </g>
+  </g>
+  <!-- dad's hover-hand near the teen's shoulder (not touching, obviously) -->
+  <g>
+    <path d="M632,386 L698,428" stroke="#a5b4bf" stroke-width="17" stroke-linecap="round" fill="none"/>
+    <path d="M698,428 L726,456" stroke="#a5b4bf" stroke-width="14" stroke-linecap="round" fill="none"/>
+    <g transform="rotate(-24 730 462)">
+      <rect x="716" y="456" width="27" height="12" rx="6" fill="#b6c4cf" stroke="#8b9aa6" stroke-width="2.5"/>
+      <line x1="724" y1="461" x2="724" y2="468" stroke="#8b9aa6" stroke-width="2"/>
+      <line x1="732" y1="461" x2="732" y2="468" stroke="#8b9aa6" stroke-width="2"/>
+    </g>
+  </g>
+
+  <!-- ======================= ROBO-DOG (ignoring everyone, staring at the laser dot) ======================= -->
+  <g>
+    <!-- tail antenna -->
+    <path d="M852,752 L826,714" stroke="#7d3430" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="824" cy="710" r="6.5" fill="#ffd166" stroke="#c98a2e" stroke-width="2"/>
+    <!-- body -->
+    <rect x="850" y="745" width="95" height="58" rx="18" fill="#d05548" stroke="#a8423a" stroke-width="3"/>
+    <line x1="850" y1="768" x2="945" y2="768" stroke="#a8423a" stroke-width="2.5" opacity="0.7"/>
+    <circle cx="866" cy="758" r="2.5" fill="#a8423a"/>
+    <circle cx="866" cy="790" r="2.5" fill="#a8423a"/>
+    <ellipse cx="866" cy="788" rx="26" ry="27" fill="#c94e42" stroke="#a8423a" stroke-width="3"/>
+    <!-- rear leg + wheel -->
+    <rect x="856" y="806" width="13" height="22" fill="#b3453b"/>
+    <circle cx="862" cy="834" r="11" fill="#2f3138"/>
+    <circle cx="862" cy="834" r="4" fill="#8b939b"/>
+    <!-- front leg planted + wheel -->
+    <rect x="902" y="806" width="13" height="22" fill="#b3453b"/>
+    <circle cx="908" cy="834" r="11" fill="#2f3138"/>
+    <circle cx="908" cy="834" r="4" fill="#8b939b"/>
+    <!-- front paw lifted, mid-step -->
+    <g transform="rotate(32 916 804)">
+      <rect x="912" y="802" width="13" height="24" fill="#b3453b"/>
+      <circle cx="918" cy="830" r="10" fill="#2f3138"/>
+      <circle cx="918" cy="830" r="3.5" fill="#8b939b"/>
+    </g>
+    <!-- collar -->
+    <g transform="rotate(24 906 762)">
+      <rect x="896" y="740" width="22" height="46" rx="9" fill="#2f3138"/>
+      <circle cx="907" cy="788" r="5.5" fill="#d8a03c" stroke="#b8862e" stroke-width="2"/>
+    </g>
+    <!-- head, angled down toward the dot -->
+    <rect x="930" y="710" width="66" height="50" rx="14" fill="#d05548" stroke="#a8423a" stroke-width="3"/>
+    <rect x="958" y="733" width="46" height="25" rx="11" fill="#b9c2c9" stroke="#93a3af" stroke-width="2.5"/>
+    <circle cx="1001" cy="745" r="6.5" fill="#2e2e2e"/>
+    <!-- bug eyes locked on the dot -->
+    <circle cx="950" cy="722" r="6.5" fill="#ffffff" stroke="#7d3430" stroke-width="2"/>
+    <circle cx="971" cy="719" r="6.5" fill="#ffffff" stroke="#7d3430" stroke-width="2"/>
+    <circle cx="952.5" cy="724.5" r="2.6" fill="#2e2e2e"/>
+    <circle cx="973.5" cy="721.5" r="2.6" fill="#2e2e2e"/>
+    <circle cx="953.5" cy="723" r="1" fill="#ff4f9e"/>
+    <circle cx="974.5" cy="720" r="1" fill="#ff4f9e"/>
+    <!-- one raised eyebrow -->
+    <line x1="964" y1="707" x2="980" y2="704" stroke="#7d3430" stroke-width="3" stroke-linecap="round"/>
+    <!-- folded ear -->
+    <polygon points="934,712 956,704 944,684" fill="#a8423a"/>
+    <path d="M936,708 L948,702" stroke="#7d3430" stroke-width="2.5"/>
+  </g>
+
+  <!-- leash from kid to dog -->
+  <path d="M542,738 C690,806 820,800 893,779" stroke="#3a3f4a" stroke-width="4" fill="none" stroke-linecap="round"/>
+
+  <!-- THE LASER DOT (the dog's whole world right now) -->
+  <circle cx="990" cy="812" r="14" fill="#ff4f9e" opacity="0.35"/>
+  <circle cx="990" cy="812" r="7" fill="#ff4f9e"/>
+  <circle cx="990" cy="812" r="2.8" fill="#ffd7ea"/>
+
+  <!-- vignette -->
+  <rect x="0" y="0" width="1200" height="900" fill="url(#vig)"/>
+</svg>

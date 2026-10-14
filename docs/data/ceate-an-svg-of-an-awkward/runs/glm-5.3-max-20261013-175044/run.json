@@ -1,0 +1,46 @@
+{
+  "id": "glm-5.3-max-20261013-175044",
+  "page": "ceate-an-svg-of-an-awkward",
+  "model": "openrouter/z-ai/glm-5.3",
+  "effort": "max",
+  "kind": "media",
+  "started_at": "2026-10-14T00:54:26Z",
+  "batch": "2026-10-13-175044-ceate-an-svg-of-an-awkward",
+  "harness": {
+    "name": "pi",
+    "version": "1.2.0"
+  },
+  "state": "failed",
+  "error": "402: {\"message\":\"This request would exceed your available credits given your current in-flight requests. Retry after in-flight requests settle, or add credits.\",\"code\":402,\"metadata\":{\"reason\":\"in_fli",
+  "route": {
+    "requested": null,
+    "served": [
+      "Friendli"
+    ],
+    "cost_usd": 0.150063012,
+    "pi_cost_usd": 0.1589383888
+  },
+  "metrics": {
+    "duration_ms": 188980,
+    "cost_usd": 0.150063012,
+    "tool_calls": 2,
+    "turns": 3,
+    "tokens_total": 37775,
+    "tokens_input": 1971,
+    "tokens_output": 35804,
+    "tokens_reasoning": 18793,
+    "tokens_cache_read": 24768
+  },
+  "thumb": null,
+  "output": null,
+  "session": {
+    "conversation": "session/conversation.json",
+    "stderr": "session/stderr.txt"
+  },
+  "source": {
+    "root": "source/",
+    "files": [
+      "src/robot-family-portrait.svg"
+    ]
+  }
+}
