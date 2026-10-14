@@ -81,7 +81,7 @@ def _put(url, body, headers=None):
 def test_api_local_says_ranking_is_available(served):
     _, base = served
     status, _, body = _get(base + "api/local")
-    assert status == 200 and json.loads(body) == {"rank": True}
+    assert status == 200 and json.loads(body) == {"rank": True, "requests": True}
 
 
 def test_saving_a_ranking_writes_it_and_rebuilds(served):
@@ -140,3 +140,43 @@ def test_rm_drops_the_removed_run_from_the_ranking(served):
     _put(base + "api/rank?p=demo", {"ranks": {HIGH: 1, LOW: 2}})
     assert main(["rm", "demo", LOW, "--root", str(docs.parent)]) == 0
     assert json.loads((docs / "data/demo/ranking.json").read_text())["ranks"] == {HIGH: 1}
+
+
+# --- local prompt requests -----------------------------------------------------------------------
+
+def test_prompt_requests_are_added_listed_and_removed_outside_docs(served):
+    docs, base = served
+    (docs.parent / "art-crit.toml").write_text('[sets]\ncheap = ["openai-codex/gpt-6-luna:low"]\n')
+    status, _, body = _get(base + "api/requests")
+    assert status == 200 and json.loads(body) == {"requests": [], "sets": ["cheap"]}
+
+    status, body = _put(base + "api/requests", {"add": {"prompt": "  a voxel lighthouse  ", "kind": "godot", "title": "", "set": "cheap"}})
+    assert status == 200 and len(body["requests"]) == 1
+    req = body["requests"][0]
+    assert req["prompt"] == "a voxel lighthouse" and req["kind"] == "godot" and req["set"] == "cheap" and "title" not in req
+    saved = json.loads((docs.parent / "requests.json").read_text())  # next to docs/, never inside it
+    assert saved == body["requests"] and not list(docs.rglob("requests.json"))
+
+    status, body = _put(base + "api/requests", {"remove": req["id"]})
+    assert status == 200 and body["requests"] == []
+
+
+@pytest.mark.parametrize("body,error", [
+    ({"add": {"prompt": "", "kind": "media"}}, "a prompt is required"),
+    ({"add": {"prompt": "x", "kind": "movie"}}, "kind must be one of"),
+    ({"add": {"prompt": "x" * 4001, "kind": "media"}}, "at most 4000"),
+    ({"add": {"prompt": "x", "kind": "media", "set": "nope"}}, "no such model set"),
+    ({"remove": "missing"}, "no such request"),
+    ({"edit": 1}, "expected add or remove"),
+])
+def test_bad_prompt_requests_are_refused(served, body, error):
+    docs, base = served
+    status, resp = _put(base + "api/requests", body)
+    assert status == 400 and error in resp["error"]
+    assert not (docs.parent / "requests.json").exists()
+
+
+def test_cross_site_prompt_requests_are_refused(served):
+    docs, base = served
+    status, _ = _put(base + "api/requests", {"add": {"prompt": "x", "kind": "media"}}, {"Origin": "https://evil.example"})
+    assert status == 403 and not (docs.parent / "requests.json").exists()

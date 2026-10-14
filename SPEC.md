@@ -380,6 +380,7 @@ records its harness; batch.json has `harnesses: {name: version}`. The run ids of
 the model (`claude-opus-5-5-cc-high-20260928-154152`), so one model under two harnesses never collides.
 ```python
 class Harness:           # one per agent program
+    name: str; tag: str                                 # tag: "" for pi, "cc"/"agy"/"gb"/"mc"/"cx" for the others
     def version(self) -> str | None
     def models(self) -> list[str]
     def resolve(self, model) -> str                     # alias -> id (identity by default)
@@ -441,6 +442,7 @@ Grok Build (`grok`): models are intersected with `grok models`; effort menus for
 Muse Code (`muse`): models and levels come from the catalog `muse` caches in `~/.local/share/muse/model-catalog/*.json` (`rows[].model_id` with `reasoning_effort_variants[].tier`, hidden `-contributor` rows included, image models skipped), refreshed only when the Muse TUI fetches it; the `MuseCode.MODELS` table is the fallback without a cache. The recorded model is `meta/<id>`. Command: `bash -c` running `muse exec --json --session-id ID --model M --reasoning-effort L --disable-approval --disable-sandbox --disable-web-tools --disable-reminders --no-foreign-personal-context -- BRIEF`, then `muse export --session ID --out harness/export.json` whatever `exec`'s exit code was (exec's own `--json` stdout, `events.jsonl`, carries no tool calls or usage). `export.json` is the session: its `events` are records whose `runtime.session` payloads of `kind: run` hold `reasoning_committed`, `assistant_message_committed`, `assistant_tool_calls_committed` (`tool_calls[{call_id, name, args}]`), `tool_result_batch_committed`, `model_completed` (`usage`) and `terminal` events; only runs with a `top_level_turn.run_origin` fact count. Conversion: one assistant message per model call (thinking, text, toolCalls, usage); `bash`/`write_file`/`edit_file`/`read_file` become pi's `bash`/`write`/`edit`/`read`; tool durations are exact (the `tool_batch.effect` start and end per call); timestamps from the records' `recorded_at` (µs). Metrics: turns = `model_completed` events, tokens summed over their usage with `input` = `input_tokens` - cache read/write (Muse's include them), reasoning = `reasoning_tokens`; `cost_usd` for models with published [Meta Model API prices](https://dev.meta.ai/docs/pricing-rate-limits) is `(input + cacheWrite) * input_rate + cacheRead * cached_rate + output * output_rate`, divided by 1M (reasoning is already in output). It is marked `metrics.cost_estimated: true`: API-equivalent, **not** actual subscription spend. Supported: Wonder 1.0 Standard ($4/$0.20/$20 per million uncached/cached/output), Spark 1.2/1.3 Standard ($1.25/$0.15/$4.25) and Spark 1.2/1.3 Contributor ($0.10/$0.002/$0.20). Muse Wonder Full and Wonder Contributor have no published API rate: they use Wonder Standard's rate as a **proxy**, marked `metrics.cost_estimate_proxy: "meta/muse-wonder-1.0"` (≈ in the viewer). Unknown models remain 0 (**unknown**, not free). The rates are pinned in `MuseCode.API_PRICES` and require updating when Meta changes pricing. Re-importing a legacy Muse run with `harness/export.json` calculates its estimate without modifying the archived batch run.json. Failed = no `terminal` event or one that is not `completed` (error = its `reason`).
 
 Codex (`codex`): version = second word of `codex --version` (`codex-cli X`). Models and levels come from `codex debug models` (`models[].slug` with `supported_reasoning_levels[].effort`, `visibility: list` rows only; `ultra` is dropped because it isn't in LEVEL_ORDER), cached per harness instance; runs are recorded as `openai/<slug>`. Command = `codex exec --json --ephemeral --ignore-user-config --ignore-rules --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox -m ID -c model_reasoning_effort="LEVEL" BRIEF`: one direct agent, no approvals or sandbox (like the other harnesses), no user config or execpolicy rules, and nothing persisted to `~/.codex/sessions`. The stdout JSONL stream is the session. Conversion to pi's format: only `item.completed` items count (`item.started`/`item.updated` are the same item in flight); `reasoning` -> thinking, `agent_message` -> text, each tool item (`command_execution` -> pi's `bash` with the command, `file_change`, `mcp_tool_call`, `collab_tool_call`, `web_search`) becomes one assistant `toolCall` plus its `toolResult` (`command_execution`'s output is `aggregated_output`, failed when its status isn't `completed` or its exit code is non-zero); a `turn.completed` flushes the pending assistant message with that turn's usage. The stream carries no timestamps and no model id, so entries have neither. Metrics: turns = `turn.started` count (at least the completed ones), tool calls = completed tool items, tokens summed over `turn.completed` usage with `input` = `input_tokens` - cached - cache-write (Codex's includes cached ones), reasoning = `reasoning_output_tokens`; cost is not reported (0 = **unreported**, not free); failed = a `turn.failed`/`error` event or no completed turn (error = its message).
+
 Future harnesses and a VM runner plug in here and at "start one agent" in `runner.py`; a container executor mounts one run directory.
 
 ### Ctrl-C
@@ -459,7 +461,7 @@ model (no `id` in its runs) can't be resumed.
 The page owner ranks runs in the browser; there is no CLI command for it. Only `art-crit serve` can save a ranking
 (GitHub Pages is static), so the published site shows rankings read-only.
 
-- `art-crit serve` answers `GET api/local` → `{"rank": true}` and `PUT api/rank?p=<slug>` with body
+- `art-crit serve` answers `GET api/local` → `{"rank": true, "requests": true}` and `PUT api/rank?p=<slug>` with body
   `{"ranks": {"<run id>": <int>|null, ...}}`. It validates the slug (`[a-z0-9][a-z0-9-]*`, page must exist), that every
   id is a run of the page, and that each rank is a whole number from 1 to the number of runs (ties allowed; `null`
   = unranked), writes `data/<slug>/ranking.json`, then rebuilds. Errors are `400 {"error": ...}`.
@@ -467,6 +469,21 @@ The page owner ranks runs in the browser; there is no CLI command for it. Only `
   without a CORS preflight, which the server doesn't answer) → else 415, a loopback `Host` (127.0.0.1, localhost or ::1;
   a DNS-rebinding site sends its own name in both Host and Origin) → else 403, and an `Origin` header, when present, must
   match the `Host` → else 403.
+
+## Prompt requests
+
+Ideas for new pages, collected on the home page under `art-crit serve` only (ADR-0024). The published site has no
+`api/requests`, so it never shows the button or the list.
+
+- `GET api/requests` → `{"requests": [...], "sets": [...]}` (`sets`: the names in art-crit.toml `[sets]`).
+- `PUT api/requests` with `{"add": {"prompt", "kind", "title"?, "note"?, "set"?}}` or `{"remove": "<id>"}` →
+  `{"requests": [...]}`. `prompt` is required (≤ 4000 chars), `kind` one of the registered kinds, `title` ≤ 120,
+  `note` ≤ 1000, `set` a name from `[sets]`; text is trimmed and empty optional fields are dropped. Each request gets
+  an `id` (8 hex chars) and `created` (UTC). Errors are `400 {"error": ...}`; same write checks as the ranking API.
+- Stored in `requests.json` next to `docs/` (gitignored), never under `docs/`, so no publish step can push it.
+- The viewer (`requests.js`) shows a "Request a prompt" button in the hero that opens a modal form (prompt, kind,
+  title, model set, note, and a live preview of the command), and a "Requested prompts" list, newest first, each
+  card with its `uv run art-crit run -k KIND [-t TITLE] [-s SET] 'PROMPT'` command (POSIX-quoted), Copy and Remove.
 - `rebuild` copies each run's rank into `page.json.runs` (`rank`, `null` when unranked) and drops `ranking.json` entries
   for runs that no longer exist (e.g. after `art-crit rm`).
 - The viewer only asks `api/local` when served from localhost; when it answers, the page shows a rank picker per row.
@@ -574,7 +591,7 @@ immediate sandboxed frame, the media gallery, or the "no output" message, with t
 one `KIND_UI` table (chip label, tab label, no-output text and failure badge per kind); page, run, compare and play all call
 them. Any output with an `entry` is shown in the sandbox, so a new kind needs no viewer code.
 
-- **index.html**: cards per page (thumb, a Game/Media chip, title, one icon per model vendor (OpenRouter's provider icons, vendored under `assets/vendor/icons/`; its models on hover), n_runs, updated date) → page.html.
+- **index.html**: cards per page (thumb, a Game/Media chip, title, one icon per model vendor (OpenRouter's provider icons, vendored under `assets/vendor/icons/`; its models on hover), n_runs, updated date) → page.html. Under `art-crit serve`, also the prompt requests (see Prompt requests).
 - **page.html**: title, a details sidebar with a meta line (kind, n runs, n models), the Prompt (prompt.md) and a collapsed Final prompt,
   then **highlights**: the cheapest, fastest and fewest-tokens run among those that made their output (each links to it; a cost of 0 means unreported and never ranks) plus verified count, failed
   count and total spend. Then a runs table (thumb, rank, model, effort, harness,

@@ -205,6 +205,13 @@ Under `art-crit serve`, each runs-table row gets a picker (– or 1st, 2nd, …,
 sort first and show 🥇🥈🥉 (then #4, #5…) across the page, gallery, compare, and run views. The live
 site can't write rankings — only your local `art-crit serve` can.
 
+## Request a prompt
+
+Under `art-crit serve`, the home page has a **Request a prompt** button: write the task, pick its kind (media,
+game or web), and optionally a title, a model set from `[sets]` and a note. Requests are listed on the home page
+with the exact `uv run art-crit run …` command to make each one a page (Copy puts it on the clipboard). They're
+kept in `requests.json` beside `docs/`, gitignored and never published; the live site doesn't show any of this.
+
 ## Import runs
 
 `art-crit run` imports its batch when it finishes. To re-publish a run or batch — say after `art-crit rm`:

@@ -105,6 +105,47 @@ def test_home_lists_page(site, page):
     assert_no_errors(page)
 
 
+def test_request_a_prompt_is_local_only(site, page):
+    page.goto(site)  # the published site has no api/requests: no button, no list
+    page.wait_for_selector(".card")
+    assert page.locator("#request-open").count() == 0 and page.locator("#requests").is_hidden()
+    assert_no_errors(page)
+
+
+def test_request_a_prompt_saves_and_lists_it_with_its_run_command(site, page):
+    saved, puts = [], []
+
+    def api(route):  # what `art-crit serve` answers (src/art_crit/serve.py)
+        url, req = route.request.url, route.request
+        if url.endswith("/api/local"):
+            return route.fulfill(json={"rank": True, "requests": True})
+        if "/api/requests" in url and req.method == "GET":
+            return route.fulfill(json={"requests": saved, "sets": ["frontier"]})
+        if "/api/requests" in url and req.method == "PUT":
+            body = req.post_data_json
+            puts.append(body)
+            saved.append({"id": "r1", "created": "2026-10-13T00:00:00Z", **{k: v for k, v in body["add"].items() if v}})
+            return route.fulfill(json={"requests": saved})
+        route.fallback()
+
+    page.route("**/api/**", api)
+    page.goto(site)
+    page.locator("#request-open").click()
+    dialog = page.locator(".request-dialog")
+    assert dialog.is_visible()
+    dialog.locator("textarea[name=prompt]").fill("a pelican's bicycle")
+    dialog.locator("input[name=kind][value=web]").check(force=True)
+    dialog.locator("select[name=set]").select_option("frontier")
+    assert dialog.locator("pre.request-cmd").inner_text() == "uv run art-crit run -k web -s frontier 'a pelican'\\''s bicycle'"
+    dialog.locator("button[type=submit]").click()
+    expect(page.locator(".request-card")).to_have_count(1)
+    assert not dialog.is_visible()
+    assert puts == [{"add": {"prompt": "a pelican's bicycle", "kind": "web", "title": "", "note": "", "set": "frontier"}}]
+    card = page.locator(".request-card")
+    assert "Web" in card.locator(".kind-chip").inner_text() and "a pelican's bicycle" in card.inner_text()
+    assert_no_errors(page)
+
+
 # ---------------------------------------------------------------- page.html
 def test_page_table_and_sorting(site, page):
     page.goto(f"{site}page.html?p=demo&view=table")

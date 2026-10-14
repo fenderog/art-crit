@@ -50,3 +50,4 @@ Copy `template.md` to `NNNN-short-title.md` using the next number, and add it to
 | [0021](0021-cloudflare-pages-subpath.md) | Cloudflare Pages on a domain subpath with compressed engine | Accepted |
 | [0022](0022-community-votes.md) | Community votes: GitHub sign-in, hearts and medals in D1 behind the Worker | Accepted |
 | [0023](0023-muse-code-reads-its-exported-session.md) | Muse Code: the session is `muse export`ed after `exec`, not read from `--json` | Accepted |
+| [0024](0024-prompt-requests-are-local.md) | Prompt requests are local: `art-crit serve` keeps them outside `docs/` | Accepted |
