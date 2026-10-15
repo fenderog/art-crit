@@ -241,6 +241,9 @@ art-crit run PROMPT | -f/--prompt-file FILE
                         an error, since every import replaces the page's prompt for all its runs
     -t, --title TEXT    page title (default: from slug, as for import). Without --page/--slug it also names the slug
     -b, --brief FILE    use this brief template instead of the built-in one ({prompt} is substituted)
+    -R, --ref FILE      a reference file, a path under <root>/references/ (repeatable); must exist. It is copied into the batch
+                        and every run's work/references/, and the brief (not the page's prompt) lists ./references/<name>.
+                        The copies are never published as source
     -j N                max agents at once (default [run].parallel or 8)
     -T, --timeout DUR   per agent, "30m" / "90s" / "1h" (default [run].timeout or 30m)
     -y, --yes           don't ask for confirmation

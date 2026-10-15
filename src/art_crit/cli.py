@@ -9,7 +9,7 @@ from .config import Config, RunRequest
 from .harness import HARNESSES
 from .importer import cmd_import
 from .kinds import KINDS
-from .runner import cmd_models, cmd_run
+from .runner import cmd_models, cmd_run, resolve_ref
 from .serve import serve_forever
 from .site import cmd_list, cmd_rename, cmd_rm, rebuild
 from .util import CritError
@@ -65,6 +65,7 @@ def build_parser():
     run.add_argument("-b", "--brief", type=Path, help="brief template file ({prompt} is substituted)")
     run.add_argument("-j", type=int, dest="parallel", help="max agents at once")
     run.add_argument("-T", "--timeout", help='per agent, e.g. "30m" (default [run].timeout or 30m)')
+    run.add_argument("-R", "--ref", dest="refs", action="append", default=[], metavar="FILE", help="a reference file under <root>/references/ (copied into each agent's working dir, which the brief points to); repeatable")
     run.add_argument("-y", "--yes", action="store_true", help="don't ask for confirmation")
     run.add_argument("-n", "--dry-run", action="store_true", help="print the plan and exit")
     run.add_argument("-P", "--publish", dest="publish", action="store_true", default=True, help="import and `art-crit publish` each run as it finishes (the default)")
@@ -138,6 +139,7 @@ def main(argv=None):
                 timeout=args.timeout,
                 publish=args.publish,
                 change_prompt=args.change_prompt,
+                refs=[resolve_ref(root, ref) for ref in args.refs],
             )
             return cmd_run(
                 config,

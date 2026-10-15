@@ -280,6 +280,35 @@ def test_brief_is_not_written_into_the_agents_working_dir(run_root):
     assert "brief.md" not in files
 
 
+def test_ref_is_looked_up_under_references_and_named_in_the_brief_only(tmp_path):
+    from art_crit.runner import render_brief, resolve_ref
+
+    (tmp_path / "references").mkdir()
+    (tmp_path / "references/toy.jpg").write_bytes(b"jpg")
+    (tmp_path / "outside.jpg").write_bytes(b"jpg")
+    ref = resolve_ref(tmp_path, "toy.jpg")
+    assert ref == str((tmp_path / "references/toy.jpg").resolve())
+    brief = render_brief(None, "model the toy", "media", (), [ref])
+    assert "model the toy\n\nReference files" in brief and "- ./references/toy.jpg" in brief
+    assert "references" not in render_brief(None, "model the toy", "media", ())
+    for bad in ("missing.jpg", "../outside.jpg"):
+        with pytest.raises(CritError, match="no such file"):
+            resolve_ref(tmp_path, bad)
+
+
+def test_ref_is_copied_into_each_runs_work_dir_and_not_published_as_source(run_root, tmp_path):
+    (run_root / "references").mkdir()
+    (run_root / "references/toy.txt").write_text("a reference")
+    rc = main(["run", "--yes", "ref run", "-m", "openai-codex/gpt-6-sol:low", "--ref", "toy.txt", "--root", str(run_root)])
+    assert rc == 0
+    [batch] = (tmp_path / "art-crit-runs").glob("*-ref-run")
+    [run_dir] = [d for d in batch.iterdir() if d.is_dir() and (d / "work").is_dir()]
+    assert (run_dir / "work/references/toy.txt").read_text() == "a reference"
+    assert "- ./references/toy.txt" in (run_dir / "harness/brief.md").read_text()
+    [run] = json.loads((run_root / "docs/data/ref-run/page.json").read_text())["runs"]
+    assert not any(f.startswith("references/") for f in run["source"]["files"])
+
+
 def test_tool_durations_are_stored_and_the_event_stream_is_not_published(run_root):
     rc = main(["run", "--yes", "events run", "-m", "openai-codex/gpt-6-sol:low", "--root", str(run_root)])
     assert rc == 0

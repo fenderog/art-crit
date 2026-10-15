@@ -114,7 +114,7 @@ def stage_source(work_dir, run_dir, kind, rewrites, redact, batch):
     files = []
     for src in sorted(work_dir.rglob("*")):
         rel = src.relative_to(work_dir)
-        if src.is_dir() or rel.parts[0] in SOURCE_SKIP or src.name in SOURCE_SKIP or not kind.keep_source(rel, src):
+        if src.is_dir() or rel.parts[0] in SOURCE_SKIP | {"references"} or src.name in SOURCE_SKIP or not kind.keep_source(rel, src):
             continue
         write_cleaned(src, run_dir / "source" / rel, "text", rewrites, redact, batch)
         files.append(rel.as_posix())

@@ -177,8 +177,22 @@ def clean_prompt(config, prompt):
     return clean.rewrite_text(prompt.strip(), config.rewrites)[0]
 
 
-def render_brief(brief_text, prompt, kind="godot", tool_entries=()):
+REF_DIR = "references"  # <root>/references/ is where --ref looks; work/references/ holds a run's copies (the importer never publishes it)
+
+
+def resolve_ref(root, name):
+    """A --ref name (a path under <root>/references/) as an absolute path to an existing file inside it."""
+    folder = (Path(root) / REF_DIR).resolve()
+    ref = (folder / name).resolve()
+    if folder not in ref.parents or not ref.is_file():
+        raise CritError(f"--ref {name}: no such file in {folder}")
+    return str(ref)
+
+
+def render_brief(brief_text, prompt, kind="godot", tool_entries=(), refs=()):
     template = brief_text if brief_text else KINDS[kind]().brief()
+    if refs:  # in the brief only: the page's prompt stays the task itself
+        prompt += f"\n\nReference files (read them, don't modify them), in ./{REF_DIR}/:\n" + "\n".join(f"- ./{REF_DIR}/{Path(r).name}" for r in refs)
     tools = describe_tools(tool_entries) if "{tools}" in template else ""
     return template.format(prompt=prompt, tools=tools)
 
@@ -320,6 +334,9 @@ def run_agent(harness, run, rd, batch, version, timeout_s, progress, live, live_
     The kind's `agent_session` (blender: the run's own Blender) is up for exactly as long as the agent."""
     rd.reset()
     brief = batch["brief"]
+    refs = rd.path.parent / REF_DIR  # the batch's own copies, so --resume doesn't depend on the originals
+    if refs.is_dir():
+        shutil.copytree(refs, rd.work / REF_DIR)
     (rd.harness / "brief.md").write_text(brief)  # kept out of work/: never seen/edited by the agent
     stdout_path, stderr_path = rd.harness / "events.jsonl", rd.harness / "stderr.txt"
     started = datetime.now(timezone.utc)
@@ -725,9 +742,12 @@ def cmd_run(config, request, *, yes=False, dry_run=False, resume=None, verify=Tr
 
     batch_dir.mkdir(parents=True)
     (batch_dir / "prompt.md").write_text(prompt)
+    for ref in request.refs:
+        (batch_dir / REF_DIR).mkdir(exist_ok=True)
+        shutil.copy2(ref, batch_dir / REF_DIR / Path(ref).name)
     batch = {
         "prompt": prompt, "kind": kind, "page": slug, "title": title, "title_is_explicit": title_is_explicit,
-        "harnesses": versions, "brief": render_brief(request.brief, prompt, kind, config.run.tools),
+        "harnesses": versions, "brief": render_brief(request.brief, prompt, kind, config.run.tools, request.refs),
         "request": request.to_dict(), "created": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "runs": runs,
     }

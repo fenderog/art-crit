@@ -87,11 +87,15 @@ class RunRequest:
     timeout: str | None = None
     publish: bool = True  # publish (import + push) each run as it finishes; --no-publish opts out
     change_prompt: bool = False
+    refs: list[str] = field(default_factory=list)  # absolute paths of local reference files named in the brief
 
     def __post_init__(self):
         """Validated where it's built, before any batch dir exists (from argparse or from JSON)."""
         if self.kind is not None and self.kind not in KINDS:
             raise CritError(f"unknown kind {self.kind!r} (expected one of: {', '.join(KINDS)})")
+        names = [Path(ref).name for ref in self.refs]
+        if len(set(names)) != len(names):
+            raise CritError(f"--ref files must have different names (they're copied into one folder): {', '.join(names)}")
         if self.parallel is not None:
             _check_parallel(self.parallel, "parallel")
         if self.timeout is not None:
