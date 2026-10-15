@@ -81,10 +81,17 @@ def expand_sets(config, set_args):
     return specs
 
 
+def slugify(text):
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:40].rstrip("-") or "run"
+
+
 def slug_from_prompt(prompt):
-    words = prompt.strip().split()[:6]
-    slug = re.sub(r"[^a-z0-9]+", "-", " ".join(words).lower()).strip("-")
-    return slug[:40].rstrip("-") or "run"
+    return slugify(" ".join(prompt.strip().split()[:6]))
+
+
+def page_slug(page, title, prompt):
+    """--page/--slug wins, else the --title, else the prompt's first words."""
+    return page or (slugify(title) if title and title.strip() else slug_from_prompt(prompt))
 
 
 def parse_model_spec(spec, known):
@@ -659,7 +666,7 @@ def cmd_run(config, request, *, yes=False, dry_run=False, resume=None, verify=Tr
         request.model_specs += pick_models(harnesses)
         if not request.model_specs:
             raise CritError("no models were picked (or pass -m MODEL / --set)")
-    slug = page or slug_from_prompt(prompt)
+    slug = page_slug(page, title, prompt)
     existing = page_json(root, slug)
     page_exists = existing is not None
     page_kind = existing.get("kind", "godot") if page_exists else None

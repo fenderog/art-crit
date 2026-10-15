@@ -58,7 +58,7 @@ A few things worth knowing:
   `art-crit models [SEARCH]` shows what's available.
 - You'll see the plan and confirm it. `-n/--dry-run` prints the plan and stops.
   `-y/--yes` skips the prompt for scripts.
-- Useful flags: `-p/--page`, `-t/--title`, `-j N` (how many agents at once),
+- Useful flags: `-p/--page` (alias `--slug`: the page slug, default taken from `--title` if given, else the prompt), `-t/--title`, `-j N` (how many agents at once),
   `-T/--timeout 30m`, `-b/--brief FILE` (your own brief template, `{prompt}` is your prompt),
   `--no-publish` (publishing each run is the default). `art-crit run -h` has the full list.
 - Ctrl-C stops everything. `art-crit run --resume <batch dir>` picks up a batch without

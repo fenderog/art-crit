@@ -197,7 +197,7 @@ The page's prompt is the batch directory's `prompt.md`. Effort-run folders (`fe-
 ## CLI (`art-crit`, run from the repo root, or pass `-C/--root`)
 
 ```
-art-crit import <run-dir | batch-dir> [-p/--page SLUG] [-t/--title TEXT] [-r/--redact] [-a/--allow-threads] [-n/--dry-run]
+art-crit import <run-dir | batch-dir> [-p/--page/--slug SLUG] [-t/--title TEXT] [-r/--redact] [-a/--allow-threads] [-n/--dry-run]
 art-crit list                      # pages and their runs
 art-crit rm <slug> [<run_id>] [-f/--failed] [-y/--yes]   # remove a run (or a whole page); --failed removes every failed run instead, then rebuild
 art-crit rename <slug> <new> [-t/--title TEXT]   # move a page to a new slug (rewrites each run.json `page`), then rebuild
@@ -234,11 +234,12 @@ art-crit run PROMPT | -f/--prompt-file FILE
                         listing the defined sets.
     -e, --effort LEVELS default LEVELS for every model without a suffix (-m or set entry)
     -i, --pick          pick harnesses, models (by number or a fuzzy search) and levels interactively (implied when no -m/--set is given; needs a tty)
-    -p, --page SLUG     add to this page (default: slug of the prompt's first 6 words, max 40 chars). For an existing
-                        page, PROMPT can be left out: its prompt (page.json) and kind are reused.
+    -p, --page, --slug SLUG
+                        add to this page (default: slug of --title if given, else of the prompt's first 6 words; max 40
+                        chars). For an existing page, PROMPT can be left out: its prompt (page.json) and kind are reused.
     -c, --change-prompt allow a PROMPT that differs from the existing page's (after path cleaning); without it that's
                         an error, since every import replaces the page's prompt for all its runs
-    -t, --title TEXT    page title (default: from slug, as for import)
+    -t, --title TEXT    page title (default: from slug, as for import). Without --page/--slug it also names the slug
     -b, --brief FILE    use this brief template instead of the built-in one ({prompt} is substituted)
     -j N                max agents at once (default [run].parallel or 8)
     -T, --timeout DUR   per agent, "30m" / "90s" / "1h" (default [run].timeout or 30m)

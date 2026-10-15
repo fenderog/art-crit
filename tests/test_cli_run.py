@@ -173,6 +173,23 @@ def test_dry_run_prints_plan_and_writes_nothing(run_root, capsys):
     assert not (run_root / "docs" / "data").exists() or not list((run_root / "docs" / "data").iterdir())
 
 
+def test_slug_comes_from_title_unless_overridden():
+    from art_crit.runner import page_slug
+    assert page_slug(None, None, "a spinning red cube in space please now") == "a-spinning-red-cube-in-space"
+    assert page_slug(None, "Voxel Horse!", "a spinning cube") == "voxel-horse"
+    assert page_slug("custom", "Voxel Horse", "a spinning cube") == "custom"
+    assert page_slug(None, "  ", "a spinning cube") == "a-spinning-cube"
+
+
+@pytest.mark.parametrize("flag", ["--page", "--slug"])
+def test_dry_run_slug_follows_title_and_slug_flag_overrides(run_root, capsys, flag):
+    base = ["run", "--dry-run", "a spinning cube", "-m", "openai-codex/gpt-6-sol:low", "--root", str(run_root)]
+    assert main(base + ["--title", "Cube Demo"]) == 0
+    assert "page: cube-demo (new, title: 'Cube Demo')" in capsys.readouterr().out
+    assert main(base + ["--title", "Cube Demo", flag, "my-cube"]) == 0
+    assert "page: my-cube (new, title: 'Cube Demo')" in capsys.readouterr().out
+
+
 def test_missing_confirmation_on_nontty_is_an_error(run_root, monkeypatch):
     monkeypatch.setattr("sys.stdin.isatty", lambda: False)
     rc = main(["run", "a spinning cube", "-m", "openai-codex/gpt-6-sol:low", "--root", str(run_root)])
