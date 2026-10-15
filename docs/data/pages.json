@@ -3,12 +3,12 @@
     "slug": "create-a-model-of-the-vintage",
     "title": "Robie the Banker",
     "kind": "blender",
-    "n_runs": 2,
+    "n_runs": 3,
     "models": [
       "anthropic/claude-sonnet-5-5"
     ],
-    "updated": "2026-10-15T19:00:47Z",
-    "thumb": "data/create-a-model-of-the-vintage/runs/claude-sonnet-5-5-cc-medium-20261015-120005/media/robie.png"
+    "updated": "2026-10-15T19:02:37Z",
+    "thumb": "data/create-a-model-of-the-vintage/runs/claude-sonnet-5-5-cc-high-20261015-120005/media/robie_back.png"
   },
   {
     "slug": "ceate-an-svg-of-an-awkward",
