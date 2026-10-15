@@ -7,7 +7,10 @@ site fills up while the batch still runs.
 
 A run's state (batch.json and run.json) says only what the agent did: queued | running | complete | failed
 | timeout. What the kind made of its work is `output` in run.json: {kind, ok, error, verified}. The progress
-table's other labels (exporting, verifying...) are transient and never written."""
+table's other labels (exporting, verifying...) are transient and never written.
+
+A running agent is stopped by writing `harness/stop` (the local monitor's Stop button, ADR-0027); this process
+owns the child, so it is the one that kills the agent's process group."""
 
 import contextlib
 import difflib
@@ -34,6 +37,9 @@ from .util import CritError, expand_levels, iso_from_ms, make_run_id, parse_dura
 
 # batch.json run states that mean "this agent hasn't produced a finished result yet".
 UNFINISHED = ("queued", "running")
+
+STOP_FILE = "stop"  # <run>/harness/stop: written by `art-crit serve`'s monitor to stop a running agent
+STOP_POLL_S = 1.0  # how often a running agent is checked for a stop request (and for its timeout)
 
 
 def tool_version(name):
@@ -311,6 +317,21 @@ def _kill_group(proc):
         pass
 
 
+def wait_agent(proc, timeout_s, stop_path):
+    """Wait for an agent process, watching for a stop request. Returns (exit_code, outcome), outcome
+    "timeout" | "stopped" | None. The process is this process's child (start_new_session=True), so killing
+    its group here is the only safe way to stop it — a monitor can only ask, by writing `stop_path`."""
+    deadline = time.monotonic() + timeout_s
+    while True:
+        try:
+            return proc.wait(timeout=min(STOP_POLL_S, max(0.05, deadline - time.monotonic()))), None
+        except subprocess.TimeoutExpired:
+            if stop_path.is_file():
+                _kill_group(proc)
+                return proc.wait(), "stopped"
+            if time.monotonic() >= deadline:
+                _kill_group(proc)
+                return proc.wait(), "timeout"
 
 
 class RunDir:
@@ -352,7 +373,7 @@ def run_agent(harness, run, rd, batch, version, timeout_s, progress, live, live_
     progress.track(key, rd.harness)
     progress.update(key, state="running")
 
-    exit_code, timed_out = None, False
+    exit_code, outcome = None, None
     try:
         with (kind.agent_session(rd.work, rd.harness) if kind else contextlib.nullcontext()) as mcp, \
                 open(stdout_path, "wb") as out, open(stderr_path, "wb") as err:
@@ -362,12 +383,7 @@ def run_agent(harness, run, rd, batch, version, timeout_s, progress, live, live_
                 live[key] = proc
                 if interrupted.is_set():  # Ctrl-C landed between Popen and registering: kill it here
                     _kill_group(proc)
-            try:
-                exit_code = proc.wait(timeout=timeout_s)
-            except subprocess.TimeoutExpired:
-                timed_out = True
-                _kill_group(proc)
-                exit_code = proc.wait()
+            exit_code, outcome = wait_agent(proc, timeout_s, rd.harness / STOP_FILE)
     except OSError as e:
         return collect(rd, batch, run, harness, version, started, datetime.now(timezone.utc), "failed", f"cannot run harness: {e}", None)
     except CritError as e:  # the kind's session didn't start (e.g. Blender's MCP server)
@@ -383,8 +399,10 @@ def run_agent(harness, run, rd, batch, version, timeout_s, progress, live, live_
     session_path = harness.session_file(rd.harness)
     metrics = harness.metrics(rd.harness, run["level"]) if session_path else None
 
-    if timed_out:
+    if outcome == "timeout":
         state, error = "timeout", f"timed out after {int(timeout_s)}s"
+    elif outcome == "stopped":  # the monitor asked to stop: killed above, so the exit code is meaningless
+        state, error = "failed", "stopped from the local monitor"
     elif exit_code != 0:
         state, error = "failed", last_line(stderr_path) or f"harness exited {exit_code}"
     elif session_path is None:

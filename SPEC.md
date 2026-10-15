@@ -150,8 +150,9 @@ page's published copies, so adding runs can't silently leave the model with no i
                                                 #   output = {kind, ok, error, verified} (null until the kind step ran)
     work/                                       # the agent's working dir, empty at start; nothing else is ever written here
     harness/                                    # session file(s), stdout (events.jsonl), stderr.txt, brief.md, route.jsonl,
-                                                #   conversation.json (the session in pi's format): never published except the
-                                                #   transcript and a non-empty stderr
+                                                #   conversation.json (the session in pi's format), stop (a local monitor
+                                                #   stop request, ADR-0027): never published except the transcript and a
+                                                #   non-empty stderr
     output/                                     # what the kind made: Godot export (+ verification/), the packaged page
                                                 #   (+ verification/), or normalized media + manifest.json
 ```
@@ -209,7 +210,8 @@ art-crit rm <slug> [<run_id>] [-f/--failed] [-y/--yes]   # remove a run (or a wh
 art-crit rename <slug> <new> [-t/--title TEXT]   # move a page to a new slug (rewrites each run.json `page`), then rebuild
 art-crit rebuild                   # regenerate page.json + pages.json from runs/*/run.json; delete engines no run references
 art-crit serve [-p/--port 8000]    # serve docs/ locally: Access-Control-Allow-Origin: *, .wasm as application/wasm, NO COOP/COEP headers
-                                #   plus the local-only ranking API (see Ranking); accept queue 64 for concurrent ES modules
+                                #   plus the local-only ranking, prompt-request and run-monitor APIs (see Ranking,
+                                #   Prompt requests, Run monitor); accept queue 64 for concurrent ES modules
 art-crit publish [-m MSG]          # git add docs && git commit && git push (Cloudflare Pages builds main)
 art-crit run ...                   # run agents locally, then import (see "Running benchmarks")
 art-crit models [SEARCH] [-H/--harness pi|claude-code|agy|grok-build|muse-code|codex]   # models the harness can run; with SEARCH also their effort levels
@@ -512,6 +514,12 @@ Future harnesses and a VM runner plug in here and at "start one agent" in `runne
 ### Ctrl-C
 Kills every running agent's process group, marks those runs `queued` in batch.json, prints the `--resume` command, exits 130.
 
+### Stopping one run (`harness/stop`, the local monitor's Stop button)
+Each agent runs in its own process group, so only the `art-crit run` process that started it can kill it. It waits for
+the agent in `wait_agent()`, checking once a second for `<run>/harness/stop`: if the file is there, it kills the group and
+the run is collected as `failed` with `error: "stopped from the local monitor"` (see Run monitor, ADR-0027). A timeout
+uses the same loop and `outcome: "timeout"`. Nothing else writes that file.
+
 ### Resume
 `batch.json` = `{prompt, kind, page, title, title_is_explicit, harnesses, brief, request, created, runs: [{id, harness, model,
 model_arg, level, state}]}`, updated on every state change (`model` = what the site shows, `model_arg` = the harness's id).
@@ -525,7 +533,7 @@ model (no `id` in its runs) can't be resumed.
 The page owner ranks runs in the browser; there is no CLI command for it. Only `art-crit serve` can save a ranking
 (GitHub Pages is static), so the published site shows rankings read-only.
 
-- `art-crit serve` answers `GET api/local` → `{"rank": true, "requests": true}` and `PUT api/rank?p=<slug>` with body
+- `art-crit serve` answers `GET api/local` → `{"rank": true, "requests": true, "runs": true}` and `PUT api/rank?p=<slug>` with body
   `{"ranks": {"<run id>": <int>|null, ...}}`. It validates the slug (`[a-z0-9][a-z0-9-]*`, page must exist), that every
   id is a run of the page, and that each rank is a whole number from 1 to the number of runs (ties allowed; `null`
   = unranked), writes `data/<slug>/ranking.json`, then rebuilds. Errors are `400 {"error": ...}`.
@@ -551,6 +559,36 @@ Ideas for new pages, collected on the home page under `art-crit serve` only (ADR
 - `rebuild` copies each run's rank into `page.json.runs` (`rank`, `null` when unranked) and drops `ranking.json` entries
   for runs that no longer exist (e.g. after `art-crit rm`).
 - The viewer only asks `api/local` when served from localhost; when it answers, the page shows a rank picker per row.
+
+## Run monitor
+
+`art-crit serve` (only) shows what `art-crit run` is doing on this machine, live: every batch under `[run].dir`,
+newest first, with each run's state, metrics, prompt, files and transcript, and a Stop button for a running agent
+(ADR-0027). The published site has no `api/runs`, so `monitor.html` and the home page's "Runs (local)" link do nothing there.
+
+- `GET api/runs` → `{"dir": "<[run].dir>", "batches": [{batch, page, kind, title, prompt, created, runs: [...]}]}`: the
+  newest 30 batches, each run `{id, harness, model, level, state, metrics, output, error, started_at, activity_ms,
+  published}`. A `running` run has no `run.json` yet, so its metrics come from the growing session file (each harness's
+  own parser, the one the CLI's progress table uses) and `duration_ms` is the run directory's age; `activity_ms` is how
+  long since the agent last wrote to `harness/`. `published` says whether the site already has that run. Batch dirs from
+  before run ids existed (no `id` in their runs) are left out.
+- `GET api/run?b=<batch>&r=<run id>` → that row plus `prompt`, `brief`, `files.work`/`files.output` (`{name, bytes}`,
+  capped at 200 files each) and `transcript` (pi-format entries, ready for `renderTranscript()`): the finished
+  `harness/conversation.json`, or the running run's session converted live, with `live` and `truncated` flags.
+- The monitor's transcript is deliberately light: image blocks become `[image omitted here]` and strings are cut at
+  4000 characters (a live pi session keeps a base64 copy of every image the agent looked at; one real run reached
+  15 MB), and at most the last 400 entries are sent. A run's own page has the full transcript.
+- `POST api/stop` with `{"batch": ..., "run": ...}` → writes `<batch>/<run id>/harness/stop`; `400 {"error": ...}`
+  unless that run is `running` right now. `art-crit serve` doesn't own the agent process, so it only asks: the
+  `art-crit run` process that started the agent checks for that file once a second, kills the agent's process group and
+  records the run as `failed` with `error: "stopped from the local monitor"` (ADR-0027). Same write checks as the
+  ranking API; a re-run's `rd.reset()` deletes a left-over stop file.
+- The monitor's reads need a loopback `Host` too and are answered **without** `Access-Control-Allow-Origin`, so
+  another website can't read the runs even by pointing a script at 127.0.0.1.
+- The page (`monitor.html` + `assets/monitor.js`) polls `api/runs` every 2 seconds while something is queued or running
+  (and the tab is visible): the batches on the left, the selected run on the right with a state chip, stat tiles, the
+  prompt and the brief it got, `work/`/`output/` file lists and the transcript. Rendering is `el()`/`textContent` like
+  the rest of the viewer.
 
 ## Community votes
 
@@ -656,7 +694,7 @@ immediate sandboxed frame, the media gallery, or the "no output" message, with t
 one `KIND_UI` table (chip label, tab label, no-output text and failure badge per kind); page, run, compare and play all call
 them. Any output with an `entry` is shown in the sandbox, so a new kind needs no viewer code.
 
-- **index.html**: cards per page (thumb, a Game/Media chip, title, one icon per model vendor (OpenRouter's provider icons, vendored under `assets/vendor/icons/`; its models on hover), n_runs, updated date) → page.html. Under `art-crit serve`, also the prompt requests (see Prompt requests).
+- **index.html**: cards per page (thumb, a Game/Media chip, title, one icon per model vendor (OpenRouter's provider icons, vendored under `assets/vendor/icons/`; its models on hover), n_runs, updated date) → page.html. Under `art-crit serve`, also the prompt requests (see Prompt requests) and a "Runs (local)" link to monitor.html (see Run monitor).
 - **page.html**: title, a details sidebar with a meta line (kind, n runs, n models), the Prompt (prompt.md) and a collapsed Final prompt,
   then **highlights**: the cheapest, fastest and fewest-tokens run among those that made their output (each links to it; a cost of 0 means unreported and never ranks) plus verified count, failed
   count and total spend. Then a runs table (thumb, rank, model, effort, harness,
@@ -723,6 +761,8 @@ them. Any output with an `entry` is shown in the sandbox, so a new kind needs no
   the output, which fills the rest of the window: for `godot`/`web` runs one `sandboxedGame()` iframe that boots immediately
   (opening the window was the click), for `media` runs `mediaGallery()` (videos still don't autoplay). A run's `error` is
   shown above the output; a missing/unknown `p`/`r` or a run without output shows a message. Never links or embeds the raw entry URL.
+- **monitor.html**: local only (see Run monitor), reached from the "Runs (local)" link the home page adds under
+  `art-crit serve`. On the published site (or any plain file server) it shows a "local only" note and makes no requests.
 - Everything renders from the JSON. There are no per-page HTML files. It must work under a sub-path (`/art-crit/`),
   so use only relative URLs. It supports dark mode via `prefers-color-scheme`, has readable defaults, and has no frameworks.
 

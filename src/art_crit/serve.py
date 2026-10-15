@@ -2,34 +2,48 @@
 
 Plus a local-only API (the published site never has it, so the viewer only shows ranking and
 prompt-request controls when served by `art-crit serve`):
-  GET api/local                 -> {"rank": true, "requests": true}
+  GET api/local                 -> {"rank": true, "requests": true, "runs": true}
   PUT api/rank?p=<slug>         body {"ranks": {"<run id>": 1, ...}}  (null/missing = unranked)
     -> writes docs/data/<slug>/ranking.json and rebuilds, so page.json carries each run's rank.
   GET api/requests              -> {"requests": [...], "sets": [names from art-crit.toml [sets]]}
   PUT api/requests              body {"add": {"prompt", "kind", "title"?, "note"?, "set"?}} or {"remove": "<id>"}
     -> requests.json next to docs/ (outside it, so prompt requests are never published).
+  GET api/runs                  -> the runs of every batch in [run].dir (see Run monitor, ADR-0027)
+  GET api/run?b=<batch>&r=<id>  -> one run: state, metrics, prompt/brief, files, transcript
+  POST api/stop                 body {"batch", "run"} -> writes that run's harness/stop, which the
+    `art-crit run` process that owns the agent sees within a second and kills the agent's group.
 Writes need Content-Type: application/json (so another site can't send one without a CORS
 preflight, which this server doesn't answer), a loopback Host (a site that rebinds its own name to
 127.0.0.1 would otherwise pass the Origin check, since both headers carry its name) and, when
-present, a same-host Origin."""
+present, a same-host Origin. The monitor's reads (api/runs, api/run) need a loopback Host too and
+are answered without Access-Control-Allow-Origin, so another website can't read them at all."""
 
 import functools
 import http.server
 import json
+import os
 import re
 import secrets
 import threading
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 from . import site
 from .config import Config
+from .harness import HARNESSES
+from .runner import STOP_FILE
 from .util import CritError
 from .kinds import KINDS
 
 SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
+NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")  # a batch dir name or a run id, never a path
 LOOPBACK = {"127.0.0.1", "localhost", "::1"}
+MONITOR_BATCHES = 30  # newest batches listed by the run monitor
+MONITOR_FILES = 200  # files per directory in a run's detail view
+MONITOR_ENTRIES = 400  # transcript entries kept (a monitor reads the tail of a running run)
+MONITOR_CLIP = 4000  # characters kept per string: a live pi session can carry megabytes of base64 images
 
 
 def save_ranking(docs_root, slug, ranks):
@@ -114,9 +128,218 @@ def change_requests(docs_root, body):
     return None, items
 
 
+# --- run monitor (ADR-0027): read [run].dir, ask running agents to stop ---------------------------------
+
+_HARNESSES = {}
+
+
+def _harness(name):
+    """A shared harness instance for live metrics (their constructors only store settings)."""
+    if name not in _HARNESSES and name in HARNESSES:
+        _HARNESSES[name] = HARNESSES[name]()
+    return _HARNESSES.get(name)
+
+
+def runs_root(docs_root):
+    """The `[run].dir` of the repo this docs/ belongs to, or None when art-crit.toml is missing/broken."""
+    try:
+        return Config.load(Path(docs_root).parent).run.dir
+    except CritError:
+        return None
+
+
+def _read_json(path):
+    try:
+        return json.loads(Path(path).read_text())
+    except (OSError, ValueError):
+        return None
+
+
+def _run_dir(root, batch, run_id):
+    """(batch dir, run dir) for a batch name and run id that both come from batch.json, or (None, None).
+    Both are validated as plain names, so neither can walk out of the runs root."""
+    if not root or not (NAME_RE.match(batch or "") and NAME_RE.match(run_id or "")):
+        return None, None
+    batch_dir = Path(root) / batch
+    if not (batch_dir / "batch.json").is_file():
+        return None, None
+    return batch_dir, batch_dir / run_id
+
+
+def _mtime_ms(path):
+    return int(path.stat().st_mtime * 1000)
+
+
+def _created_ms(path):
+    """Approximate creation time: birth time on macOS, ctime elsewhere (both close enough for "elapsed")."""
+    st = path.stat()
+    return int((getattr(st, "st_birthtime", None) or st.st_ctime) * 1000)
+
+
+def _activity_ms(harness_dir):
+    """How long since anything was written to a run's harness dir (None when there's nothing yet)."""
+    if not harness_dir.is_dir():
+        return None
+    times = [_mtime_ms(p) for p in harness_dir.iterdir() if p.is_file()]
+    return int(time.time() * 1000) - max(times) if times else None
+
+
+def _elapsed_ms(run_dir):
+    """A running run's elapsed time (approximate: the run dir is created when its agent starts)."""
+    return int(time.time() * 1000) - _created_ms(run_dir) if run_dir.is_dir() else None
+
+
+def live_metrics(name, harness_dir, level):
+    """A running run's live metrics in run.json's `metrics` shape, or {} when there's no session yet.
+    Reuses each harness's own parser (the one the CLI's progress table polls)."""
+    harness = _harness(name)
+    if not harness:
+        return {}
+    try:
+        metrics = harness.metrics(harness_dir, level)
+    except Exception:  # a live session file can be mid-write, or a shape we don't know yet
+        return {}
+    if not metrics:
+        return {}
+    tokens = metrics.get("tokens") or {}
+    return {"cost_usd": metrics.get("cost_usd") or 0.0, "tool_calls": metrics.get("tool_calls") or 0,
+            "turns": metrics.get("turns") or 0, "tokens_total": tokens.get("total") or 0,
+            "tokens_input": tokens.get("input") or 0, "tokens_output": tokens.get("output") or 0,
+            "tokens_reasoning": tokens.get("reasoning") or 0, "tokens_cache_read": tokens.get("cacheRead") or 0}
+
+
+def _batch_runs(batch):
+    """A batch's runs that have an id. Batch dirs from before run ids existed carry `model_dir` instead
+    and have no run directories, so the monitor leaves them out."""
+    return [r for r in batch.get("runs") or [] if r.get("id")]
+
+
+def _run_row(batch_dir, run, page_dir):
+    """One batch.json run as the monitor shows it: its record when it finished, live metrics while running."""
+    run_dir = batch_dir / run["id"]
+    record = _read_json(run_dir / "run.json") or {}
+    state = record.get("state") or run.get("state") or "queued"
+    metrics = record.get("metrics") or {}
+    if state == "running":  # no run.json yet: live metrics from the growing session, elapsed from the run dir
+        metrics = {**live_metrics(run.get("harness"), run_dir / "harness", run.get("level")), "duration_ms": _elapsed_ms(run_dir)}
+    return {"id": run["id"], "harness": run.get("harness"), "model": run.get("model"), "level": run.get("level"),
+            "state": state, "metrics": metrics, "output": record.get("output"), "error": record.get("error"),
+            "started_at": record.get("started_at"), "activity_ms": _activity_ms(run_dir / "harness"),
+            "published": (page_dir / "runs" / run["id"] / "run.json").is_file()}
+
+
+def list_batches(docs_root):
+    """Every batch under [run].dir, newest first (up to MONITOR_BATCHES), with each run's state and
+    live metrics. Read-only: the monitor never writes inside a batch (only `stop_run` does)."""
+    root = runs_root(docs_root)
+    if not root or not Path(root).is_dir():
+        return []
+    batches = sorted((p for p in Path(root).iterdir() if (p / "batch.json").is_file()), key=lambda p: p.name, reverse=True)
+    out = []
+    for batch_dir in batches[:MONITOR_BATCHES]:
+        batch = _read_json(batch_dir / "batch.json") or {}
+        runs = _batch_runs(batch)
+        if not runs:  # an old batch dir: no run ids, nothing to monitor
+            continue
+        page_dir = Path(docs_root) / "data" / str(batch.get("page") or "")
+        out.append({"batch": batch_dir.name, "page": batch.get("page"), "kind": batch.get("kind"),
+                    "title": batch.get("title"), "prompt": batch.get("prompt"), "created": batch.get("created"),
+                    "runs": [_run_row(batch_dir, run, page_dir) for run in runs]})
+    return out
+
+
+def _files(root, limit=MONITOR_FILES):
+    """A run's work/ or output/ as {name, bytes} entries (relative names, capped)."""
+    out = []
+    root = Path(root)
+    if not root.is_dir():
+        return out
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames.sort()
+        for name in sorted(filenames):
+            path = Path(dirpath) / name
+            out.append({"name": str(path.relative_to(root)), "bytes": path.stat().st_size})
+            if len(out) >= limit:
+                return out
+    return out
+
+
+def _clip(value):
+    """Recursively shrink one transcript entry: image blocks go (a live pi session holds base64 copies of
+    everything the agent looked at) and long strings are cut. The run's own page shows the full thing."""
+    if isinstance(value, str):
+        return value if len(value) <= MONITOR_CLIP else value[:MONITOR_CLIP] + f"\n… [{len(value) - MONITOR_CLIP} more characters]"
+    if isinstance(value, list):
+        return [_clip(v) for v in value]
+    if isinstance(value, dict):
+        if str(value.get("type") or "").endswith("image"):
+            return {"type": "text", "text": "[image omitted here]"}
+        return {k: _clip(v) for k, v in value.items()}
+    return value
+
+
+def transcript(batch, run, harness_dir):
+    """(entries, live, truncated): the finished conversation.json, or a running run's session converted on
+    the fly. Empty for a run whose harness hasn't written a session yet (muse writes its export at exit)."""
+    if (harness_dir / "conversation.json").is_file():
+        entries, live = _read_json(harness_dir / "conversation.json") or [], False
+    else:
+        harness = _harness(run.get("harness"))
+        try:
+            entries = (harness.session_entries(harness_dir, batch.get("brief"), run.get("level")) or []) if harness else []
+        except Exception:  # a live stream mid-line, or a shape we don't know yet
+            entries = []
+        live = bool(entries)
+    return [_clip(e) for e in entries[-MONITOR_ENTRIES:]], live, len(entries) > MONITOR_ENTRIES
+
+
+def run_detail(docs_root, batch, run_id):
+    """One run for the monitor: the list row plus prompt, brief, file lists and a light transcript.
+    Returns (data, error)."""
+    root = runs_root(docs_root)
+    batch_dir, run_dir = _run_dir(root, batch, run_id)
+    if not batch_dir:
+        return None, "no such batch"
+    batch_data = _read_json(batch_dir / "batch.json") or {}
+    run = next((r for r in _batch_runs(batch_data) if r["id"] == run_id), None)
+    if run is None:
+        return None, f"no such run: {run_id}"
+    page_dir = Path(docs_root) / "data" / str(batch_data.get("page") or "")
+    entries, live, truncated = transcript(batch_data, run, run_dir / "harness")
+    return {"batch": batch_dir.name, "page": batch_data.get("page"), "kind": batch_data.get("kind"),
+            "prompt": batch_data.get("prompt"), "brief": batch_data.get("brief"),
+            "run": _run_row(batch_dir, run, page_dir), "transcript": entries, "live": live, "truncated": truncated,
+            "files": {"work": _files(run_dir / "work"), "output": _files(run_dir / "output")}}, None
+
+
+def stop_run(docs_root, batch, run_id):
+    """Ask a running agent to stop: write <run>/harness/stop, which the `art-crit run` process that owns
+    the agent notices within a second and turns into a kill of the agent's process group (runner.wait_agent).
+    This process must not kill anything itself: it doesn't own the child. Returns an error string or None."""
+    root = runs_root(docs_root)
+    batch_dir, run_dir = _run_dir(root, batch, run_id)
+    if not batch_dir:
+        return "no such batch"
+    batch_data = _read_json(batch_dir / "batch.json") or {}
+    run = next((r for r in _batch_runs(batch_data) if r["id"] == run_id), None)
+    if run is None:
+        return f"no such run: {run_id}"
+    if run.get("state") != "running":
+        return f"{run_id} isn't running ({run.get('state')})"
+    harness_dir = run_dir / "harness"
+    if not harness_dir.is_dir():
+        return "that run hasn't started its agent yet"
+    (harness_dir / STOP_FILE).write_text(json.dumps(
+        {"by": "local monitor", "at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}, indent=2) + "\n")
+    return None
+
+
 class _Handler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
-        self.send_header("Access-Control-Allow-Origin", "*")
+        # The monitor's reads carry run dirs and prompts, so they are answered without CORS headers
+        # (the viewer is same-origin, and a page on another site must not be able to read them).
+        if not getattr(self, "_local_only", False):
+            self.send_header("Access-Control-Allow-Origin", "*")
         super().end_headers()
 
     def guess_type(self, path):
@@ -135,29 +358,56 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _loopback(self):
+        return urlsplit("//" + self.headers.get("Host", "")).hostname in LOOPBACK
+
+    def _local_json(self, status, obj):
+        """Answer one of the monitor's reads: loopback only, no CORS headers (see end_headers)."""
+        self._local_only = True
+        if not self._loopback():
+            return self._json(403, {"error": "the local API is only served on a loopback address"})
+        return self._json(status, obj)
+
+    def _write_body(self):
+        """The JSON body of a local write, or None after answering the request itself."""
+        if not self._loopback():
+            self._json(403, {"error": "writes are only accepted on a loopback address"})
+            return None
+        origin = self.headers.get("Origin")
+        if origin and urlsplit(origin).netloc != self.headers.get("Host"):
+            self._json(403, {"error": "cross-origin write refused"})
+            return None
+        if self.headers.get("Content-Type", "").split(";")[0].strip() != "application/json":
+            self._json(415, {"error": "expected application/json"})
+            return None
+        try:
+            return json.loads(self.rfile.read(int(self.headers.get("Content-Length") or 0)) or b"{}")
+        except (ValueError, UnicodeDecodeError):
+            self._json(400, {"error": "bad JSON"})
+            return None
+
     def do_GET(self):
         path = urlsplit(self.path).path
         if path.endswith("/api/local"):
-            return self._json(200, {"rank": True, "requests": True})
+            return self._json(200, {"rank": True, "requests": True, "runs": True})
         if path.endswith("/api/requests"):
             return self._json(200, {"requests": load_requests(self.directory), "sets": model_sets(self.directory)})
+        if path.endswith("/api/runs"):
+            root = runs_root(self.directory)
+            return self._local_json(200, {"dir": str(root) if root else None, "batches": list_batches(self.directory)})
+        if path.endswith("/api/run"):
+            query = parse_qs(urlsplit(self.path).query)
+            data, error = run_detail(self.directory, query.get("b", [None])[0], query.get("r", [None])[0])
+            return self._local_json(400, {"error": error}) if error else self._local_json(200, data)
         return super().do_GET()
 
     def do_PUT(self):
         url = urlsplit(self.path)
         if not (url.path.endswith("/api/rank") or url.path.endswith("/api/requests")):
             return self._json(404, {"error": "not found"})
-        if urlsplit("//" + self.headers.get("Host", "")).hostname not in LOOPBACK:
-            return self._json(403, {"error": "writes are only accepted on a loopback address"})
-        origin = self.headers.get("Origin")
-        if origin and urlsplit(origin).netloc != self.headers.get("Host"):
-            return self._json(403, {"error": "cross-origin write refused"})
-        if self.headers.get("Content-Type", "").split(";")[0].strip() != "application/json":
-            return self._json(415, {"error": "expected application/json"})
-        try:
-            body = json.loads(self.rfile.read(int(self.headers.get("Content-Length") or 0)) or b"{}")
-        except (ValueError, UnicodeDecodeError):
-            return self._json(400, {"error": "bad JSON"})
+        body = self._write_body()
+        if body is None:
+            return
         if url.path.endswith("/api/requests"):
             error, items = change_requests(self.directory, body)
             return self._json(400, {"error": error}) if error else self._json(200, {"requests": items})
@@ -166,6 +416,17 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
         if error:
             return self._json(400, {"error": error})
         return self._json(200, {"ok": True})
+
+    def do_POST(self):
+        if not urlsplit(self.path).path.endswith("/api/stop"):
+            return self._json(404, {"error": "not found"})
+        body = self._write_body()
+        if body is None:
+            return
+        if not isinstance(body, dict):
+            return self._json(400, {"error": "expected an object"})
+        error = stop_run(self.directory, body.get("batch"), body.get("run"))
+        return self._json(400, {"error": error}) if error else self._json(200, {"ok": True})
 
     def log_message(self, fmt, *args):
         pass  # keep test/CLI output quiet

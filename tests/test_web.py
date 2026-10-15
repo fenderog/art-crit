@@ -7,6 +7,7 @@ ThreadingHTTPServer (no dependency on the CLI's own serve command).
 
 import functools
 import http.server
+import json
 import re
 import shutil
 import threading
@@ -1461,3 +1462,69 @@ def test_blender_run_page_lists_the_model_with_its_triangles(site, gl_page):
     box = page.locator(".media-full.is-model").bounding_box()
     assert box["width"] > 600 and abs(box["width"] / box["height"] - 4 / 3) < 0.02
     assert page._page_errors == []
+
+
+# --- local run monitor (ADR-0027) ---------------------------------------------------------------
+
+LIVE_ID = "gpt-6-sol-low-20260101-000000"
+
+
+@pytest.fixture
+def monitor_site(tmp_path):
+    """The site as `art-crit serve` serves it (local API included) plus a batch with a running run."""
+    from art_crit.serve import serve_in_thread
+    root = tmp_path / "site"
+    docs = root / "docs"
+    docs.mkdir(parents=True)
+    for f in REPO.glob("docs/*.html"):
+        shutil.copy(f, docs / f.name)
+    shutil.copytree(REPO / "docs/assets", docs / "assets")
+    shutil.copytree(FIXTURE_DATA, docs / "data")
+    runs = root / "art-crit-runs"
+    (root / "art-crit.toml").write_text(f'[run]\ndir = "{runs}"\n')
+    batch = runs / "2026-01-01-000000-demo"
+    (batch / LIVE_ID / "harness").mkdir(parents=True)
+    line = {"type": "message", "message": {"role": "assistant", "content": [{"type": "text", "text": "looking at it"}], "usage": {"input": 100, "output": 20, "cost": {"total": 0.002}}}}
+    (batch / LIVE_ID / "harness" / "s.jsonl").write_text(json.dumps(line) + "\n")
+    row = {"id": LIVE_ID, "harness": "pi", "model": "openai/gpt-6-sol", "model_arg": "gpt-6-sol", "level": "low", "state": "running"}
+    meta = {"prompt": "a demo prompt", "kind": "godot", "page": "demo", "brief": "BRIEF", "runs": [row]}
+    (batch / "batch.json").write_text(json.dumps(meta))
+    server = serve_in_thread(docs, 0)
+    yield f"http://127.0.0.1:{server.server_address[1]}/"
+    server.shutdown()
+    server.server_close()
+
+
+def test_monitor_is_local_only_on_the_static_site(site, page):
+    page.goto(site + "monitor.html")
+    expect(page.locator("#local-only")).to_contain_text("art-crit serve")
+    assert page.locator("#main").is_hidden()
+    page.goto(site + "index.html")
+    page.wait_for_selector(".card")
+    assert page.locator(".site-header .monitor-crumb").count() == 0
+    assert_no_errors(page)
+
+
+def test_monitor_lists_a_running_run_with_live_metrics(monitor_site, page):
+    page.goto(monitor_site + "monitor.html")
+    expect(page.locator("#where")).to_contain_text("1 batch")
+    run = page.locator(".monitor-run")
+    expect(run).to_have_count(1)
+    expect(run).to_contain_text("running")
+    expect(run).to_contain_text("gpt-6-sol")
+    run.click()
+    expect(page.locator(".monitor-stop")).to_be_visible()
+    expect(page.locator(".stat-tiles")).to_contain_text("120")
+    expect(page.locator(".monitor-transcript")).to_contain_text("looking at it")
+    expect(page.locator("#detail h2")).to_contain_text("gpt-6-sol")
+    assert_no_errors(page)
+
+
+def test_monitor_link_appears_on_the_local_home_page(monitor_site, page):
+    page.goto(monitor_site + "index.html")
+    page.wait_for_selector(".card")
+    link = page.locator(".site-header .monitor-crumb")
+    expect(link).to_have_text("Runs (local)")
+    link.click()
+    page.wait_for_selector(".monitor-run")
+    assert_no_errors(page)

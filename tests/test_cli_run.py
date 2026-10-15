@@ -1297,3 +1297,25 @@ def test_bad_run_inputs_fail_before_a_batch_dir_exists(run_root, tmp_path, capsy
     assert main(["run", "--yes", "x", "--set", str(empty_set), "--root", str(run_root)]) != 0
     assert "at least one -m" in capsys.readouterr().err
     assert not runs_dir.exists() or not list(runs_dir.iterdir())
+
+
+def test_a_monitor_stop_kills_the_agent(run_root, monkeypatch):
+    """`art-crit serve`'s monitor only writes harness/stop; the runner owns the process and kills it."""
+    import threading
+
+    from art_crit.serve import stop_run
+    monkeypatch.setenv("FAKE_PI_HANG", "1")
+    args = ["run", "--yes", "stop me", "-m", "openai-codex/gpt-6-sol:low", "--root", str(run_root)]
+    threading.Thread(target=main, daemon=True, args=(args,)).start()
+    deadline = time.time() + 20
+    runs = run_root.parent / "art-crit-runs"
+    while time.time() < deadline and not list(runs.glob("*-stop-me/*/work/fake_pi.pid")):
+        time.sleep(0.05)
+    [pid_file] = runs.glob("*-stop-me/*/work/fake_pi.pid")
+    run_dir = pid_file.parent.parent
+    assert stop_run(run_root / "docs", run_dir.parent.name, run_dir.name) is None
+    while time.time() < deadline and not (run_dir / "run.json").is_file():
+        time.sleep(0.1)
+    record = json.loads((run_dir / "run.json").read_text())
+    assert (record["state"], record["error"]) == ("failed", "stopped from the local monitor")
+    assert (run_dir / "harness" / "stop").is_file()

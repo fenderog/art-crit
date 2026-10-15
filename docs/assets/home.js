@@ -49,3 +49,16 @@ function vendorIcons(models) {
   }
   return el("div", { class: "vendor-icons" }, [...byVendor].map(([v, { model, names }]) => vendorMark(model, `${vendorName(v)}: ${names.join(", ")}`)));
 }
+
+// Local only (ADR-0027): link to the run monitor, but only when `art-crit serve` answers api/local.
+async function setupMonitorLink() {
+  if (!["localhost", "127.0.0.1", "[::1]"].includes(location.hostname)) return;
+  try {
+    const res = await fetch("api/local", { cache: "no-store" });
+    if (!res.ok || (await res.json()).runs !== true) return;
+  } catch {
+    return;
+  }
+  document.querySelector(".site-header").append(el("a", { class: "monitor-crumb", attrs: { href: "monitor.html" }, text: "Runs (local)" }));
+}
+setupMonitorLink();

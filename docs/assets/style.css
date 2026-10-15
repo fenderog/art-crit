@@ -956,3 +956,42 @@ body.play { margin: 0; height: 100vh; display: flex; flex-direction: column; bac
 .popout { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: var(--r-sm); transition: background var(--ease), color var(--ease); color: var(--ink-3); text-decoration: none; font-size: 14px; vertical-align: middle; }
 .popout:hover { color: var(--accent); background: var(--accent-soft); text-decoration: none; }
 .popout:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Run monitor (docs/monitor.html): local only, never part of the published site (ADR-0027). */
+.monitor-crumb { margin-left: 0.75rem; font-size: 0.85rem; }
+.monitor { display: grid; grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
+@media (max-width: 1024px) {
+  .monitor { grid-template-columns: minmax(0, 1fr); }
+  .monitor-batches { max-height: 40vh; overflow: auto; }  /* keep the selected run reachable on a phone */
+}
+.monitor-batches { display: flex; flex-direction: column; gap: 0.75rem; }
+.monitor-batch-head { display: flex; flex-direction: column; gap: 0.15rem; width: 100%; padding: 0.6rem 0.75rem; text-align: left; font: inherit; color: inherit; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+.monitor-batch-head:hover { border-color: var(--line-strong); }
+.monitor-batch-title { font-weight: 600; }
+.monitor-runs { display: flex; flex-direction: column; gap: 0.25rem; margin: 0.4rem 0 0; padding: 0; list-style: none; }
+.monitor-run { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.5rem; width: 100%; padding: 0.4rem 0.6rem; text-align: left; font: inherit; font-size: 0.85rem; color: inherit; background: none; border: 1px solid transparent; border-radius: 6px; cursor: pointer; }
+.monitor-run:hover { background: var(--surface-2); }
+.monitor-run.is-active { background: var(--accent-soft); border-color: var(--line-strong); }
+.monitor-run-model { flex: 1 1 8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.monitor-run-metrics { font-size: 0.78rem; white-space: nowrap; }
+.monitor-state { padding: 0.05rem 0.4rem; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; color: var(--ink-2); background: var(--surface-3); border-radius: 99px; }
+.monitor-state[data-state="running"] { color: var(--accent); background: var(--accent-soft); }
+.monitor-state[data-state="complete"] { color: var(--good); background: var(--good-soft); }
+.monitor-state[data-state="failed"], .monitor-state[data-state="timeout"] { color: var(--bad); background: var(--bad-soft); }
+.monitor-detail { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
+.monitor-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.monitor-head h2 { display: flex; align-items: center; gap: 0.5rem; margin: 0; font-size: 1.15rem; }
+.monitor-runline { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.78rem; word-break: break-all; }
+.monitor-block { display: flex; flex-direction: column; gap: 0.4rem; }
+.monitor-block h3 { margin: 0; font-size: 0.95rem; }
+.monitor-block details summary { cursor: pointer; font-size: 0.9rem; }
+.monitor-prompt { margin: 0.3rem 0 0; max-width: 65ch; }
+.monitor-brief { max-height: 20rem; overflow: auto; padding: 0.6rem; font-size: 0.78rem; white-space: pre-wrap; background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; }
+.monitor-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+.monitor-files h3 { margin: 0 0 0.3rem; font-size: 0.85rem; }
+.monitor-files ul { margin: 0; padding: 0; list-style: none; font-size: 0.8rem; }
+.monitor-files li { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.1rem 0; border-bottom: 1px solid var(--line); }
+.monitor-file { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.monitor-transcript { max-height: 60rem; overflow: auto; padding-right: 0.25rem; }
+.monitor-live { margin-left: 0.4rem; padding: 0.05rem 0.4rem; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: var(--bad); background: var(--bad-soft); border-radius: 99px; }
+.monitor-stop { color: var(--bad); border: 1px solid var(--bad); background: var(--bad-soft); }
