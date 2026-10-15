@@ -148,6 +148,7 @@ export function renderTranscript(root, conversation) {
   root.append(toolbar);
 
   const messages = conversation.filter((e) => e.type === "message");
+  let hasThinking = false;
   const toolResults = new Map();
   for (const m of messages) if (m.message.role === "toolResult") toolResults.set(m.message.toolCallId, m.message);
   const sessionStartMs = Date.parse(conversation[0]?.timestamp ?? messages[0]?.timestamp);
@@ -174,6 +175,8 @@ export function renderTranscript(root, conversation) {
       let hasError = false;
       for (const block of m.message.content || []) {
         if (block.type === "thinking") {
+          if (!block.thinking?.trim()) continue; // providers that hide their reasoning send empty blocks
+          hasThinking = true;
           turn.append(el("div", { class: "thinking-block", text: block.thinking }));
         } else if (block.type === "text") {
           const div = el("div", { class: "content-md" });
@@ -190,6 +193,10 @@ export function renderTranscript(root, conversation) {
       if (hasError) turn.dataset.hasError = "1";
     }
     list.append(turn);
+  }
+  if (!hasThinking) {
+    thinkToggle.disabled = true;
+    thinkToggle.title = "This run's transcript has no thinking text (the provider doesn't expose it).";
   }
   root.append(list); // all at once, after every message has rendered
   return list;

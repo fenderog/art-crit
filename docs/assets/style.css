@@ -501,6 +501,8 @@ tr.run-detail:hover { background: none; }
 .chip:hover { color: var(--ink); border-color: var(--line-strong); }
 .chip-active { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
 .chip-active:hover { color: var(--accent); border-color: transparent; }
+.chip:disabled { opacity: 0.45; cursor: not-allowed; }
+.chip:disabled:hover { color: inherit; border-color: var(--line); }
 
 .transcript { max-width: 980px; }
 .turn { position: relative; padding: 0 0 18px 22px; border-left: 2px solid var(--line); margin-left: 5px; }
