@@ -3,12 +3,12 @@
     "slug": "robbie-the-banker-with-reference",
     "title": "Robbie the Banker with reference",
     "kind": "blender",
-    "n_runs": 3,
+    "n_runs": 4,
     "models": [
       "anthropic/claude-opus-5-5"
     ],
-    "updated": "2026-10-15T21:10:13Z",
-    "thumb": "data/robbie-the-banker-with-reference/runs/claude-opus-5-5-cc-high-20261015-140457/media/robie_front.png"
+    "updated": "2026-10-15T21:38:22Z",
+    "thumb": "data/robbie-the-banker-with-reference/runs/claude-opus-5-5-cc-xhigh-20261015-140457/media/robie_front.jpg"
   },
   {
     "slug": "create-a-model-of-the-vintage",
