@@ -1,0 +1,39 @@
+{
+  "id": "gpt-6.1-sol-cx-low-20261015-151145",
+  "page": "robbie-the-banker-with-reference",
+  "model": "openai/gpt-6.1-sol",
+  "effort": "low",
+  "kind": "blender",
+  "started_at": "2026-10-15T22:11:48Z",
+  "batch": "2026-10-15-151145-robbie-the-banker-with-reference",
+  "harness": {
+    "name": "codex",
+    "version": "0.162.1"
+  },
+  "state": "complete",
+  "error": null,
+  "route": null,
+  "metrics": {
+    "duration_ms": 17433,
+    "cost_usd": 0.0,
+    "tool_calls": 3,
+    "turns": 1,
+    "tokens_total": 12699,
+    "tokens_input": 12394,
+    "tokens_output": 305,
+    "tokens_reasoning": 92,
+    "tokens_cache_read": 50432
+  },
+  "thumb": null,
+  "output": {
+    "kind": "blender",
+    "ok": false,
+    "verified": null,
+    "error": "no files in ./output/"
+  },
+  "session": {
+    "conversation": "session/conversation.json",
+    "stderr": "session/stderr.txt"
+  },
+  "source": null
+}
