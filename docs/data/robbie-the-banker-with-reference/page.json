@@ -1,0 +1,67 @@
+{
+  "slug": "robbie-the-banker-with-reference",
+  "title": "Robbie the Banker with reference",
+  "kind": "blender",
+  "prompt": "Model the vintage robbie the banker coin bank toy using the reference image",
+  "final_prompt": "Model the vintage robbie the banker coin bank toy using the reference image\n\nReference files (read them, don't modify them), in ./references/:\n- ./references/robie.jpg\n\nMake it in Blender, working in the current directory.\n- A Blender 5 instance is running for you with no window (background mode). Use it through the `blender`\n  MCP tools: run Python (`bpy`) with execute_blender_code, and look things up with the API and manual\n  search tools. Blender's working directory is the current directory. The scene starts as Blender's\n  default one (a cube, a camera and a light).\n- There is no window to screenshot. To check your work, render it to an image file and look at the image\n  (render_thumbnail_to_path, render_viewport_to_path, or a render of the scene camera to a file).\n  Keep renders quick: a single tool call may take at most 5 minutes.\n- Build it in Blender itself; don't write the model or the images any other way.\n- Save the finished result in ./output/ (only what is in ./output/ is published):\n  - the model or scene as one .glb file (glTF binary), shown on the site in an interactive 3D viewer:\n    `bpy.ops.export_scene.gltf(filepath=..., export_format='GLB')`, without Draco or meshopt\n    compression, at most 15 MB;\n  - one or more final renders as .png or .jpg, at most 2 MB each, from camera angles you choose.\n  At most 8 files in all.\n- Tools available on this machine: python3 3.15.0 (standard library only), node 26.12.0 (no npm packages), ffmpeg 9.0.2, ffprobe 9.0.2. Don't install packages or download anything (no asset\n  libraries or add-ons).\n- Only create or edit files inside the current directory.\n- Finish with a short summary of what you made.\n",
+  "created": "2026-10-15T21:05:01Z",
+  "updated": "2026-10-15T21:07:07Z",
+  "runs": [
+    {
+      "id": "claude-opus-5-5-cc-low-20261015-140457",
+      "page": "robbie-the-banker-with-reference",
+      "model": "anthropic/claude-opus-5-5",
+      "effort": "low",
+      "kind": "blender",
+      "started_at": "2026-10-15T21:05:01Z",
+      "batch": "2026-10-15-140457-robbie-the-banker-with-reference",
+      "harness": {
+        "name": "claude-code",
+        "version": "2.1.300"
+      },
+      "state": "complete",
+      "error": null,
+      "route": null,
+      "metrics": {
+        "duration_ms": 126393,
+        "cost_usd": 0.4676603999999999,
+        "tool_calls": 13,
+        "turns": 10,
+        "tokens_total": 8414,
+        "tokens_input": 20,
+        "tokens_output": 8394,
+        "tokens_reasoning": 614,
+        "tokens_cache_read": 203662
+      },
+      "thumb": "media/robie.png",
+      "output": {
+        "kind": "blender",
+        "items": [
+          {
+            "type": "model",
+            "bytes": 415576,
+            "meshes": 29,
+            "triangles": 14282,
+            "animations": 0,
+            "path": "media/robie.glb"
+          },
+          {
+            "type": "image",
+            "width": 900,
+            "height": 900,
+            "bytes": 585437,
+            "path": "media/robie.png"
+          }
+        ],
+        "ok": true,
+        "verified": true,
+        "error": null
+      },
+      "session": {
+        "conversation": "session/conversation.json"
+      },
+      "source": null,
+      "rank": null
+    }
+  ]
+}
