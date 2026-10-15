@@ -1,5 +1,16 @@
 [
   {
+    "slug": "create-a-model-of-the-vintage",
+    "title": "Robie the Banker",
+    "kind": "blender",
+    "n_runs": 1,
+    "models": [
+      "anthropic/claude-sonnet-5-5"
+    ],
+    "updated": "2026-10-15T19:00:32Z",
+    "thumb": "data/create-a-model-of-the-vintage/runs/claude-sonnet-5-5-cc-low-20261015-120005/media/robie.png"
+  },
+  {
     "slug": "ceate-an-svg-of-an-awkward",
     "title": "Awkward Robot Family",
     "kind": "media",
