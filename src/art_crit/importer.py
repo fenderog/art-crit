@@ -23,6 +23,10 @@ SOURCE_SKIP = {".DS_Store", ".godot", "node_modules", ".pi", ".grok"}  # .pi, .g
 # conversation.json (Pages takes at most 25 MiB per file). The run directory keeps the originals.
 IMAGE_MAX_BYTES = 48 * 1024
 IMAGE_WIDTH = 800
+# A --ref file bigger than this is published as a JPEG at most REF_WIDTH wide (the viewer shows them as
+# thumbnails beside the page's prompt; Pages takes at most 25 MiB per file). Still too big -> the import aborts.
+REF_MAX_BYTES = 8 * 1024 * 1024
+REF_WIDTH = 2048
 
 
 def shrink_images(obj):
@@ -244,6 +248,25 @@ def cmd_import(config, path, page=None, title=None, redact=False, allow_threads=
             return 0
 
         final = next((p for r in results if (p := final_prompt(r.run_dir))), None)
+
+        # The batch's --ref copies (runner.REF_DIR), published beside the runs so the viewer can show them
+        # (references/ is the one work/ subtree the run staging skips). A fresh copy per import: re-importing
+        # replaces the set. The originals stay in the batch; the viewer shows them through <img> only.
+        refs_src = sources[0].parent / "references"
+        if refs_src.is_dir():
+            refs_dir = docs_root / "data" / slug / "references"
+            if refs_dir.is_dir():
+                shutil.rmtree(refs_dir)
+            refs_dir.mkdir(parents=True)
+            for ref in sorted(p for p in refs_src.iterdir() if p.is_file()):
+                raw = ref.read_bytes()
+                if len(raw) > REF_MAX_BYTES:
+                    small = thumbnail(raw, REF_WIDTH)
+                    if small:
+                        raw = small
+                if len(raw) > 20 * 1024 * 1024:
+                    raise CritError(f"reference {ref.name} is {len(raw)} bytes even re-encoded; Pages takes at most 25 MiB per file")
+                (refs_dir / ref.name).write_bytes(raw)
 
         for r in results:
             if r.engine_sha and r.engine_files is not None:

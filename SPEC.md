@@ -39,6 +39,7 @@ docs/
   data/
     pages.json                    # [PageSummary]
     <slug>/page.json              # Page
+    <slug>/references/<file>      # optional: the page's --ref files, shown as thumbnails on page.html (ADR-0026)
     <slug>/ranking.json           # optional: {"ranks": {"<run id>": 1, ...}, "updated": "<iso>"}, the owner's ranking (see Ranking)
     <slug>/runs/<run_id>/
       run.json                    # Run
@@ -66,9 +67,12 @@ All paths inside JSON are **relative to the run directory** (for Run) or to `doc
 { "slug": "voxel-horse", "title": "Voxel horse", "kind": "godot",
   "prompt": "<contents of prompt.md, the originating prompt; refreshed on every import>",
   "final_prompt": "<the full brief each run received: first user message of the cleaned transcript; null if none>",
+  "references": ["robie.jpg"],   // --ref files in data/<slug>/references/, listed by name; key absent when none
   "created": "2026-09-26T07:12:42Z", "updated": "2026-09-26T07:15:57Z",
   "runs": ["<Run with rank; see below>"] }
 ```
+`references` is derived from the `references/` directory by `rebuild` (an import replaces the whole set), and the
+viewer shows image files as thumbnails in page.html's details sidebar (`<img>` only, click to expand; ADR-0026).
 
 ### Run (`run.json`, and each element of `page.json.runs`)
 ```json
@@ -243,6 +247,7 @@ art-crit run PROMPT | -f/--prompt-file FILE
     -b, --brief FILE    use this brief template instead of the built-in one ({prompt} is substituted)
     -R, --ref FILE      a reference file, a path under <root>/references/ (repeatable); must exist. It is copied into the batch
                         and every run's work/references/, and the brief (not the page's prompt) lists ./references/<name>.
+                        Import publishes the batch's copies to data/<slug>/references/ for the viewer (ADR-0026).
                         The copies are never published as source
     -j N                max agents at once (default [run].parallel or 8)
     -T, --timeout DUR   per agent, "30m" / "90s" / "1h" (default [run].timeout or 30m)

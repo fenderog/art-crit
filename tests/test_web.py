@@ -237,7 +237,7 @@ def test_page_harness_column_and_failed_badge(site, page):
 def test_page_shows_labeled_prompt(site, page):
     page.goto(f"{site}page.html?p=demo&view=table")
     page.wait_for_selector("#prompt-box:not([hidden])")
-    assert page.locator(".prompt-label").inner_text().strip().lower() == "prompt"
+    assert page.locator("#prompt-box .prompt-label").inner_text().strip().lower() == "prompt"
     assert page.locator("#prompt").inner_text().startswith("build a tiny demo project")
     # final prompt: present but collapsed to one line until clicked
     final = page.locator("details.final-prompt")
@@ -245,6 +245,20 @@ def test_page_shows_labeled_prompt(site, page):
     assert not page.locator("#final-prompt").is_visible()
     final.locator("summary").click()
     assert page.locator("#final-prompt").inner_text().startswith("Task: Goal: build a tiny demo")
+    assert_no_errors(page)
+
+
+def test_page_shows_reference_thumbnails(site, page):
+    page.goto(f"{site}page.html?p=demo")
+    page.wait_for_selector("#refs-box:not([hidden])")
+    imgs = page.locator("#refs img")
+    assert imgs.count() == 2  # any number of references, one thumbnail each
+    assert "/references/front.png" in imgs.nth(0).get_attribute("src")
+    assert imgs.nth(0).get_attribute("alt") == "Reference: front.png"
+    imgs.nth(0).click()  # a thumbnail expands to the sidebar's full width, click again collapses
+    assert "full" in (imgs.nth(0).get_attribute("class") or "")
+    imgs.nth(0).click()
+    assert "full" not in (imgs.nth(0).get_attribute("class") or "")
     assert_no_errors(page)
 
 

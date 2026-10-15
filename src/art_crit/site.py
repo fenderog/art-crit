@@ -76,6 +76,9 @@ def rebuild(root):
             "updated": max(_ended_at(r) for r in runs),
             "runs": runs,
         }
+        refs_dir = page_dir / "references"  # --ref files published by import; the viewer lists them by name
+        if refs_dir.is_dir():
+            page["references"] = sorted(p.name for p in refs_dir.iterdir() if p.is_file())
         page_json_path.write_text(json.dumps(page, indent=2) + "\n")
 
         thumb_run = _pick_thumb(runs)

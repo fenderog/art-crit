@@ -26,6 +26,8 @@ function initialView() {
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
+const REF_IMAGE = /\.(png|jpe?g|gif|webp|avif|svg)$/i; // non-image refs exist but only images are shown
+
 const COLUMNS = [
   { key: "rank", label: "Rank", get: (r) => r.rank ?? null, num: false },
   { key: "model", label: "Model", get: (r) => r.model, num: false },
@@ -55,6 +57,17 @@ function render(page, runs, editable) {
   if (page.final_prompt) {
     document.getElementById("final-prompt").textContent = page.final_prompt;
     document.getElementById("final-prompt-box").hidden = false;
+  }
+  const refs = (page.references || []).filter((name) => REF_IMAGE.test(name));
+  if (refs.length) {
+    const grid = document.getElementById("refs");
+    for (const name of refs) {
+      grid.append(el("img", {
+        attrs: { src: `data/${encodeURIComponent(slug)}/references/${encodeURIComponent(name)}`, alt: `Reference: ${name}`, title: name, loading: "lazy" },
+        on: { click: (e) => e.target.classList.toggle("full") }, // thumbnail <-> full width of the sidebar
+      }));
+    }
+    document.getElementById("refs-box").hidden = false;
   }
   const isMedia = kindUi(page.kind).gallery === true; // media and blender: files, not a game
   renderMeta(page, runs);

@@ -137,8 +137,10 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
 - **Keep it lean.** Stdlib-only CLI, no JS frameworks or bundler for the viewer (Cloudflare's staging build only
   compresses oversized engines; esbuild only packages model-made web pages, ADR-0013, ADR-0021); the user checks for this. Prefer small
   functions and small diffs, and don't add dependencies without asking. (ADR-0002)
-- **`--ref` files** live in `<root>/references/` (the user's own files; never published): the batch dir and every run's
-  `work/references/` get copies, the brief (not the page's prompt) lists them, and `importer.stage_source` skips `references/`.
+- **`--ref` files** live in `<root>/references/` (the user's own files): the batch dir and every run's
+  `work/references/` get copies, the brief (not the page's prompt) lists them, and `importer.stage_source` skips
+  `references/`. Import publishes the batch's copies to `docs/data/<slug>/references/` and the page sidebar shows
+  the images as thumbnails (ADR-0026): never put them in anything but `<img>`, like model-made SVGs.
 - **Prompt requests are local only** (ADR-0024): `art-crit serve`'s `api/requests` keeps them in `requests.json` beside
   `docs/` (gitignored). Never move them under `docs/` (`run --publish` stages all of it) or into the Worker.
 - **Rankings are only written by `art-crit serve` on the user's machine** (`PUT api/rank`, which refuses cross-site

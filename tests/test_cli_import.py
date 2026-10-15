@@ -56,6 +56,34 @@ def test_page_override(bench_root, batch_dir):
     assert all(r["page"] == "custom-slug" for r in runs)
 
 
+# --- reference files (--ref) -----------------------------------------------------------------
+
+
+def test_import_publishes_references_and_rebuild_lists_them(bench_root, batch_factory):
+    batch = batch_factory(refs={"robie.jpg": b"JPEG-DATA", "second.png": b"PNG-DATA"})
+    main(["import", str(batch), "--root", str(bench_root)])
+    refs = bench_root / "docs/data/voxel-horse/references"
+    assert sorted(p.name for p in refs.iterdir()) == ["robie.jpg", "second.png"]
+    assert (refs / "robie.jpg").read_bytes() == b"JPEG-DATA"
+    page = json.loads((bench_root / "docs/data/voxel-horse/page.json").read_text())
+    assert page["references"] == ["robie.jpg", "second.png"]
+    # a re-import replaces the set, and rebuild derives the list from what is on disk
+    batch2 = batch_factory(started=datetime(2026, 9, 26, 0, 12, 58), refs={"only.png": b"NEW"})
+    main(["import", str(batch2), "--page", "voxel-horse", "--root", str(bench_root)])
+    page = json.loads((bench_root / "docs/data/voxel-horse/page.json").read_text())
+    assert page["references"] == ["only.png"]
+    main(["rebuild", "--root", str(bench_root)])
+    page = json.loads((bench_root / "docs/data/voxel-horse/page.json").read_text())
+    assert page["references"] == ["only.png"]
+
+
+def test_import_without_references_leaves_no_list(bench_root, batch_dir):
+    main(["import", str(batch_dir), "--root", str(bench_root)])
+    page = json.loads((bench_root / "docs/data/voxel-horse/page.json").read_text())
+    assert "references" not in page
+    assert not (bench_root / "docs/data/voxel-horse/references").exists()
+
+
 def test_engine_dedupe_one_dir_for_two_levels(bench_root, batch_dir):
     main(["import", str(batch_dir), "--root", str(bench_root)])
     engines = list((bench_root / "docs/engines").iterdir())

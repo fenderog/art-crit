@@ -9,4 +9,5 @@ __pycache__/
 /.wrangler/
 .claude/worktrees/
 /requests.json
+/references/
 /ideas.md

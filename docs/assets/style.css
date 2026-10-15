@@ -334,6 +334,16 @@ pre.request-cmd {
   content: ""; position: absolute; left: 0; top: 22px; bottom: 24px; width: 3px; border-radius: 0 3px 3px 0; background: var(--marigold);
 }
 .prompt-box[hidden] { display: none; }
+
+/* ---- reference images (--ref), thumbnails beside the prompt; click a thumbnail to expand it ---- */
+.refs-box { margin: 16px 0 0; }
+.refs-box[hidden] { display: none; }
+.refs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+.refs-grid img {
+  display: block; width: 100%; aspect-ratio: 1; object-fit: cover; cursor: zoom-in;
+  border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface);
+}
+.refs-grid img.full { grid-column: 1 / -1; aspect-ratio: auto; height: auto; cursor: zoom-out; }
 .prompt-label { font-size: 12px; font-weight: 600; letter-spacing: 0.01em; color: var(--ink-3); margin-bottom: 8px; }
 .prompt-text { white-space: pre-wrap; line-height: 1.55; overflow-wrap: anywhere; }
 .prompt-box .prompt-text { font-family: var(--serif); font-size: 1.3rem; line-height: 1.5; color: var(--ink); max-width: 72ch; }
@@ -816,6 +826,7 @@ body:has(.page-container) { --page: 1440px; } /* the header lines up with the wi
 .page-aside .page-meta > * + *::before { content: none; }
 .page-aside .prompt-box { margin: 0; padding: 0 0 0 12px; border: 0; border-radius: 0; background: none; }
 .page-aside .prompt-box::before { top: 2px; bottom: 2px; border-radius: 3px; }
+.page-aside .refs-box { margin: 14px 0 0; }
 .page-aside .prompt-box .prompt-text { font-family: var(--font); font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
 .page-aside details.final-prompt { margin: -6px 0 0; font-size: 13px; }
 .page-aside details.final-prompt .prompt-text { max-height: 50vh; background: var(--bg); font-size: 12.5px; }

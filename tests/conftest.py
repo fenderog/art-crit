@@ -75,8 +75,9 @@ def _write_conversation(path, home, level, secret=None):
     path.write_text(json.dumps(convo, indent=2))
 
 
-def make_batch(base, slug="voxel-horse", started=datetime(2026, 9, 26, 0, 11, 58), levels=None, threads=False, secret=None):
-    """A synthetic batch directory under `base`: prompt.md and one run directory per level."""
+def make_batch(base, slug="voxel-horse", started=datetime(2026, 9, 26, 0, 11, 58), levels=None, threads=False, secret=None, refs=None):
+    """A synthetic batch directory under `base`: prompt.md and one run directory per level. `refs` maps
+    reference file names to bytes, copied into the batch's references/ (what --ref leaves behind)."""
     from art_crit.util import make_run_id
 
     levels = levels if levels is not None else DEFAULT_LEVELS
@@ -84,6 +85,10 @@ def make_batch(base, slug="voxel-horse", started=datetime(2026, 9, 26, 0, 11, 58
     root = base / f"{started:%Y-%m-%d-%H%M%S}-{slug}"
     root.mkdir(parents=True)
     (root / "prompt.md").write_text("draw a running horse")
+    for name, content in (refs or {}).items():
+        refs_dir = root / "references"
+        refs_dir.mkdir(exist_ok=True)
+        (refs_dir / name).write_bytes(content)
 
     for i, level in enumerate(levels):
         model = "openai-codex/gpt-6-sol"

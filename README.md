@@ -60,7 +60,7 @@ A few things worth knowing:
   `-y/--yes` skips the prompt for scripts.
 - Useful flags: `-p/--page` (alias `--slug`: the page slug, default taken from `--title` if given, else the prompt), `-t/--title`, `-j N` (how many agents at once),
   `-T/--timeout 30m`, `-b/--brief FILE` (your own brief template, `{prompt}` is your prompt),
-  `-R/--ref FILE` (a file in the project's `references/` folder, e.g. `--ref robbie.jpg`; repeatable; each agent gets a copy in `./references/` and the brief points to it),
+  `-R/--ref FILE` (a file in the project's `references/` folder, e.g. `--ref robbie.jpg`; repeatable; each agent gets a copy in `./references/` and the brief points to it; the files are published with the page and shown as thumbnails beside the prompt),
   `--no-publish` (publishing each run is the default). `art-crit run -h` has the full list.
 - Ctrl-C stops everything. `art-crit run --resume <batch dir>` picks up a batch without
   redoing finished agents.
