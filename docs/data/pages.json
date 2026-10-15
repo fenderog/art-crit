@@ -1,5 +1,16 @@
 [
   {
+    "slug": "robbie-the-banker-with-reference",
+    "title": "Robbie the Banker with reference",
+    "kind": "blender",
+    "n_runs": 1,
+    "models": [
+      "anthropic/claude-sonnet-5-5"
+    ],
+    "updated": "2026-10-15T20:05:23Z",
+    "thumb": "data/robbie-the-banker-with-reference/runs/claude-sonnet-5-5-cc-low-20261015-130449/media/robbie.png"
+  },
+  {
     "slug": "create-a-model-of-the-vintage",
     "title": "Robie the Banker",
     "kind": "blender",
