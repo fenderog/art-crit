@@ -81,6 +81,7 @@ uv run art-crit run --dry-run "prompt" -m openai-codex/gpt-6-sol:low   # plan on
 uv run art-crit run --dry-run --kind media "an SVG pelican" -m openai-codex/gpt-6-sol:low
 uv run art-crit run --dry-run --kind web "a three.js horse" -m openai-codex/gpt-6-sol:low   # needs esbuild + npm
 uv run art-crit run --dry-run --kind blender "a low-poly fox" -m claude-code:opus:low   # needs blender + uvx
+uv run art-crit run --dry-run "prompt" -m claude-code:opus:low --ref robbie.jpg   # a file from <root>/references/, copied into each run's work/references/
 uv run art-crit run --dry-run "prompt" --set cheap   # a model set from art-crit.toml [sets] (or a file path)
 uv run art-crit run --dry-run "prompt"                # no -m/--set: pick harness, models and levels interactively (-i/--pick)
 uv run art-crit run --dry-run --page <slug> -m MODEL:LEVEL   # add runs to an existing page (reuses its prompt + kind)
@@ -136,6 +137,8 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
 - **Keep it lean.** Stdlib-only CLI, no JS frameworks or bundler for the viewer (Cloudflare's staging build only
   compresses oversized engines; esbuild only packages model-made web pages, ADR-0013, ADR-0021); the user checks for this. Prefer small
   functions and small diffs, and don't add dependencies without asking. (ADR-0002)
+- **`--ref` files** live in `<root>/references/` (the user's own files; never published): the batch dir and every run's
+  `work/references/` get copies, the brief (not the page's prompt) lists them, and `importer.stage_source` skips `references/`.
 - **Prompt requests are local only** (ADR-0024): `art-crit serve`'s `api/requests` keeps them in `requests.json` beside
   `docs/` (gitignored). Never move them under `docs/` (`run --publish` stages all of it) or into the Worker.
 - **Rankings are only written by `art-crit serve` on the user's machine** (`PUT api/rank`, which refuses cross-site
