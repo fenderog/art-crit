@@ -1,0 +1,69 @@
+{
+  "id": "claude-opus-5-5-cc-medium-20261015-140457",
+  "page": "robbie-the-banker-with-reference",
+  "model": "anthropic/claude-opus-5-5",
+  "effort": "medium",
+  "kind": "blender",
+  "started_at": "2026-10-15T21:05:01Z",
+  "batch": "2026-10-15-140457-robbie-the-banker-with-reference",
+  "harness": {
+    "name": "claude-code",
+    "version": "2.1.300"
+  },
+  "state": "complete",
+  "error": null,
+  "route": null,
+  "metrics": {
+    "duration_ms": 226171,
+    "cost_usd": 0.7291858,
+    "tool_calls": 16,
+    "turns": 15,
+    "tokens_total": 15486,
+    "tokens_input": 30,
+    "tokens_output": 15456,
+    "tokens_reasoning": 3599,
+    "tokens_cache_read": 403529
+  },
+  "thumb": "media/robie_back.png",
+  "output": {
+    "kind": "blender",
+    "items": [
+      {
+        "type": "image",
+        "width": 1024,
+        "height": 1024,
+        "bytes": 1094014,
+        "path": "media/robie_back.png"
+      },
+      {
+        "type": "model",
+        "bytes": 2096708,
+        "meshes": 42,
+        "triangles": 69792,
+        "animations": 0,
+        "path": "media/robie_banker.glb"
+      },
+      {
+        "type": "image",
+        "width": 1024,
+        "height": 1024,
+        "bytes": 1152562,
+        "path": "media/robie_front.png"
+      },
+      {
+        "type": "image",
+        "width": 1024,
+        "height": 1024,
+        "bytes": 1115125,
+        "path": "media/robie_side.png"
+      }
+    ],
+    "ok": true,
+    "verified": true,
+    "error": null
+  },
+  "session": {
+    "conversation": "session/conversation.json"
+  },
+  "source": null
+}
