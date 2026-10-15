@@ -23,6 +23,36 @@ from .util import LEVEL_INDEX, LEVEL_ORDER, CritError
 # which upstream served each response and what OpenRouter charged, and pins the upstream for
 # `MODEL@slug` runs. Passed with an explicit `-e` (which still loads under `-ne`).
 ROUTING_EXTENSION = Path(__file__).parent / "pi_ext" / "openrouter_routing.ts"
+MCP_TIMEOUT_S = 600  # per MCP tool call; a Blender render can take minutes (the clients default to ~60s)
+
+
+def write_mcp_config(path, servers):
+    """A run's MCP servers as the `mcpServers` JSON that pi and Claude Code read (`hidden` is ours: each
+    harness hides those tools its own way)."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    servers = {name: {k: v for k, v in spec.items() if k != "hidden"} for name, spec in servers.items()}
+    path.write_text(json.dumps({"mcpServers": servers}, indent=2) + "\n")
+    return path
+
+
+def hidden_mcp_tools(mcp):
+    """The hidden tools by their client-side names (`mcp__<server>__<tool>`, the same in pi and Claude Code)."""
+    return [f"mcp__{name}__{tool}" for name, spec in (mcp or {}).items() for tool in spec.get("hidden", ())]
+
+
+def codex_mcp_args(mcp):
+    """A run's MCP servers as Codex `-c mcp_servers.<name>...` overrides (TOML values; JSON strings are valid TOML)."""
+    args = []
+    for name, spec in (mcp or {}).items():
+        env = ", ".join(f"{k} = {json.dumps(v)}" for k, v in spec.get("env", {}).items())
+        args += ["-c", f"mcp_servers.{name}.command={json.dumps(spec['command'])}",
+                 "-c", f"mcp_servers.{name}.args={json.dumps(spec.get('args', []))}",
+                 "-c", f"mcp_servers.{name}.env={{{env}}}",
+                 "-c", f"mcp_servers.{name}.disabled_tools={json.dumps(list(spec.get('hidden', ())))}",
+                 "-c", f"mcp_servers.{name}.tool_timeout_sec={MCP_TIMEOUT_S}",
+                 "-c", f"mcp_servers.{name}.startup_timeout_sec=60"]
+    return args
 
 
 SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9._/-]*$")
@@ -119,7 +149,12 @@ class Harness:
             raise CritError(f"{model}: @UPSTREAM only works for pi openrouter/ models")
         return model
 
-    def command(self, model, level, brief, session_dir):
+    supports_mcp = False  # whether `command` can give the agent MCP servers (kinds like blender need it)
+
+    def command(self, model, level, brief, session_dir, mcp=None):
+        """The agent's argv. `mcp` = {name: {command, args, env, hidden}}: stdio MCP servers for this run only
+        (never the user's global config), `hidden` = tool names the model must not get. Only harnesses with
+        `supports_mcp` take it. The agent's cwd is always the run's work/ (a sibling of session_dir)."""
         raise NotImplementedError
 
     def env(self, model=None, harness_dir=None):
@@ -154,6 +189,7 @@ class Pi(Harness):
     """The `pi` CLI harness. See SPEC.md "Harness interface"."""
 
     name = "pi"
+    supports_mcp = True
 
     def __init__(self, binary="pi"):
         self.binary = binary
@@ -240,7 +276,7 @@ class Pi(Harness):
         cost = route["cost_usd"] if route["cost_usd"] is not None else route["pi_cost_usd"]
         return {**metrics, "extra": {"route": route}, "cost_usd": cost, "notes": notes}
 
-    def command(self, model, level, brief, session_dir):
+    def command(self, model, level, brief, session_dir, mcp=None):
         base, slugs = split_model_route(model)
         cmd = [
             self.binary,
@@ -258,6 +294,15 @@ class Pi(Harness):
         ]
         if base.startswith("openrouter/"):
             cmd += ["-e", str(ROUTING_EXTENSION)]
+        if mcp:
+            # pi's built-in MCP support (which -ne leaves out) has no per-run config flag: it reads ~/.pi/agent/mcp.json
+            # and a trusted project's .pi/mcp.json, so the servers go in work/.pi/ (never published as source) and
+            # --approve trusts that fresh work dir for this run only. `direct` declares the tools like a built-in's.
+            servers = {name: {**spec, "exposure": "direct", "timeout": MCP_TIMEOUT_S} for name, spec in mcp.items()}
+            write_mcp_config(Path(session_dir).parent / "work" / ".pi" / "mcp.json", servers)
+            cmd += ["-e", "builtin:mcp", "--approve"]
+            if hidden_mcp_tools(mcp):
+                cmd += ["--exclude-tools", ",".join(hidden_mcp_tools(mcp))]
         return cmd + [brief]
 
     def env(self, model=None, harness_dir=None):
@@ -346,6 +391,7 @@ class ClaudeCode(Harness):
     and nothing is saved to the user's session history. The stdout stream-json is the session."""
 
     name = "claude-code"
+    supports_mcp = True
     tag = "cc"
     # Models and effort levels (Claude Code has no command that lists them, so this mirrors the CLI's
     # own alias table + model catalog and has to be updated when they change). Aliases resolve to
@@ -395,24 +441,30 @@ class ClaudeCode(Harness):
     def display_model(self, model):
         return f"anthropic/{self.resolve(model)}"
 
-    def command(self, model, level, brief, session_dir):
+    def command(self, model, level, brief, session_dir, mcp=None):
         return [
             self.binary, "-p",
             "--model", self.resolve(model),
             "--effort", level,
             "--output-format", "stream-json", "--verbose",
-            "--safe-mode",
+            # --safe-mode also drops --mcp-config (measured, despite its help text), so a run with MCP servers
+            # gets the same isolation from no settings sources (no user hooks/plugins), --strict-mcp-config and
+            # CLAUDE_CODE_DISABLE_AUTO_MEMORY (env); the system prompt then differs only by the MCP server's tools.
+            *(["--setting-sources="] if mcp else ["--safe-mode"]),
             "--permission-mode", "bypassPermissions",
             "--no-session-persistence",
             f"--tools={self.TOOLS}",
-            f"--disallowed-tools={self.NO_SUBAGENTS}",
+            f"--disallowed-tools={','.join([self.NO_SUBAGENTS, *hidden_mcp_tools(mcp)])}",
             "--disable-slash-commands",
+            *([f"--mcp-config={write_mcp_config(Path(session_dir) / 'mcp.json', mcp)}", "--strict-mcp-config"] if mcp else []),
             "--", brief,
         ]
 
     def env(self, model=None, harness_dir=None):
         # art-crit itself may be running inside Claude Code; don't let the agent think it's nested.
-        return {k: v for k, v in os.environ.items() if k != "CLAUDECODE" and not k.startswith("CLAUDE_CODE_")}
+        env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE" and not k.startswith("CLAUDE_CODE_")}
+        # A Blender render can take minutes; memory is off already under --safe-mode, and explicitly for MCP runs.
+        return {**env, "MCP_TOOL_TIMEOUT": str(MCP_TIMEOUT_S * 1000), "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1"}
 
     def session_file(self, session_dir):
         path = Path(session_dir) / "events.jsonl"
@@ -689,7 +741,7 @@ class Agy(Harness):
                                             ("gpt-oss-", "openai")) if model.startswith(prefix)), "antigravity")
         return f"{vendor}/{model}"
 
-    def command(self, model, level, brief, session_dir):
+    def command(self, model, level, brief, session_dir, mcp=None):
         return [self.binary, "-p", brief, "--model", f"{model}-{level}",
                 "--output-format", "stream-json", "--dangerously-skip-permissions",
                 "--disable-slash-commands"]
@@ -746,7 +798,7 @@ class GrokBuild(Harness):
     def display_model(self, model):
         return f"xai/{model}"
 
-    def command(self, model, level, brief, session_dir):
+    def command(self, model, level, brief, session_dir, mcp=None):
         return [self.binary, "-p", brief, "--model", model, "--reasoning-effort", level,
                 "--output-format", "streaming-messages-json", "--always-approve", "--verbatim",
                 "--tools", "run_terminal_cmd,read_file,write_file,search_replace,grep,list_dir",
@@ -839,7 +891,7 @@ class MuseCode(Harness):
     def display_model(self, model):
         return f"meta/{model}"
 
-    def command(self, model, level, brief, session_dir):
+    def command(self, model, level, brief, session_dir, mcp=None):
         # No approval prompts or sandbox (like the other harnesses); the workspace stays untrusted, which
         # also leaves delegation off. No web, reminder agents or other tools' rules/skills.
         session_id = str(uuid.uuid4())
@@ -1077,6 +1129,7 @@ class Codex(Harness):
     effort levels come from `codex debug models`. Cost is not reported (0 = unreported)."""
 
     name = "codex"
+    supports_mcp = True
     tag = "cx"
     TOOL_ITEMS = ("command_execution", "file_change", "mcp_tool_call", "collab_tool_call", "web_search")
 
@@ -1126,12 +1179,12 @@ class Codex(Harness):
     def display_model(self, model):
         return f"openai/{model}"
 
-    def command(self, model, level, brief, session_dir):
+    def command(self, model, level, brief, session_dir, mcp=None):
         # No approvals or sandbox (like the other harnesses); user config and execpolicy rules are
         # left out for reproducibility, the session isn't persisted (events.jsonl is the session).
         return [self.binary, "exec", "--json", "--ephemeral", "--ignore-user-config", "--ignore-rules",
                 "--skip-git-repo-check", "--dangerously-bypass-approvals-and-sandbox",
-                "-m", model, "-c", f'model_reasoning_effort="{level}"', brief]
+                "-m", model, "-c", f'model_reasoning_effort="{level}"', *codex_mcp_args(mcp), brief]
 
     def session_file(self, session_dir):
         path = Path(session_dir) / "events.jsonl"

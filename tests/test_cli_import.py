@@ -2,7 +2,10 @@
 secrets, dry-run, idempotency. Uses the synthetic batch_dir fixture from conftest.py."""
 
 import json
+import shutil
 from pathlib import Path
+
+import pytest
 
 from datetime import datetime
 
@@ -245,3 +248,41 @@ def test_reimport_is_idempotent(bench_root, batch_dir):
     assert {r["id"] for r in runs_after} == {r["id"] for r in runs_before}
     # engine still deduped to one dir after re-import
     assert len(list((bench_root / "docs/engines").iterdir())) == 1
+
+
+@pytest.mark.skipif(not shutil.which("ffmpeg"), reason="needs ffmpeg")
+def test_big_transcript_images_are_published_as_small_jpegs(tmp_path):
+    """An agent reading a big render: the published transcript keeps an 800px JPEG plus the original's type and size."""
+    import base64
+    import subprocess
+
+    from art_crit.importer import IMAGE_MAX_BYTES, shrink_images
+
+    png = tmp_path / "big.png"
+    subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "testsrc2=size=1600x1200", "-frames:v", "1", str(png)], check=True)
+    raw = png.read_bytes()
+    assert len(raw) > IMAGE_MAX_BYTES
+    small = base64.b64encode(b"tiny").decode()
+    entries = [{"message": {"role": "toolResult", "content": [
+        {"type": "image", "mimeType": "image/png", "data": base64.b64encode(raw).decode()},
+        {"type": "image", "mimeType": "image/png", "data": small},  # small: left alone
+        {"type": "image", "mimeType": "image/jpeg", "sourceMimeType": "image/png", "bytes": 9, "data": small},  # already done
+    ]}}]
+    assert shrink_images(entries) == 1
+    big, tiny, done = entries[0]["message"]["content"]
+    assert (big["mimeType"], big["sourceMimeType"], big["bytes"]) == ("image/jpeg", "image/png", len(raw))
+    thumb = base64.b64decode(big["data"])
+    assert thumb[:2] == b"\xff\xd8" and len(thumb) < len(raw)
+    assert tiny["data"] == small and "sourceMimeType" not in tiny
+    assert done["data"] == small
+
+
+def test_big_transcript_image_without_ffmpeg_keeps_only_its_record(monkeypatch):
+    import base64
+
+    monkeypatch.setattr("art_crit.importer.thumbnail", lambda raw, width: None)
+    from art_crit.importer import shrink_images
+
+    block = {"type": "image", "mimeType": "image/png", "data": base64.b64encode(b"x" * 100_000).decode()}
+    assert shrink_images([block]) == 1
+    assert block == {"type": "image", "mimeType": "image/jpeg", "sourceMimeType": "image/png", "bytes": 100_000}

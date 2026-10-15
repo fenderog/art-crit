@@ -10,6 +10,7 @@ const KINDS = [
   ["media", "Images or video the agent saves (SVG, PNG, MP4…)"],
   ["godot", "A Godot project, played in the browser"],
   ["web", "A web page with JS modules, packaged into one file"],
+  ["blender", "A 3D model and renders made in Blender (viewable in 3D)"],
 ];
 
 // Shown only when served by `art-crit serve` on this machine (it answers api/local with requests: true).

@@ -1,0 +1,21 @@
+#!/usr/bin/env python3
+"""A fake `blender` for testing the blender kind without Blender: `blender -b --online-mode --command blender_mcp
+--port N` listens on N (accepting and dropping connections) until it is killed, like the MCP add-on's background
+server. FAKE_BLENDER_FAIL=1 exits at once instead (Blender that can't start its server). Its pid goes to
+FAKE_BLENDER_PID when set, so a test can check it was killed."""
+import os
+import socket
+import sys
+
+if os.environ.get("FAKE_BLENDER_FAIL"):
+    print("fake blender: failing on purpose")
+    sys.exit(1)
+port = int(sys.argv[sys.argv.index("--port") + 1])
+if os.environ.get("FAKE_BLENDER_PID"):
+    with open(os.environ["FAKE_BLENDER_PID"], "a") as f:
+        f.write(f"{os.getpid()}\n")
+server = socket.create_server(("127.0.0.1", port))
+print(f"MCP server started on localhost:{port}", flush=True)
+while True:
+    conn, _ = server.accept()
+    conn.close()

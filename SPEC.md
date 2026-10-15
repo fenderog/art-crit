@@ -17,7 +17,9 @@ tomllib, http.server, subprocess). The site is vanilla JS ES modules, with one p
   "Run directory"). `art-crit import` publishes it to the site.
 - **Kind**: what a page's runs produce. `godot` = a Godot project, published as a playable web build;
   `media` = image and/or video files; `web` = a web page (HTML + ES modules + npm packages), published as one
-  self-contained `index.html` packaged with esbuild. Every run of a page has the page's kind.
+  self-contained `index.html` packaged with esbuild; `blender` = a `.glb` model and/or renders made in a Blender of
+  the run's own through the official Blender MCP server, the model shown in an interactive 3D viewer. Every run of a
+  page has the page's kind.
 
 ## Site layout (the data contract between the CLI and the viewer)
 
@@ -42,7 +44,7 @@ docs/
       run.json                    # Run
       thumb.png                   # optional (godot)
       game/index.html, index.pck, index.png, index.icon.png, index.apple-touch-icon.png   # godot
-      media/<file>, media/<name>.poster.jpg                                              # media
+      media/<file>, media/<name>.poster.jpg                                              # media, blender (+ media/<name>.glb)
       game/index.html             # web: the packaged page, one file (cleaned and secret-scanned like source)
       session/conversation.json   # cleaned (see Cleaning)
       session/stderr.txt          # optional, cleaned
@@ -110,9 +112,10 @@ All paths inside JSON are **relative to the run directory** (for Run) or to `doc
 - `output` carries its own `kind` and the kind's fields (see Kinds): `godot` = `entry`, `engine`, `godot`, `threads`;
   `web` = `entry`, `bytes`, `esbuild`; `media` = `items`, each `{type: "image"|"video", path: "media/<file>", width,
   height, bytes}` plus, for a video, `duration_s, poster: "media/<name>.poster.jpg", transcoded` and `trimmed: true`
-  when it was cut to 10 s (width/height can be `null` for an SVG without a size). Paths are relative to the run
+  when it was cut to 10 s (width/height can be `null` for an SVG without a size); `blender` = `items` like media, plus
+  `{type: "model", path: "media/<name>.glb", bytes, meshes, triangles, animations}` for a model. Paths are relative to the run
   directory. `thumb` = `thumb.png` (the verify step's first screenshot) for godot and web, the first image's path or
-  the first video's poster for media. Model-written text (SVGs, the packaged page) is cleaned and secret-scanned like
+  the first video's poster for media (the first render for blender). Model-written text (SVGs, the packaged page) is cleaned and secret-scanned like
   source. The run's `source` never includes `node_modules/`; for media it holds only text files of at most 512 KB,
   and `output/` only for the files there that aren't media (a generator script kept in `./output/`).
 - `id` = `<model name after the last "/", lowercased>-<effort>-<YYYYMMDD-HHMMSS of the batch>`, with `-cc` after the
@@ -184,7 +187,11 @@ The page's prompt is the batch directory's `prompt.md`. Effort-run folders (`fe-
    (first 4 characters + `…`). With `--redact`, each match is replaced with `[REDACTED]` and the import continues.
 5. Image data (the base64 `data` of `{type: "image"}` blocks in session JSON) is set aside before steps 2 and 4 and
    put back after: it's binary, so rewrites could corrupt it and the scan finds random matches (`AKIA…`) in it.
-   Data that isn't plain base64 stays in place and is scanned.
+   Data that isn't plain base64 stays in place and is scanned. Before cleaning, every image in `conversation.json` over
+   48 KB (decoded) without a `sourceMimeType` becomes an ≤ 800 px JPEG (`media.thumbnail`), recorded as `{mimeType:
+   "image/jpeg", sourceMimeType: <original type>, bytes: <original size>}` (no `data` without ffmpeg), so an agent
+   reading its renders doesn't publish each one in full (pi keeps the whole file as base64; a 10-read run was 15 MB).
+   The run directory keeps the originals.
 6. JSONL files are cleaned line by line. Source files, stderr, SVGs and the packaged page get steps 2 and 4 only.
 
 ## CLI (`art-crit`, run from the repo root, or pass `-C/--root`)
@@ -215,7 +222,7 @@ pi or Claude Code), turns each run's work into its kind's output and verifies it
 
 ```
 art-crit run PROMPT | -f/--prompt-file FILE
-    -k, --kind godot|media|web what the agents produce (default: the existing page's kind, else godot); must match it
+    -k, --kind godot|media|web|blender what the agents produce (default: the existing page's kind, else godot); must match it
     -m, --model MODEL[@UPSTREAMS][:LEVELS]  repeatable. UPSTREAMS: comma-separated OpenRouter provider slugs, as
                         OpenRouter lists a model's endpoints, variants included (`deepinfra/fp8`, `fireworks/us`)
                         (pi `openrouter/` models only, e.g. `openrouter/deepseek/deepseek-v4.1-flash@deepinfra/fp8:low`);
@@ -325,7 +332,11 @@ A kind is one class registered in `KINDS` (like `HARNESSES`); the runner and the
 class Kind:
     name: str; tools: tuple; tools_hint: str; activity: str; serial: bool   # tools must be on PATH before a batch starts;
                                                                             # serial: finalize runs one at a time
+    needs_mcp: bool                                     # runs need MCP servers: only harnesses with supports_mcp
     def brief(self) -> str                              # the template text (kinds/<name>.md)
+    def prepare(self) -> None                           # one-time setup before a batch's agents start (CritError if not)
+    def agent_session(self, work_dir, harness_dir)      # context manager, up exactly as long as one agent: yields the
+                                                        # run's MCP servers {name: {command, args, env, hidden}} or None
     def finalize(self, work_dir, out_dir) -> (bool, str | None)    # export / package / normalize -> (ok, error)
     def verify(self, out_dir) -> dict | None            # {ok, ...} or None when it can't be checked here
     def stage(self, out_dir, run_dir, ctx) -> Staged    # the output into the run's published dir; Staged(fields, thumb, engine)
@@ -365,6 +376,21 @@ class Kind:
   `error` = the manifest's errors (joined with `; `, the first 200 characters, the kept files are still published);
   `verify` = the manifest's `ok`. `keep_source`: text files of at most 512 KB; `output/` only for the files there that
   aren't media (the script that made them), never the images or videos themselves.
+- **blender** (`Blender`, a `Media` with one more handler; `blender` 5.1+, `uvx`, `ffmpeg`, `ffprobe` on PATH; `needs_mcp`):
+  `prepare` installs the official Blender Lab MCP add-on (v1.0.3, sha256-pinned zip) into an art-crit-owned Blender user dir
+  (`~/.cache/art-crit/blender-mcp-1.0.3/`, passed as `BLENDER_USER_RESOURCES`; the user's own Blender is never touched) and
+  fetches the MCP server (`uvx --from git+https://projects.blender.org/lab/blender_mcp.git@<pinned commit>#subdirectory=mcp
+  blender-mcp`; not `uvx blender-mcp`, a different PyPI project) into uv's cache. `agent_session` starts `blender -b
+  --online-mode --command blender_mcp --port N` (the add-on's background server; `--online-mode` because the add-on asks for
+  network access) in the run's `work/` on a free port (up to 3 tries, ≤ 60 s each), logs to `harness/blender.log`, yields
+  `{"blender": {command: "uvx", args, env: {BLENDER_MCP_PORT: N}, hidden: [the 3 screenshot and 4 jump_to_* tools, which
+  need a window]}}` and kills Blender's process group when the agent ends. A Blender that won't start fails the run
+  (`state: failed`), not the batch. `finalize` = the media step with `.glb` added: the file must be a glTF 2.0 binary
+  (magic, version 2, length = file size, a JSON chunk, `asset.version` 2.x, at least one scene), ≤ 15 MB, and need no
+  extension the viewer can't decode (`KHR_draco_mesh_compression`, `EXT_meshopt_compression`, `KHR_texture_basisu` in
+  `extensionsRequired`); the item records `meshes`, `triangles` (mode-4 primitives: index count or POSITION count / 3) and
+  `animations`. No media file at all is the error `no render or .glb files in ./output/`. `verify` and `stage` are the
+  media kind's (a `.glb` is copied as is; it is binary, so never source).
 
 ### Metrics (from the session log, the same numbers pi-subagents reported)
 Over assistant messages: `turns` = count; `tool_calls` = number of `toolCall` content blocks; `tokens_input/output/
@@ -388,7 +414,8 @@ class Harness:           # one per agent program
     def display_model(self, model) -> str               # the model name recorded for the run
     def split_spec(self, rest) -> (str, list | None)    # "MODEL@UPSTREAMS:LEVELS" -> ("MODEL:LEVELS", upstreams)
     def pinned(self, model, upstreams) -> str           # the model argument ("model@a,b"); only pi accepts upstreams
-    def command(self, model, level, brief, session_dir) -> list[str]
+    supports_mcp: bool                                  # pi, claude-code, codex
+    def command(self, model, level, brief, session_dir, mcp=None) -> list[str]  # mcp: the kind's servers for this run only
     def env(self, model=None, harness_dir=None) -> dict | None  # the agent's environment (None = inherit)
     def session_file(self, session_dir) -> Path | None  # the raw session in harness/ (never published)
     def session_entries(self, session_dir, brief, level) -> list  # the session in pi's format -> conversation.json
@@ -400,6 +427,11 @@ Pi: `pi --version`; `pi --list-models` (parse the table); levels via `pi --mode 
 sending `{"type":"get_available_thinking_levels"}` and reading the matching response;
 command = `pi -p --mode json --model M:LEVEL --session-dir DIR -ne -ns -np -nc BRIEF` (no user extensions, skills,
 prompt templates or AGENTS.md, so runs are reproducible); session file = the `*.jsonl` in DIR that isn't pi's stdout (`events.jsonl`).
+With MCP servers (blender), pi's built-in MCP support (which `-ne` leaves out, and which has no per-run config flag) is
+loaded with `-e builtin:mcp --approve`: the servers go in `work/.pi/mcp.json` (`exposure: "direct"`, `timeout: 600`), a
+project config that `--approve` trusts for this run only, and the hidden tools go to `--exclude-tools`. `.pi/` is never
+published as source. Codex gets them as `-c mcp_servers.<name>.{command,args,env,disabled_tools,tool_timeout_sec=600,
+startup_timeout_sec=60}` overrides. agy, grok-build and muse-code take none, so a blender batch refuses them at planning.
 Every `openrouter/` run adds `-e src/art_crit/pi_ext/openrouter_routing.ts` (explicit `-e` paths still load under
 `-ne`) and sets `ART_CRIT_ROUTE_LOG=<harness dir>/route.jsonl` in that run's environment. A pinned run (`MODEL@slug`)
 passes the base id to `--model` and also sets `ART_CRIT_OPENROUTER_ROUTING={"only": [...], "allow_fallbacks": false}`
@@ -419,7 +451,10 @@ models sends `effort=high`), so those are listed without xhigh, and a model that
 --permission-mode bypassPermissions --no-session-persistence --tools=Bash,Read,Write,Edit,Glob,Grep
 --disallowed-tools=Agent,Task --disable-slash-commands -- BRIEF`: one direct agent with only the core file and shell
 tools (like pi: no sub-agents, web, scheduling, messaging or skills), none of the user's CLAUDE.md, memory, plugins,
-hooks or MCP servers (login still works), and nothing saved to the user's session history. `CLAUDECODE` and
+hooks or MCP servers (login still works), and nothing saved to the user's session history. With MCP servers (blender), `--safe-mode`
+becomes `--setting-sources=` (it drops `--mcp-config`, measured) and `--mcp-config=<harness>/mcp.json --strict-mcp-config` is added,
+with the kind's hidden tools appended to `--disallowed-tools` as `mcp__<server>__<tool>`; `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`
+and `MCP_TOOL_TIMEOUT=600000` are always set, so the system prompt matches safe mode's except for the server's tools. `CLAUDECODE` and
 `CLAUDE_CODE_*` are removed from its environment (art-crit may itself run inside Claude Code). The stdout stream-json is
 the session; its raw events carry account/session details, so they're not published (for any harness). Conversion to pi's format:
 assistant events are merged by message id (the stream emits one per content block, each repeating the usage) and
@@ -565,7 +600,8 @@ parameters and fetch-error messages; run/play find their run by id in `page.runs
 
 All five viewer documents enforce a meta CSP: `default-src 'self'; script-src 'self'; style-src 'self';
 img-src 'self' data:; media-src 'self'; connect-src 'self'; frame-src 'self'; object-src 'none';
-base-uri 'none'`. Dynamic styles use CSSOM properties. The transcript lazily loads local Marked 15.0.12
+base-uri 'none'`. page, run and compare (the three that can show a 3D model) add `blob:` to `img-src` and `connect-src`:
+three.js's GLTFLoader decodes a .glb's embedded textures through blob: URLs the page itself creates. Dynamic styles use CSSOM properties. The transcript lazily loads local Marked 15.0.12
 and renders lexer tokens to DOM nodes with textContent, never innerHTML. Raw HTML stays visible text;
 links permit only HTTP(S), and remote Markdown images stay alt text to avoid outside requests.
 
@@ -629,7 +665,11 @@ them. Any output with an `entry` is shown in the sandbox, so a new kind needs no
   - *Output* (instead of Game, for a `media` run): every `output.items` entry as a captioned figure (file name, size, duration,
     bytes, a `download` link), one per row at its recorded `width`×`height` (never wider than the page). Images, **SVGs included**, are only ever shown with `<img>` (which never runs an
     SVG's scripts), never inlined or put in an object/embed/iframe, and never linked for viewing on this origin.
-    Videos use `<video controls preload="none">` with the poster, and never autoplay.
+    Videos use `<video controls preload="none">` with the poster, and never autoplay. A `model` item (blender) is a
+    "View in 3D" button over the run's first render; the click loads the vendored three.js bundle
+    (`assets/vendor/three-gltf.min.js`, three 0.186.1: GLTFLoader, OrbitControls, RoomEnvironment) once and the .glb into
+    a 4:3 orbit/zoom/pan view (`model.js`, rendered on demand, animations looped; its WebGL context is freed when the card
+    is redrawn). Its caption adds the triangle count. Galleries are chosen by `output.items`, not by kind name.
   - *Page* (instead of Game, for a `web` run): the packaged page with click-to-play, in the same sandboxed iframe as games.
   - *Source*: a file list, and clicking a file shows it in a `<pre>`. The first code file opens right away.
   - *Metrics*: all metrics as a table of raw values (with a readable form beside durations, costs and big counts,
@@ -638,8 +678,8 @@ them. Any output with an `entry` is shown in the sandbox, so a new kind needs no
   into rows (3 across at desktop width, 1 on phones, never sideways scrolling), ordered by model then effort. Each card has
   the model, its effort pill (plus the failed/timeout badge), one line with harness, duration, tokens and cost (the best
   among the shown runs starred), and its game with click-to-play (each column boots independently, never automatically),
-  or for a `media` run one output as the hero with a strip of thumbnails that swap it (the Play all button is hidden when there
-  are no games). An image hero links to the run page (`a.media-link`); a video hero doesn't, so a click plays it. page.html's
+  or for a `media`/`blender` run one output as the hero with a strip of thumbnails that swap it (a video or 3D model is the
+  hero when there is one; the Play all button is hidden when there are no games and never opens 3D views). An image hero links to the run page (`a.media-link`); a video hero doesn't, so a click plays it. page.html's
   Grid view draws the same cards (`renderRunGrid()`).
   Cards are subgrids spanning three grid rows (heading, metrics, output), so those line up across a row even when a metrics line wraps.
   Cards are grouped by vendor (`groupByVendor()`, `vendorOf()`): a section per vendor with a quiet header (name from
@@ -667,7 +707,8 @@ them. Any output with an `entry` is shown in the sandbox, so a new kind needs no
   against `art-crit serve` on a fixture site. It covers each page rendering without console errors, click-to-play inserting
   a sandboxed iframe, the transcript's tool calls and error badges, and compare with 3 runs. A `media` fixture page
   (`art`: an SVG with an embedded script, a PNG and a 1 s mp4) covers the gallery, the Output tab (the SVG's script
-  never runs, videos don't autoplay), expanded rows and compare.
+  never runs, videos don't autoplay), expanded rows and compare. A routed `blender` page (a one-triangle .glb and a PNG,
+  in a Chrome with SwiftShader WebGL) covers the click-to-view card (nothing loads before the click) and the run page.
   Also covered: effort-order sorting, the highlights (a failed run never wins "cheapest"), best-value stars, the run
   page ranks, the linkable tab hash and the Source tab opening its first file.
 - `art-crit run`: a fake `pi` (a Python script put first on PATH by the test) that answers `--version`, `--list-models`,
@@ -679,7 +720,11 @@ them. Any output with an `entry` is shown in the sandbox, so a new kind needs no
   leftover binary frame; with `FAKE_PI_BAD_OUTPUT` it adds an unreadable PNG (the step's error) and a text file in
   `./output/` (published as source, not an error). `tests/test_media.py` checks the media step on ffmpeg-generated inputs (trim + re-encode,
   oversized image → JPEG, bad files, empty output, too many files, name clashes, non-media files being skipped); media tests are skipped without
-  ffmpeg. A slow test (skipped without `godot`) exports a tiny real project. No test calls a real model.
+  ffmpeg. `tests/test_blender.py` covers the .glb check, the per-run Blender session against a fake `blender`
+  (tests/fixtures/fake_pi/blender, which only listens on its port), each harness's MCP flags, harnesses without MCP being
+  refused, and a full blender run (the fake pi records the `.pi/mcp.json` it got and writes a .glb + PNG; with
+  `FAKE_PI_BLENDER_LIVE=1` it drives the real Blender MCP server instead, a manual end-to-end check without a model).
+  A slow test (skipped without `godot`) exports a tiny real project. No test calls a real model.
   For a web brief the fake pi writes `index.html`, `main.js`, `style.css` and a fake npm package in `node_modules/`.
   `tests/test_web_kind.py` (skipped without esbuild) packages pages with the real esbuild (module + inline module +
   classic scripts, stylesheets, imported assets, `</script>` escaping, remote/importmap left alone, missing imports and

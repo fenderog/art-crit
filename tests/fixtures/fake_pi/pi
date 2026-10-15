@@ -17,13 +17,17 @@ Behavior knobs (env vars), read at `-p` run time:
   ART_CRIT_ROUTE_LOG       (set by art-crit for routed runs) append what the routing extension would log:
                         {id, provider} (the first requested upstream's name) and {id, cost: 0.0042}
   FAKE_PI_SERVED=NAME   report NAME as the upstream that served the request
+  FAKE_PI_BLENDER_LIVE=1  (blender briefs) drive the real Blender MCP server from ./.pi/mcp.json (a monkey, a render and
+                        a .glb) instead of writing canned files: an end-to-end check of the kind without a model
 
-A media brief (one mentioning ./output/) gets ./output/ with an SVG, a PNG and a 2s mp4 (made with
+A blender brief (one mentioning .glb) gets ./output/ with a one-triangle scene.glb and a PNG render; the MCP config
+art-crit gave it (./.pi/mcp.json) is copied to ./mcp-seen.json. A media brief (one mentioning ./output/) gets ./output/ with an SVG, a PNG and a 2s mp4 (made with
 ffmpeg), plus a make.py and a leftover binary frame instead of a Godot project. A web brief (one
 mentioning esbuild) gets index.html + main.js + style.css and a fake npm package in node_modules/.
 """
 import base64
 import json
+import struct
 import subprocess
 import os
 import sys
@@ -126,7 +130,9 @@ def cmd_run():
         print("fake pi: forced failure", file=sys.stderr)
         sys.exit(int(exit_code))
 
-    if "./output/" in brief:
+    if ".glb" in brief:
+        write_blender()
+    elif "./output/" in brief:
         write_media()
     elif "esbuild" in brief:
         write_web()
@@ -198,6 +204,61 @@ def write_media():
     Path("make.py").write_text("print('made the files')\n")
     Path("frames").mkdir(exist_ok=True)
     (Path("frames") / "f001.png").write_bytes(PNG_1X1)  # a leftover binary: never published as source
+
+
+def tiny_glb():
+    """A valid glTF 2.0 binary with one triangle."""
+    positions = struct.pack("<9f", 0, 0, 0, 1, 0, 0, 0, 1, 0)
+    gltf = {"asset": {"version": "2.0"}, "scene": 0, "scenes": [{"nodes": [0]}], "nodes": [{"mesh": 0}],
+            "meshes": [{"primitives": [{"attributes": {"POSITION": 0}}]}],
+            "accessors": [{"bufferView": 0, "componentType": 5126, "count": 3, "type": "VEC3",
+                           "min": [0, 0, 0], "max": [1, 1, 0]}],
+            "bufferViews": [{"buffer": 0, "byteLength": len(positions)}], "buffers": [{"byteLength": len(positions)}]}
+    js = json.dumps(gltf).encode()
+    js += b" " * (-len(js) % 4)
+    body = struct.pack("<II", len(js), 0x4E4F534A) + js + struct.pack("<II", len(positions), 0x004E4942) + positions
+    return struct.pack("<III", 0x46546C67, 2, 12 + len(body)) + body
+
+
+def blender_live(spec):
+    """Like a model would: build, render and export through the Blender MCP server art-crit started for this run."""
+    proc = subprocess.Popen([spec["command"], *spec["args"]], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                            stderr=subprocess.DEVNULL, env={**os.environ, **spec.get("env", {})}, text=True)
+
+    def rpc(i, method, params=None):
+        msg = {"jsonrpc": "2.0", "method": method, **({"id": i} if i else {}), **({"params": params} if params else {})}
+        proc.stdin.write(json.dumps(msg) + "\n")
+        proc.stdin.flush()
+        return json.loads(proc.stdout.readline()) if i else None
+
+    rpc(1, "initialize", {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "fake", "version": "0"}})
+    rpc(None, "notifications/initialized")
+    code = (
+        "import bpy, os\nos.makedirs('output', exist_ok=True)\n"
+        "bpy.data.objects['Cube'].hide_render = True\nbpy.data.objects['Cube'].hide_set(True)\n"
+        "bpy.ops.mesh.primitive_monkey_add()\nbpy.ops.object.shade_smooth()\n"
+        "m = bpy.data.materials.new('fake'); m.diffuse_color = (0.9, 0.35, 0.2, 1); bpy.context.object.data.materials.append(m)\n"
+        "bpy.context.scene.render.resolution_x, bpy.context.scene.render.resolution_y = 640, 480\n"
+        "bpy.context.scene.render.filepath = os.path.abspath('output/render.png')\nbpy.ops.render.render(write_still=True)\n"
+        "bpy.ops.export_scene.gltf(filepath=os.path.abspath('output/scene.glb'), export_format='GLB', use_visible=True)\n"
+        "result = {'ok': True}"
+    )
+    reply = rpc(2, "tools/call", {"name": "execute_blender_code", "arguments": {"code": code}})
+    Path("blender-reply.json").write_text(json.dumps(reply))
+    proc.stdin.close()
+    proc.terminate()
+
+
+def write_blender():
+    config = Path(".pi") / "mcp.json"
+    if config.is_file():
+        Path("mcp-seen.json").write_text(config.read_text())
+    if os.environ.get("FAKE_PI_BLENDER_LIVE"):
+        return blender_live(json.loads(config.read_text())["mcpServers"]["blender"])
+    out = Path("output")
+    out.mkdir(exist_ok=True)
+    (out / "scene.glb").write_bytes(tiny_glb())
+    (out / "render.png").write_bytes(PNG_1X1)
 
 
 def write_web():

@@ -1,8 +1,10 @@
 """A kind is what a page's runs produce: `godot` (a project, exported to a web build), `media`
-(image/video files) or `web` (a page packaged into one file). Each kind is one class here with the
+(image/video files), `web` (a page packaged into one file) or `blender` (a .glb model and/or renders made in
+Blender through its MCP server). Each kind is one class here with the
 same surface, registered in `KINDS` like `HARNESSES`; the runner and the importer never branch on
 the kind's name. See SPEC.md "Kinds" and ADR-0017."""
 
+import contextlib
 import importlib.resources
 import shutil
 from dataclasses import dataclass, field
@@ -36,6 +38,7 @@ class Kind:
     tools_hint = ""  # how to install them
     activity = "processing"  # the progress table's label while `finalize` runs
     serial = False  # whether `finalize` must not run for two runs at once
+    needs_mcp = False  # whether runs need MCP servers from `agent_session` (only harnesses with `supports_mcp`)
 
     def brief(self):
         """The brief template ({prompt} and {tools} are substituted)."""
@@ -43,6 +46,15 @@ class Kind:
 
     def missing_tools(self):
         return [tool for tool in self.tools if not shutil.which(tool)]
+
+    def prepare(self):
+        """One-time setup before a batch's agents start (install, warm caches). Raises CritError when it can't."""
+
+    @contextlib.contextmanager
+    def agent_session(self, work_dir, harness_dir):
+        """What runs alongside one agent (blender: its own Blender). Yields the run's MCP servers
+        ({name: {command, args, env, hidden}}) or None, and stops it all when the agent is done."""
+        yield None
 
     def finalize(self, work_dir, out_dir):
         """Turn the agent's work into the publishable output in out_dir (export, package, normalize).
@@ -62,8 +74,9 @@ class Kind:
         return True
 
 
+from .blender import Blender  # noqa: E402
 from .godot import Godot  # noqa: E402
 from .media import Media  # noqa: E402
 from .web import Web  # noqa: E402
 
-KINDS = {kind.name: kind for kind in (Godot, Media, Web)}
+KINDS = {kind.name: kind for kind in (Godot, Media, Web, Blender)}

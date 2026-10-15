@@ -56,7 +56,7 @@ function render(page, runs, editable) {
     document.getElementById("final-prompt").textContent = page.final_prompt;
     document.getElementById("final-prompt-box").hidden = false;
   }
-  const isMedia = page.kind === "media";
+  const isMedia = kindUi(page.kind).gallery === true; // media and blender: files, not a game
   renderMeta(page, runs);
   renderHighlights(runs);
 
@@ -161,7 +161,7 @@ function render(page, runs, editable) {
       const thumb = r.thumb
         ? el("a", { attrs: { href: url, "aria-label": "Open run" } }, [el("img", { class: "row-thumb", attrs: { src: runDir(slug, r.id) + r.thumb, alt: "", loading: "lazy" } })])
         : el("span", { class: "thumb-none", text: "–" });
-      const files = r.output?.kind === "media" ? (r.output.items || []).length : 0; // "×3" when a media run made several
+      const files = (r.output?.items || []).length; // "×3" when a media or blender run made several
       const tds = [
         el("td", { class: "select-cell" }, [selectBox(r, selection), el("span", { class: "caret", text: "▶" })]),
         el("td", { class: "thumb-cell", attrs: { "data-col": "thumb" } }, [el("div", { class: "thumb-box" }, [thumb, files > 1 ? el("span", { class: "media-count", text: `×${files}`, attrs: { title: mediaCount(r.output.items) } }) : null])]),

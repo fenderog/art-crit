@@ -144,26 +144,28 @@ def do_video(src, dest_dir, name):
     return item, None
 
 
-MEDIA_EXTS = IMAGE_EXTS | VIDEO_EXTS | {SVG_EXT}
+HANDLERS = {**dict.fromkeys(IMAGE_EXTS, do_image), **dict.fromkeys(VIDEO_EXTS, do_video), SVG_EXT: do_svg}
 
 
-def normalize(work_dir, out_dir):
+def normalize(work_dir, out_dir, handlers=None, what="image or video"):
     """Check every media file in work_dir/output/ and write the publishable versions plus manifest.json
     to out_dir. Returns the manifest: {ok, items: [...], errors: [...]}. ok = at least one item
     and no errors. Never raises for bad agent output: problems become `errors`.
-    A file that isn't an image or video isn't output at all: it's left alone, so a script the model
+    `handlers` maps a file extension to its check (`do_image`, `do_svg`, `do_video` by default; the blender
+    kind adds `.glb`). A file with no handler isn't output at all: it's left alone, so a script the model
     kept in ./output/ is not an error (the importer still publishes it as source when it's text)."""
+    handlers = handlers or HANDLERS
     if out_dir.exists():
         shutil.rmtree(out_dir)
     out_dir.mkdir(parents=True)
     output = work_dir / "output"
     files = sorted(p for p in output.rglob("*") if p.is_file() and not p.name.startswith(".")) if output.is_dir() else []
-    media = [p for p in files if p.suffix.lower() in MEDIA_EXTS]
+    media = [p for p in files if p.suffix.lower() in handlers]
     items, errors = [], []
     if not files:
         errors.append("no files in ./output/")
     elif not media:
-        errors.append("no image or video files in ./output/")
+        errors.append(f"no {what} files in ./output/")
     if len(media) > MAX_FILES:
         errors.append(f"{len(media)} files in ./output/; only the first {MAX_FILES} were kept")
         media = media[:MAX_FILES]
@@ -174,12 +176,7 @@ def normalize(work_dir, out_dir):
         if (out_dir / planned).exists():  # e.g. x.webm and x.mp4 would both become x.mp4
             errors.append(f"{name}: skipped, another output is already named {planned}")
             continue
-        if ext == SVG_EXT:
-            item, error = do_svg(src, out_dir, name)
-        elif ext in IMAGE_EXTS:
-            item, error = do_image(src, out_dir, name)
-        else:  # the only extension left in MEDIA_EXTS
-            item, error = do_video(src, out_dir, name)
+        item, error = handlers[ext](src, out_dir, name)
         if item:
             items.append(item)
         if error:
@@ -205,11 +202,13 @@ def _is_text(path):
 class Media(Kind):
     name = "media"
     tools = ("ffmpeg", "ffprobe")
+    handlers = HANDLERS  # extension -> check; what the step publishes from ./output/
+    what = "image or video"  # for "no ... files in ./output/"
 
     def finalize(self, work_dir, out_dir):
         """ok = at least one file was kept; problems with the ones it kept (unreadable, too big) are the
         error (the kept files are still published); files that aren't images/videos are ignored."""
-        manifest = normalize(work_dir, out_dir)
+        manifest = normalize(work_dir, out_dir, self.handlers, self.what)
         return bool(manifest["items"]), "; ".join(manifest["errors"])[:200] or None
 
     def verify(self, out_dir):
@@ -220,12 +219,13 @@ class Media(Kind):
         """Text files of at most 512 KB. `output/` itself is the media output, never source, but a non-media
         file the model left there (its generator script) is: the media step ignores it and dropping it would
         lose the code that made the files."""
-        if rel.parts[0] == "output" and path.suffix.lower() in MEDIA_EXTS:
+        if rel.parts[0] == "output" and path.suffix.lower() in self.handlers:
             return False
         return path.stat().st_size <= SOURCE_MAX_BYTES and _is_text(path)
 
     def stage(self, out_dir, run_dir, ctx):
-        """SVGs are text written by the model, so they're cleaned and secret-scanned like source."""
+        """SVGs are text written by the model, so they're cleaned and secret-scanned like source; everything else
+        (images, videos, the blender kind's .glb models) is copied as is."""
         manifest = json.loads((out_dir / "manifest.json").read_text())
         items = []
         for item in manifest["items"]:

@@ -691,6 +691,21 @@ input.run-select { width: 16px; height: 16px; margin: 4px 0 0; flex: none; accen
   content: "\25B6"; position: absolute; right: 2px; bottom: 2px; font-size: 8px; line-height: 1; color: #fff;
   background: rgba(14, 14, 12, 0.72); padding: 2px 3px 2px 4px; border-radius: 3px;
 }
+.media-thumb.is-model::after {
+  content: "3D"; position: absolute; right: 2px; bottom: 2px; font: 700 8px/1 var(--font); color: #fff;
+  background: rgba(14, 14, 12, 0.72); padding: 2px 3px; border-radius: 3px;
+}
+/* A .glb (blender kind): a click-to-view box (render as poster + "View in 3D"), then the three.js canvas. It fills the
+   4:3 media box on cards; on the run page it gets the page's width at 4:3 instead of a size of its own. */
+.model-view { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; }
+.model-view .play-overlay { position: absolute; inset: 0; }
+.model-stage { flex: 1; min-height: 0; position: relative; cursor: grab; touch-action: none; }
+.model-stage:active { cursor: grabbing; }
+.model-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.model-hint { position: absolute; left: 8px; bottom: 6px; margin: 0; font-size: 11.5px; color: var(--ink-3); pointer-events: none; }
+.model-view .msg { margin: auto; padding: 12px; text-align: center; }
+.media-grid.is-full .media-item.is-model { width: 100%; }
+.media-full.is-model { aspect-ratio: 4 / 3; max-height: 80vh; }
 
 /* ---- runs: view toggle, filter bar, selection ---- */
 .view-toggle { display: inline-flex; }

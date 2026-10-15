@@ -156,7 +156,7 @@ uv run art-crit run "a windmill" --set cheap
 Entries take the same form as `-m`. `--set` also accepts a file (one `MODEL[:LEVELS]` per line,
 `#` for comments). Sets compose with each other and with `-m`; `-e` fills in entries missing levels.
 
-### The three kinds of pages
+### The four kinds of pages
 
 **Godot games** (`--kind godot`, the default) get exported to a web build and booted in headless
 Chrome to prove they run. The engine (~38 MB) lives once in `docs/engines/` and is shared, so each
@@ -189,6 +189,20 @@ local classic scripts as data URLs to preserve their globals — leaving you wit
 (max 20 MB). Remote URLs and import maps stay untouched, but the check loads the page offline in the
 same sandboxed frame the site uses. Anything fetched from outside, or any need for localStorage, fails
 verification. `node_modules/` never ships.
+
+**Blender models** (`--kind blender`):
+
+```sh
+uv run art-crit run --kind blender "a low-poly fox sitting on a rock" -m claude-code:opus:high -m openai-codex/gpt-6-sol:high
+```
+
+Each run gets its own windowless Blender, and the agent works in it through the official
+[Blender MCP server](https://projects.blender.org/lab/blender_mcp): it runs `bpy` code, searches the API docs, and
+renders to check its work. It saves a `.glb` of the model (≤ 15 MB, no Draco/meshopt compression) and renders (`.png`/`.jpg`)
+in `./output/`. Renders go through the media checks, and the `.glb` must be a glTF 2.0 binary the viewer can read.
+On the site a model is a "View in 3D" button over its render that opens an orbit/zoom/pan view (three.js). Only
+harnesses that take per-run MCP servers can run it: pi, `claude-code:` and `codex:`. The first batch installs the
+add-on into `~/.cache/art-crit/` (your own Blender isn't touched) and fetches the server with `uvx`.
 
 One kind per page: you can't add a media prompt to a Godot page, and so on.
 
@@ -317,6 +331,7 @@ You should see `403` (the Worker refusing a request without the site's Origin) a
 - `godot` on PATH with matching web export templates (games).
 - `ffmpeg` + `ffprobe` on PATH (media).
 - `esbuild` + `npm` on PATH (web): `brew install esbuild node`.
+- `blender` 5.1+ and `uvx` on PATH, plus ffmpeg (blender). The MCP add-on and server are fetched on first use.
 - Google Chrome + Playwright for browser checks and viewer tests (`pip install art-crit[verify]`,
   already in dev deps). Without Playwright, browser checks are skipped and `output.verified`
   comes back null rather than false.

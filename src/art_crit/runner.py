@@ -306,15 +306,14 @@ class RunDir:
         self.record_path.write_text(json.dumps(record, indent=2) + "\n")
 
 
-def run_agent(harness, run, rd, batch, version, timeout_s, progress, live, live_lock, interrupted):
+def run_agent(harness, run, rd, batch, version, timeout_s, progress, live, live_lock, interrupted, kind=None):
     """Run one agent to completion (or until killed by a timeout or Ctrl-C). Returns the run's record
     (written to its run.json), or None if it was killed for a Ctrl-C (the caller leaves its batch.json
-    state as "queued" so --resume reruns it; nothing is collected for a run that never really finished)."""
+    state as "queued" so --resume reruns it; nothing is collected for a run that never really finished).
+    The kind's `agent_session` (blender: the run's own Blender) is up for exactly as long as the agent."""
     rd.reset()
     brief = batch["brief"]
     (rd.harness / "brief.md").write_text(brief)  # kept out of work/: never seen/edited by the agent
-
-    cmd = harness.command(run["model_arg"], run["level"], brief, rd.harness)
     stdout_path, stderr_path = rd.harness / "events.jsonl", rd.harness / "stderr.txt"
     started = datetime.now(timezone.utc)
     key = run["id"]
@@ -323,7 +322,9 @@ def run_agent(harness, run, rd, batch, version, timeout_s, progress, live, live_
 
     exit_code, timed_out = None, False
     try:
-        with open(stdout_path, "wb") as out, open(stderr_path, "wb") as err:
+        with (kind.agent_session(rd.work, rd.harness) if kind else contextlib.nullcontext()) as mcp, \
+                open(stdout_path, "wb") as out, open(stderr_path, "wb") as err:
+            cmd = harness.command(run["model_arg"], run["level"], brief, rd.harness, **({"mcp": mcp} if mcp else {}))
             proc = subprocess.Popen(cmd, cwd=rd.work, stdin=subprocess.DEVNULL, stdout=out, stderr=err, start_new_session=True, env=harness.env(run["model_arg"], rd.harness))
             with live_lock:
                 live[key] = proc
@@ -337,6 +338,8 @@ def run_agent(harness, run, rd, batch, version, timeout_s, progress, live, live_
                 exit_code = proc.wait()
     except OSError as e:
         return collect(rd, batch, run, harness, version, started, datetime.now(timezone.utc), "failed", f"cannot run harness: {e}", None)
+    except CritError as e:  # the kind's session didn't start (e.g. Blender's MCP server)
+        return collect(rd, batch, run, harness, version, started, datetime.now(timezone.utc), "failed", str(e), None)
     finally:
         with live_lock:
             live.pop(key, None)
@@ -553,6 +556,8 @@ def execute(config, request, batch_dir, harnesses, verify=True):
     kind = KINDS[batch["kind"]]()
     slug, title = batch["page"], batch["title"]
 
+    if any(r["state"] in UNFINISHED for r in runs):
+        kind.prepare()
     progress = Progress(harnesses, runs)
     progress.start()
     finalize_lock = threading.Lock()
@@ -572,7 +577,7 @@ def execute(config, request, batch_dir, harnesses, verify=True):
         if run["state"] in UNFINISHED:
             run["state"] = "running"
             save()
-            record = run_agent(harness, run, rd, batch, versions.get(run["harness"]), timeout_s, progress, live, live_lock, interrupted)
+            record = run_agent(harness, run, rd, batch, versions.get(run["harness"]), timeout_s, progress, live, live_lock, interrupted, kind)
             if record is None:
                 return  # Ctrl-C: left "running" here; the handler below resets it to "queued"
             run["state"] = record["state"]
@@ -675,6 +680,11 @@ def cmd_run(config, request, *, yes=False, dry_run=False, resume=None, verify=Tr
         raise CritError(f"--kind {kind} needs {' and '.join(missing)} on PATH" + (f" ({hint})" if hint else ""))
 
     plan = plan_runs(config, request, harnesses)
+    if KINDS[kind].needs_mcp:
+        no_mcp = sorted({name for name, _, _ in plan if not harnesses[name].supports_mcp})
+        if no_mcp:
+            raise CritError(f"--kind {kind} gives agents MCP tools, which {', '.join(no_mcp)} can't take here "
+                            f"(use {', '.join(n for n in HARNESSES if HARNESSES[n].supports_mcp)})")
     versions = {name: harnesses[name].version() for name in dict.fromkeys(name for name, _, _ in plan)}
     title_is_explicit = bool(title)
     if not title:

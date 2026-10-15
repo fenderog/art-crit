@@ -1,6 +1,8 @@
 """art-crit import: publish run directories (the runner's `<batch>/<run id>/`, see SPEC.md "Run directory")
 to the site: clean + secret-scan, copy, then rebuild."""
 
+import base64
+import binascii
 import json
 import shutil
 import sys
@@ -10,17 +12,49 @@ from types import SimpleNamespace
 
 from . import clean, site
 from .kinds import KINDS, StageContext
+from .kinds.media import thumbnail
 from .util import CritError, mask
 
 # Files under work/ that are never part of the copied source (editor cache, npm packages: bundled into a
 # packaged page, never published as source). export_presets.cfg is one of a Godot project's own files and stays.
-SOURCE_SKIP = {".DS_Store", ".godot", "node_modules"}
+SOURCE_SKIP = {".DS_Store", ".godot", "node_modules", ".pi"}  # .pi: a run's pi MCP config
+# A transcript image (the agent reading a render or screenshot) bigger than this is published as a JPEG at most
+# IMAGE_WIDTH wide: pi keeps the full file as base64, and a run that looks at its renders ten times made a 15 MB
+# conversation.json (Pages takes at most 25 MiB per file). The run directory keeps the originals.
+IMAGE_MAX_BYTES = 48 * 1024
+IMAGE_WIDTH = 800
 
 
-def write_cleaned(src, dest, fmt, rewrites, redact, batch):
-    """Clean src's text per `fmt` (json / jsonl / text) and write it to dest, tracking rewrites/hits on `batch`."""
+def shrink_images(obj):
+    """Every image block ({"type": "image", "data": base64}) over IMAGE_MAX_BYTES -> a JPEG thumbnail, recording the
+    original's type and size like Claude Code's converted images (whose `sourceMimeType` marks them done). Without
+    ffmpeg the block keeps only that record, no data. Returns the number of images shrunk."""
+    if isinstance(obj, list):
+        return sum(shrink_images(v) for v in obj)
+    if not isinstance(obj, dict):
+        return 0
+    n = sum(shrink_images(v) for v in obj.values())
+    data = obj.get("data")
+    if obj.get("type") != "image" or not isinstance(data, str) or "sourceMimeType" in obj or len(data) * 3 // 4 <= IMAGE_MAX_BYTES:
+        return n
     try:
-        raw = src.read_text(encoding="utf-8")
+        raw = base64.b64decode(data, validate=True)
+    except (binascii.Error, ValueError):
+        return n  # not plain base64: left as is (the viewer shows only a caption for it)
+    thumb = thumbnail(raw, IMAGE_WIDTH)
+    obj.update(mimeType="image/jpeg", sourceMimeType=obj.get("mimeType"), bytes=len(raw))
+    if thumb:
+        obj["data"] = base64.b64encode(thumb).decode()
+    else:
+        del obj["data"]
+    return n + 1
+
+
+def write_cleaned(src, dest, fmt, rewrites, redact, batch, raw=None):
+    """Clean src's text (or `raw`, text already read from it) per `fmt` (json / jsonl / text) and write it to dest,
+    tracking rewrites/hits on `batch`."""
+    try:
+        raw = raw if raw is not None else src.read_text(encoding="utf-8")
     except UnicodeDecodeError:
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(src, dest)
@@ -63,7 +97,12 @@ def stage_session(harness_dir, run_dir, rewrites, redact, batch):
     for key, fname, fmt in (("conversation", "conversation.json", "json"), ("stderr", "stderr.txt", "text")):
         src = harness_dir / fname
         if src.is_file() and src.stat().st_size:
-            write_cleaned(src, run_dir / "session" / fname, fmt, rewrites, redact, batch)
+            raw = None
+            if key == "conversation":
+                entries = json.loads(src.read_text(encoding="utf-8"))
+                if shrink_images(entries):
+                    raw = json.dumps(entries, indent=2) + "\n"
+            write_cleaned(src, run_dir / "session" / fname, fmt, rewrites, redact, batch, raw)
             session[key] = f"session/{fname}"
     return session or None
 

@@ -19,7 +19,7 @@ try {
 
 function renderCard(p) {
   const thumb = p.thumb
-    ? el("img", { class: p.kind === "media" ? "thumb thumb-contain" : "thumb", attrs: { src: p.thumb, alt: "", loading: "lazy" } })
+    ? el("img", { class: kindUi(p.kind).gallery ? "thumb thumb-contain" : "thumb", attrs: { src: p.thumb, alt: "", loading: "lazy" } })
     : el("div", { class: "thumb-ph", text: "no preview" });
   const models = p.models || [];
   const updated = p.updated ? new Date(p.updated) : null;

@@ -1372,3 +1372,70 @@ def test_page_views_load_one_page_json(site, page, view, selector):
     assert sum(url.endswith("/data/demo/page.json") for url in requests) == 1
     assert not any("results.json" in url or url.endswith("/run.json") for url in requests)
     assert_no_errors(page)
+
+
+# ---------------------------------------------------------------- blender pages (kind "blender")
+def blender_page(page):
+    """Routes a one-run blender page "sculpt" (a one-triangle .glb and a PNG render) into the fixture site."""
+    from test_blender import PNG_1X1, glb
+
+    run = {"id": "model-x-low-20260103-000000", "page": "sculpt", "model": "test-org/model-x", "effort": "low",
+           "kind": "blender", "started_at": "2026-01-03T00:00:00Z", "harness": {"name": "pi", "version": "0.87.1"},
+           "state": "complete", "error": None, "route": None, "rank": None, "session": None, "source": None,
+           "metrics": {"duration_ms": 1000, "cost_usd": 0.01, "tool_calls": 1, "turns": 1, "tokens_total": 10,
+                       "tokens_input": 5, "tokens_output": 5, "tokens_reasoning": 0, "tokens_cache_read": 0},
+           "thumb": "media/render.png",
+           "output": {"kind": "blender", "ok": True, "verified": True, "error": None, "items": [
+               {"type": "image", "path": "media/render.png", "width": 1, "height": 1, "bytes": len(PNG_1X1)},
+               {"type": "model", "path": "media/scene.glb", "bytes": len(glb()), "meshes": 1, "triangles": 1, "animations": 0}]}}
+    data = {"slug": "sculpt", "title": "Sculpt", "kind": "blender", "prompt": "a triangle", "final_prompt": None,
+            "created": "2026-01-03T00:00:00Z", "updated": "2026-01-03T00:00:00Z", "runs": [run]}
+    page.route("**/data/sculpt/page.json", lambda r: r.fulfill(json=data))
+    page.route("**/media/render.png", lambda r: r.fulfill(body=PNG_1X1, content_type="image/png"))
+    page.route("**/media/scene.glb", lambda r: r.fulfill(body=glb(), content_type="model/gltf-binary"))
+    return run
+
+
+@pytest.fixture
+def gl_page(browser):
+    """A page in a Chrome with software WebGL (the session browser has none in headless mode)."""
+    b = browser.browser_type.launch(channel="chrome", args=["--enable-unsafe-swiftshader", "--use-angle=swiftshader"])
+    pg = b.new_page(viewport={"width": 1280, "height": 900})
+    pg._page_errors = []
+    pg.on("pageerror", lambda e: pg._page_errors.append(str(e)))
+    yield pg
+    b.close()
+
+
+def test_blender_card_shows_render_until_the_model_is_opened(site, gl_page):
+    page = gl_page
+    blender_page(page)
+    requests = []
+    page.on("request", lambda r: requests.append(r.url))
+    page.goto(f"{site}page.html?p=sculpt&view=grid")
+    card = page.locator(".compare-col")
+    overlay = card.locator(".media-box .model-view .play-overlay")
+    expect(overlay).to_contain_text("View in 3D")
+    assert "/media/render.png" in overlay.get_attribute("style")  # the render as the poster
+    assert card.locator(".media-count").inner_text() == "2 files · 1 3D model"
+    assert card.locator(".media-thumb.is-model").count() == 1
+    assert page.locator("#play-all").is_hidden()  # Play all never opens WebGL views
+    assert not any("three-gltf" in u or u.endswith(".glb") for u in requests)  # nothing loads before the click
+    overlay.click()
+    page.wait_for_selector(".model-stage[data-loaded='true'] canvas")
+    assert page.locator(".model-view .msg").count() == 0 and page._page_errors == []
+
+
+def test_blender_run_page_lists_the_model_with_its_triangles(site, gl_page):
+    page = gl_page
+    run = blender_page(page)
+    page.goto(f"{site}run.html?p=sculpt&r={run['id']}")
+    page.wait_for_selector(".media-grid.is-full .media-item.is-model")
+    caption = page.locator(".media-item.is-model figcaption")
+    expect(caption).to_contain_text("scene.glb · 1 triangles")
+    assert caption.locator("a").get_attribute("download") == "scene.glb"
+    page.locator(".media-item.is-model .play-overlay").click()
+    page.wait_for_selector(".model-stage[data-loaded='true'] canvas")
+    box = page.locator(".media-full.is-model").bounding_box()
+    assert box["width"] > 600 and abs(box["width"] / box["height"] - 4 / 3) < 0.02
+    assert page._page_errors == []

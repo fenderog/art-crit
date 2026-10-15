@@ -51,3 +51,4 @@ Copy `template.md` to `NNNN-short-title.md` using the next number, and add it to
 | [0022](0022-community-votes.md) | Community votes: GitHub sign-in, hearts and medals in D1 behind the Worker | Accepted |
 | [0023](0023-muse-code-reads-its-exported-session.md) | Muse Code: the session is `muse export`ed after `exec`, not read from `--json` | Accepted |
 | [0024](0024-prompt-requests-are-local.md) | Prompt requests are local: `art-crit serve` keeps them outside `docs/` | Accepted |
+| [0025](0025-blender-kind-through-the-official-mcp.md) | Blender kind: a windowless Blender per run, driven through the official MCP server | Accepted |

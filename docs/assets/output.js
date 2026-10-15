@@ -1,15 +1,19 @@
 // A run's output on screen. The sandbox-critical code lives here and only here: games and pages are embedded only by
 // sandboxedGame() (never allow-same-origin), model-made images and SVGs only through mediaElement() (<img>, ADR-0004).
+// A .glb is data that model.js parses with three.js (nothing in it runs), so it needs no frame.
 
 import { el, badge } from "./dom.js";
-import { fmtBytes } from "./fmt.js";
+import { fmtBytes, fmtNum } from "./fmt.js";
+import { mountModel } from "./model.js";
 
 // What differs per kind in the UI: its name, the run page's output tab, what a run without output says,
-// and the badge for a kind step that failed. Anything else (kinds the viewer doesn't know) reads as a game.
+// the badge for a kind step that failed, and whether its output is a gallery of files (output.items) rather than a game
+// or page. Anything else (kinds the viewer doesn't know) reads as a game.
 const KIND_UI = {
   godot: { label: "Game", tab: "Game", none: "No playable build recorded for this run.", failed: "export failed" },
-  media: { label: "Media", tab: "Output", none: "No output files recorded for this run.", failed: "output failed" },
+  media: { label: "Media", tab: "Output", none: "No output files recorded for this run.", failed: "output failed", gallery: true },
   web: { label: "Web", tab: "Page", none: "No packaged page recorded for this run.", failed: "packaging failed" },
+  blender: { label: "3D", tab: "Output", none: "No model or renders recorded for this run.", failed: "output failed", gallery: true },
 };
 
 export function kindUi(kind) {
@@ -61,7 +65,8 @@ export function buildGameFrame(entryUrl, thumbUrl) {
 // SVG included, is shown through <img> (which never runs them) and never inlined or framed.
 // Videos never autoplay: like games, they start on an explicit click. The recorded size goes on as width/height, so
 // a full-size gallery reserves the space and an SVG without its own size isn't drawn at the default 300×150.
-export function mediaElement(item, base) {
+export function mediaElement(item, base, poster = null) {
+  if (item.type === "model") return modelElement(item, base, poster);
   const size = { width: item.width ?? null, height: item.height ?? null };
   if (item.type === "video") {
     return el("video", {
@@ -70,6 +75,25 @@ export function mediaElement(item, base) {
   }
   return el("img", { attrs: { src: base + item.path, alt: "", loading: "lazy", ...size } });
 }
+
+// A .glb (blender kind) as a click-to-view box: the run's first render (if any) behind a "View in 3D" button, replaced in
+// place by the interactive viewer (model.js) on click. Like games, nothing loads (three.js or the model) until then.
+export function modelElement(item, base, poster = null) {
+  const box = el("div", { class: "model-view" });
+  const overlay = el("button", { class: "play-overlay", attrs: { type: "button", "aria-label": "View the 3D model" } },
+    [el("span", { class: "play-icon", text: "\u29BF" }), el("span", { class: "play-label", text: "View in 3D" })]);
+  if (poster) overlay.style.backgroundImage = `url("${base + poster.path}")`;
+  overlay.addEventListener("click", () => {
+    const stage = el("div", { class: "model-stage" });
+    box.replaceChildren(stage, el("p", { class: "model-hint", text: "drag to orbit · scroll to zoom · right-drag to pan" }));
+    mountModel(stage, base + item.path).catch((err) => box.replaceChildren(el("p", { class: "msg", text: `Could not show the model: ${err.message}` })));
+  });
+  box.append(overlay);
+  return box;
+}
+
+// The first render of a run, shown behind its model's "View in 3D" button.
+const posterOf = (items) => items.find((i) => i.type === "image") ?? null;
 
 // A run's media items as captioned figures (file name, size, duration) with download links.
 // Downloads use the `download` attribute so an SVG is saved, never opened as a page here. `full` (the run page) shows
@@ -80,43 +104,49 @@ export function mediaGallery(items, base, { full = false } = {}) {
     const name = item.path.split("/").pop();
     const dims = item.width && item.height ? `${item.width}×${item.height}` : null;
     const dur = item.duration_s != null ? `${Number(item.duration_s).toFixed(1)}s` : null;
+    const tris = item.triangles != null ? `${fmtNum(item.triangles)} triangles` : null;
     const caption = el("figcaption", {}, [
-      el("span", { text: [name, dims, dur, fmtBytes(item.bytes)].filter(Boolean).join(" · ") }),
+      el("span", { text: [name, dims, dur, tris, fmtBytes(item.bytes)].filter(Boolean).join(" · ") }),
       el("a", { text: "download", attrs: { href: base + item.path, download: name } }),
     ]);
-    grid.append(el("figure", { class: "media-item" }, [el("div", { class: full ? "media-full" : "media-box" }, [mediaElement(item, base)]), caption]));
+    const boxClass = item.type === "model" && full ? "media-full is-model" : full ? "media-full" : "media-box";
+    grid.append(el("figure", { class: item.type === "model" ? "media-item is-model" : "media-item" }, [el("div", { class: boxClass }, [mediaElement(item, base, posterOf(items))]), caption]));
   }
   return grid;
 }
 
 // "3 files · 1 video": how many outputs a media run has, for the corner badge on its card and table thumbnail.
 export function mediaCount(items) {
-  const videos = items.filter((i) => i.type === "video").length;
-  return `${items.length} files${videos ? ` · ${videos} video${videos === 1 ? "" : "s"}` : ""}`;
+  const count = (type, noun) => {
+    const n = items.filter((i) => i.type === type).length;
+    return n ? ` · ${n} ${noun}${n === 1 ? "" : "s"}` : "";
+  };
+  return `${items.length} files${count("video", "video")}${count("model", "3D model")}`;
 }
 
-// A media run on a card, at a fixed height: one output as the hero (a video if there is one; it still starts on a
-// click), a corner badge counting the outputs, and a strip of small thumbnails that swap the hero in place.
+// A media run on a card, at a fixed height: one output as the hero (a video or 3D model if there is one; both still start
+// on a click), a corner badge counting the outputs, and a strip of small thumbnails that swap the hero in place.
 // Everything is shown through mediaElement(), so model-made SVGs stay <img> (ADR-0004). With `href` (the run page), an
 // image hero is a link there; a video hero isn't, so a click still plays it.
 export function mediaCard(items, base, href = null) {
   const box = el("div", { class: "media-box" });
+  const poster = posterOf(items);
   const thumbs = items.length > 1 ? items.map((item, i) => {
-    const src = item.type === "video" ? item.poster : item.path;
+    const src = item.type === "video" ? item.poster : item.type === "model" ? poster?.path : item.path;
     const label = item.path.split("/").pop();
     return el("button", {
-      class: item.type === "video" ? "media-thumb is-video" : "media-thumb",
+      class: item.type === "image" ? "media-thumb" : `media-thumb is-${item.type}`,
       attrs: { type: "button", title: label, "aria-label": `Show ${label}` },
       on: { click: () => show(i) },
     }, [src ? el("img", { attrs: { src: base + src, alt: "", loading: "lazy" } }) : null]);
   }) : [];
   const show = (i) => {
-    const media = mediaElement(items[i], base);
-    const hero = href && items[i].type !== "video" ? el("a", { class: "media-link", attrs: { href, title: "Open the run" } }, [media]) : media;
+    const media = mediaElement(items[i], base, poster);
+    const hero = href && items[i].type === "image" ? el("a", { class: "media-link", attrs: { href, title: "Open the run" } }, [media]) : media;
     box.replaceChildren(...[hero, items.length > 1 ? el("span", { class: "media-count", text: mediaCount(items) }) : null].filter(Boolean));
     thumbs.forEach((t, j) => t.setAttribute("aria-current", String(j === i)));
   };
-  if (items.length) show(Math.max(0, items.findIndex((i) => i.type === "video")));
+  if (items.length) show(Math.max(0, items.findIndex((i) => i.type === "video" || i.type === "model")));
   return el("div", { class: "media-card" }, [box, thumbs.length ? el("div", { class: "media-strip" }, thumbs) : null]);
 }
 
@@ -130,12 +160,12 @@ export function renderOutput(run, base, { autoplay = false, frameClass = "game-f
   const out = run.output;
   const nodes = out?.error ? [el("p", { class: "run-error", text: out.error })] : [];
   if (!out?.ok) return [...nodes, el("p", { class: "msg", text: kindUi(run.kind).none })];
-  if (out.kind === "media") return [...nodes, compact ? mediaCard(out.items || [], base, href) : mediaGallery(out.items || [], base, { full })];
+  if (out.items) return [...nodes, compact ? mediaCard(out.items || [], base, href) : mediaGallery(out.items || [], base, { full })];
   const entry = base + out.entry;
   return [...nodes, autoplay ? el("div", { class: frameClass }, [sandboxedGame(entry)]) : buildGameFrame(entry, run.thumb ? base + run.thumb : null)];
 }
 
 // Whether a run's output is a game or page that has its own full-screen window (play.html).
 export function isPlayable(run) {
-  return outputOk(run) && run.output.kind !== "media";
+  return outputOk(run) && !run.output.items;
 }
