@@ -1,0 +1,90 @@
+{
+  "id": "claude-opus-5-5-cc-max-20261015-140457",
+  "page": "robbie-the-banker-with-reference",
+  "model": "anthropic/claude-opus-5-5",
+  "effort": "max",
+  "kind": "blender",
+  "started_at": "2026-10-15T21:05:01Z",
+  "batch": "2026-10-15-140457-robbie-the-banker-with-reference",
+  "harness": {
+    "name": "claude-code",
+    "version": "2.1.300"
+  },
+  "state": "complete",
+  "error": null,
+  "route": null,
+  "metrics": {
+    "duration_ms": 2569317,
+    "cost_usd": 11.494005399999999,
+    "tool_calls": 116,
+    "turns": 102,
+    "tokens_total": 226187,
+    "tokens_input": 204,
+    "tokens_output": 225983,
+    "tokens_reasoning": 161718,
+    "tokens_cache_read": 22146407
+  },
+  "thumb": "media/robie_back_3q.png",
+  "output": {
+    "kind": "blender",
+    "items": [
+      {
+        "type": "image",
+        "width": 1280,
+        "height": 1280,
+        "bytes": 698582,
+        "path": "media/robie_back_3q.png"
+      },
+      {
+        "type": "image",
+        "width": 1280,
+        "height": 1280,
+        "bytes": 1482743,
+        "path": "media/robie_face_closeup.png"
+      },
+      {
+        "type": "image",
+        "width": 1280,
+        "height": 1280,
+        "bytes": 976832,
+        "path": "media/robie_front.png"
+      },
+      {
+        "type": "image",
+        "width": 1280,
+        "height": 1280,
+        "bytes": 883178,
+        "path": "media/robie_hero_3q.png"
+      },
+      {
+        "type": "model",
+        "bytes": 1355020,
+        "meshes": 24,
+        "triangles": 60884,
+        "animations": 0,
+        "path": "media/robie_robotic_banker.glb"
+      },
+      {
+        "type": "image",
+        "width": 1280,
+        "height": 1280,
+        "bytes": 937908,
+        "path": "media/robie_side.png"
+      }
+    ],
+    "ok": true,
+    "verified": true,
+    "error": null
+  },
+  "session": {
+    "conversation": "session/conversation.json"
+  },
+  "source": {
+    "root": "source/",
+    "files": [
+      "scripts/robie_build.py",
+      "scripts/robie_finalize.py",
+      "scripts/robie_scene.py"
+    ]
+  }
+}
