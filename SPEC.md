@@ -73,6 +73,8 @@ All paths inside JSON are **relative to the run directory** (for Run) or to `doc
 ```
 `references` is derived from the `references/` directory by `rebuild` (an import replaces the whole set), and the
 viewer shows image files as thumbnails in page.html's details sidebar (`<img>` only, click to expand; ADR-0026).
+They are also an *input* to later batches: a `--page` run whose prompt says "use the reference image" stages the
+page's published copies, so adding runs can't silently leave the model with no image (ADR-0028).
 
 ### Run (`run.json`, and each element of `page.json.runs`)
 ```json
@@ -240,7 +242,9 @@ art-crit run PROMPT | -f/--prompt-file FILE
     -i, --pick          pick harnesses, models (by number or a fuzzy search) and levels interactively (implied when no -m/--set is given; needs a tty)
     -p, --page, --slug SLUG
                         add to this page (default: slug of --title if given, else of the prompt's first 6 words; max 40
-                        chars). For an existing page, PROMPT can be left out: its prompt (page.json) and kind are reused.
+                        chars). For an existing page, PROMPT can be left out: its prompt (page.json) and kind are reused,
+                        and so are its published references (data/<slug>/references/), unless this batch passes its own
+                        --ref (ADR-0028).
     -c, --change-prompt allow a PROMPT that differs from the existing page's (after path cleaning); without it that's
                         an error, since every import replaces the page's prompt for all its runs
     -t, --title TEXT    page title (default: from slug, as for import). Without --page/--slug it also names the slug
@@ -248,7 +252,8 @@ art-crit run PROMPT | -f/--prompt-file FILE
     -R, --ref FILE      a reference file, a path under <root>/references/ (repeatable); must exist. It is copied into the batch
                         and every run's work/references/, and the brief (not the page's prompt) lists ./references/<name>.
                         Import publishes the batch's copies to data/<slug>/references/ for the viewer (ADR-0026).
-                        The copies are never published as source
+                        The copies are never published as source. `--page` on a page that has published references
+                        adopts them as this batch's refs (--ref replaces that set; ADR-0028), and the plan prints them
     -j N                max agents at once (default [run].parallel or 8)
     -T, --timeout DUR   per agent, "30m" / "90s" / "1h" (default [run].timeout or 30m)
     -y, --yes           don't ask for confirmation

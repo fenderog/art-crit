@@ -53,3 +53,5 @@ Copy `template.md` to `NNNN-short-title.md` using the next number, and add it to
 | [0024](0024-prompt-requests-are-local.md) | Prompt requests are local: `art-crit serve` keeps them outside `docs/` | Accepted |
 | [0025](0025-blender-kind-through-the-official-mcp.md) | Blender kind: a windowless Blender per run, driven through the official MCP server | Accepted |
 | [0026](0026-reference-images-are-published.md) | Reference images are published beside the page, shown as sidebar thumbnails | Accepted |
+| [0027](0027-local-run-monitor.md) | A local run monitor in `art-crit serve`, and stopping a run with a file | Accepted |
+| [0028](0028-page-runs-reuse-the-pages-references.md) | A `--page` batch reuses the page's published references | Accepted |

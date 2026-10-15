@@ -140,9 +140,16 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
 - **`--ref` files** live in `<root>/references/` (the user's own files): the batch dir and every run's
   `work/references/` get copies, the brief (not the page's prompt) lists them, and `importer.stage_source` skips
   `references/`. Import publishes the batch's copies to `docs/data/<slug>/references/` and the page sidebar shows
-  the images as thumbnails (ADR-0026): never put them in anything but `<img>`, like model-made SVGs.
+  the images as thumbnails (ADR-0026): never put them in anything but `<img>`, like model-made SVGs. `--page`
+  adds runs to an existing page and adopts its published references (`runner.page_refs`) unless the batch passes
+  its own `--ref` (ADR-0028), so a "use the reference image" prompt can't silently run with no image staged.
 - **Prompt requests are local only** (ADR-0024): `art-crit serve`'s `api/requests` keeps them in `requests.json` beside
   `docs/` (gitignored). Never move them under `docs/` (`run --publish` stages all of it) or into the Worker.
+- **The run monitor is local only and never kills anything itself** (ADR-0027): `api/runs`/`api/run` need a loopback
+  `Host` and are answered *without* `Access-Control-Allow-Origin` (never add it back for those two), the Stop button
+  writes only `<run>/harness/stop`, and `runner.wait_agent` — in the process that owns the agent — is what kills its
+  process group. The monitor's transcripts drop image blocks and clip long strings (`MONITOR_CLIP`, `MONITOR_ENTRIES`):
+  a live pi session keeps a base64 copy of every image the agent read.
 - **Rankings are only written by `art-crit serve` on the user's machine** (`PUT api/rank`, which refuses cross-site
   writes and any non-loopback `Host`, against DNS rebinding); the Worker answers 404 for it. (ADR-0010)
 - **Community votes are the one thing the published site writes**, through the Worker's `/art-crit/api/*` into D1
@@ -267,7 +274,9 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
 - **Local server backlog:** the stdlib HTTP server's default accept queue is only 5. Chrome fetches many
   ES modules in parallel; overflow resets a module request (`net::ERR_CONNECTION_RESET`) and leaves the page
   on Loading… with no JS error. `serve._Server.request_queue_size` is 64; keep it above the module fanout. The `site`
-  fixture in test_web.py needs the same (it was the source of flaky 30s "waiting for selector" timeouts).
+  fixture in test_web.py needs the same (it was the source of flaky 30s "waiting for selector" timeouts), and its
+  handler must silence `log_message` like `serve._Handler`: that server runs in a background thread, so its access
+  logs escape pytest's capture and scramble the progress output on the shell.
   Published `docs/data/` is not a fixed test fixture; avoid tests asserting its run count or requiring
   live published games to remain unchanged.
 - **Sync Playwright can't nest:** `test_web.py` keeps a session-wide browser open, so other tests that start Playwright

@@ -58,9 +58,9 @@ A few things worth knowing:
   `art-crit models [SEARCH]` shows what's available.
 - You'll see the plan and confirm it. `-n/--dry-run` prints the plan and stops.
   `-y/--yes` skips the prompt for scripts.
-- Useful flags: `-p/--page` (alias `--slug`: the page slug, default taken from `--title` if given, else the prompt), `-t/--title`, `-j N` (how many agents at once),
+- Useful flags: `-p/--page` (alias `--slug`: the page slug, default taken from `--title` if given, else the prompt; for an existing page it reuses the page's prompt, kind and references), `-t/--title`, `-j N` (how many agents at once),
   `-T/--timeout 30m`, `-b/--brief FILE` (your own brief template, `{prompt}` is your prompt),
-  `-R/--ref FILE` (a file in the project's `references/` folder, e.g. `--ref robbie.jpg`; repeatable; each agent gets a copy in `./references/` and the brief points to it; the files are published with the page and shown as thumbnails beside the prompt),
+  `-R/--ref FILE` (a file in the project's `references/` folder, e.g. `--ref robie.jpg`; repeatable; each agent gets a copy in `./references/` and the brief points to it; the files are published with the page and shown as thumbnails beside the prompt. Adding runs with `--page` reuses the page's published reference files, so a "use the reference image" prompt can't run without one — pass `--ref` to replace that set),
   `--no-publish` (publishing each run is the default). `art-crit run -h` has the full list.
 - Ctrl-C stops everything. `art-crit run --resume <batch dir>` picks up a batch without
   redoing finished agents.
@@ -227,6 +227,13 @@ Under `art-crit serve`, the home page has a **Request a prompt** button: write t
 game or web), and optionally a title, a model set from `[sets]` and a note. Requests are listed on the home page
 with the exact `uv run art-crit run …` command to make each one a page (Copy puts it on the clipboard). They're
 kept in `requests.json` beside `docs/`, gitignored and never published; the live site doesn't show any of this.
+
+## Watch a run in progress
+
+Under `art-crit serve` (only), the home page gets a **Runs (local)** link to a monitor of the batches in
+`[run].dir`: every run's state, live cost/tokens/tool calls, its prompt, the files it has written and its
+transcript so far. It refreshes every two seconds while something is running. A **Stop** button on a running
+run kills that agent's process group and marks the run failed. None of this reaches the published site.
 
 ## Import runs
 

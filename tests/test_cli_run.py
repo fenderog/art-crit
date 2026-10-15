@@ -828,6 +828,37 @@ def test_page_alone_reuses_the_pages_prompt_and_kind(run_root):
     assert json.loads((run_root / "docs/data/a-red-circle/page.json").read_text())["prompt"] == "a red circle"
 
 
+@needs_ffmpeg
+def test_page_alone_reuses_the_pages_references(run_root, tmp_path, capsys):
+    (run_root / "references").mkdir()
+    (run_root / "references/toy.txt").write_text("a reference")
+    (run_root / "references/other.txt").write_text("another reference")
+    base = ["run", "--yes", "--kind", "media", "draw the toy", "-m", "openai-codex/gpt-6-sol:low", "--root", str(run_root)]
+    assert main(base + ["--ref", "toy.txt"]) == 0
+    capsys.readouterr()
+    assert main(["run", "--yes", "--page", "draw-the-toy", "-m", "openai-codex/gpt-6-luna:minimal", "--root", str(run_root)]) == 0
+    out = capsys.readouterr().out
+    assert "references: toy.txt (reused from the page)" in out
+
+    runs_dir = tmp_path / "art-crit-runs"
+    reused_batch = max(runs_dir.glob("*-draw-the-toy"), key=lambda d: d.name)
+    assert (reused_batch / "references/toy.txt").read_text() == "a reference"
+    [run_dir] = [d for d in reused_batch.iterdir() if (d / "work").is_dir()]
+    assert (run_dir / "work/references/toy.txt").read_text() == "a reference"
+    assert "- ./references/toy.txt" in (run_dir / "harness/brief.md").read_text()
+
+    # an explicit --ref replaces the page's set rather than adding to it
+    assert main(["run", "--yes", "--page", "draw-the-toy", "-m", "openai-codex/gpt-6-luna:low",
+                 "--ref", "other.txt", "--root", str(run_root)]) == 0
+    assert "references: other.txt" in capsys.readouterr().out
+    explicit_batch = max(runs_dir.glob("*-draw-the-toy"), key=lambda d: d.name)
+    assert explicit_batch != reused_batch
+    [run_dir] = [d for d in explicit_batch.iterdir() if (d / "work").is_dir()]
+    brief = (run_dir / "harness/brief.md").read_text()
+    assert "- ./references/other.txt" in brief and "toy.txt" not in brief
+    assert not (run_dir / "work/references/toy.txt").exists()
+
+
 def test_a_different_prompt_for_an_existing_page_is_refused(run_root, capsys):
     assert main(["run", "--yes", "a spinning cube", "-m", "openai-codex/gpt-6-sol:low", "--root", str(run_root)]) == 0
     rc = main(["run", "--yes", "--page", "a-spinning-cube", "a spinning red cube", "-m", "openai-codex/gpt-6-sol:high", "--root", str(run_root)])

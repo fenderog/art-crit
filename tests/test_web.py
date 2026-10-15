@@ -19,6 +19,14 @@ REPO = Path(__file__).resolve().parents[1]
 FIXTURE_DATA = REPO / "tests/fixtures/site/data"
 
 
+class QuietHandler(http.server.SimpleHTTPRequestHandler):
+    """The fixture server runs in a background thread; its access logs otherwise leak past pytest's capture
+    and scramble the progress output on the shell. `art-crit serve._Handler` silences log_message the same way."""
+
+    def log_message(self, fmt, *args):
+        pass
+
+
 @pytest.fixture(scope="session")
 def site(tmp_path_factory):
     root = tmp_path_factory.mktemp("site")
@@ -27,7 +35,7 @@ def site(tmp_path_factory):
     shutil.copytree(REPO / "docs/assets", root / "assets")
     shutil.copytree(FIXTURE_DATA, root / "data")
 
-    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(root))
+    handler = functools.partial(QuietHandler, directory=str(root))
     # a deep accept queue, like `art-crit serve`: Chrome fetches the viewer's ES modules in parallel, and the default (5)
     # resets some of them, leaving a page on Loading… (the flaky timeouts this used to cause)
     server = type("Server", (http.server.ThreadingHTTPServer,), {"request_queue_size": 64})

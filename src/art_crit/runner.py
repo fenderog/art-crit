@@ -189,6 +189,14 @@ def resolve_ref(root, name):
     return str(ref)
 
 
+def page_refs(root, slug):
+    """A page's published reference files (data/<slug>/references/), reused when --page adds runs to it."""
+    folder = root / "docs" / "data" / slug / REF_DIR
+    if not folder.is_dir():
+        return []
+    return sorted(str(p) for p in folder.iterdir() if p.is_file() and not p.name.startswith("."))
+
+
 def render_brief(brief_text, prompt, kind="godot", tool_entries=(), refs=()):
     template = brief_text if brief_text else KINDS[kind]().brief()
     if refs:  # in the brief only: the page's prompt stays the task itself
@@ -696,6 +704,12 @@ def cmd_run(config, request, *, yes=False, dry_run=False, resume=None, verify=Tr
             f"page {slug!r} was run with a different prompt:\n  {existing['prompt']}\n"
             "Leave the prompt out to reuse it, use another --page, or pass --change-prompt to replace it for the whole page."
         )
+    # Adding runs to an existing page reuses the page's published references, unless this batch names its own
+    # with --ref: a "use the reference image" prompt must not silently run with no image staged. (ADR-0026)
+    reused_refs = []
+    if page_exists and not request.refs:
+        reused_refs = page_refs(root, slug)
+        request.refs = reused_refs
     if kind not in KINDS:
         raise CritError(f"unknown kind {kind!r} (expected one of: {', '.join(KINDS)})")
     missing = KINDS[kind]().missing_tools()
@@ -725,6 +739,9 @@ def cmd_run(config, request, *, yes=False, dry_run=False, resume=None, verify=Tr
     print(f"kind: {kind}")
     print(f"page: {slug} ({'existing' if page_exists else 'new'}, title: {title!r})")
     print(f"prompt: {prompt}")
+    if request.refs:
+        refs = ", ".join(Path(r).name for r in request.refs)
+        print(f"references: {refs}" + (" (reused from the page)" if reused_refs else ""))
     for i, (name, model, level) in enumerate(plan, 1):
         print(f"  {i}. {'' if name == 'pi' else name + ':'}{model}:{level}")
     print(f"batch dir: {batch_dir}")
