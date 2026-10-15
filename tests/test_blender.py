@@ -170,9 +170,10 @@ def test_codex_gets_mcp_overrides(tmp_path):
     assert cmd[-1] == "brief"
 
 
-def test_blender_pages_refuse_harnesses_without_mcp(run_root, capsys):
-    rc = main(["run", "--yes", "--dry-run", "--kind", "blender", "a fox", "-m", "agy:gemini-3.8-flash:low", "--root", str(run_root)])
-    assert rc != 0 and "agy can't take here (use pi, claude-code, codex)" in capsys.readouterr().err
+def test_blender_pages_refuse_harnesses_without_mcp(run_root, capsys, monkeypatch):
+    monkeypatch.setattr(Codex, "supports_mcp", False)  # every harness takes MCP today; the check guards new ones
+    rc = main(["run", "--yes", "--dry-run", "--kind", "blender", "a fox", "-m", "codex:gpt-6-sol:low", "--root", str(run_root)])
+    assert rc != 0 and "codex can't take here" in capsys.readouterr().err
 
 
 # --- a whole run ---------------------------------------------------------------------------------

@@ -55,7 +55,15 @@ Code can't, at least not without touching the user's global config.
 
 ## Consequences
 
-- Blender pages can only use pi, Claude Code and Codex. Claude Code MCP runs can't use `--safe-mode`, which drops
+- Update (2026-10-15): agy, Grok Build and Muse Code take Blender too, so all six harnesses do. agy and Muse read MCP
+  servers only from the user's global config (Muse ignores a project file, and its `--trust-workspace` turns on
+  sub-agents), so with the user's consent each got one permanent `art-crit-blender` entry pointing at a stdlib proxy
+  in `~/.cache/art-crit/`. Inside a run the proxy reads `<run>/harness/art-crit-mcp.json` and runs that run's server,
+  dropping the hidden tools. Elsewhere it is a server with no tools, so the user's own sessions are unaffected. Grok
+  gets a per-run project config that runs the same proxy (it can't hide tools itself), with `GROK_FOLDER_TRUST=0`
+  rather than `--trust`, which would record every run dir. Grok's models reach MCP tools only through
+  `search_tool`/`use_tool`, an extra step the other harnesses don't have; keep that in mind when comparing.
+- Claude Code MCP runs can't use `--safe-mode`, which drops
   `--mcp-config` (measured). They use `--setting-sources=`, `--strict-mcp-config` and `CLAUDE_CODE_DISABLE_AUTO_MEMORY`
   instead, and the system prompt was checked to match safe mode's except for the server's tools. Re-check that after
   Claude Code updates.

@@ -29,6 +29,19 @@ MCP_COMMIT = "2cea8d566dde07fbac28a61d698909d69724e853"  # tag v1.0.3
 MCP_SOURCE = f"git+https://projects.blender.org/lab/blender_mcp.git@{MCP_COMMIT}#subdirectory=mcp"
 ADDON_URL = f"https://projects.blender.org/lab/blender_mcp/releases/download/v{MCP_VERSION}/mcp-{MCP_VERSION}.zip"
 ADDON_SHA256 = "a7a9da816192502e5a0a202a396444e266b47d8fc4f74ad4698048bd43040707"
+# The MCP server's tools at MCP_COMMIT (agy needs them by name to declare them up front; update with the pin).
+TOOLS = (
+    "execute_blender_code", "execute_blender_code_for_cli", "get_blendfile_summary_datablocks",
+    "get_blendfile_summary_datablocks_for_cli", "get_blendfile_summary_missing_files",
+    "get_blendfile_summary_missing_files_for_cli", "get_blendfile_summary_of_linked_libraries",
+    "get_blendfile_summary_of_linked_libraries_for_cli", "get_blendfile_summary_path_info",
+    "get_blendfile_summary_path_info_for_cli", "get_blendfile_summary_usage_guess",
+    "get_blendfile_summary_usage_guess_for_cli", "get_object_detail_summary", "get_objects_summary",
+    "get_python_api_docs", "get_screenshot_of_area_as_image", "get_screenshot_of_window_as_image",
+    "get_screenshot_of_window_as_json", "jump_to_tab_by_name", "jump_to_tab_by_space_type",
+    "jump_to_view3d_object_by_name", "jump_to_view3d_object_data_by_name", "render_thumbnail_to_path",
+    "render_viewport_to_path", "search_api_docs", "search_manual_docs",
+)
 # Tools that need Blender's window; in background mode they only answer "not available", so the model never gets them.
 HIDDEN_TOOLS = (
     "get_screenshot_of_area_as_image", "get_screenshot_of_window_as_image", "get_screenshot_of_window_as_json",
@@ -182,6 +195,7 @@ class Blender(Media):
                 raise CritError(f"Blender didn't start its MCP server (see {Path(harness_dir) / 'blender.log'})")
         try:
             yield {"blender": {"command": "uvx", "args": ["--from", MCP_SOURCE, "blender-mcp"],
-                               "env": {"BLENDER_MCP_PORT": str(port)}, "hidden": list(HIDDEN_TOOLS)}}
+                               "env": {"BLENDER_MCP_PORT": str(port)}, "hidden": list(HIDDEN_TOOLS),
+                               "tools": [t for t in TOOLS if t not in HIDDEN_TOOLS]}}
         finally:
             _kill(proc)

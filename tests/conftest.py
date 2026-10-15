@@ -24,6 +24,16 @@ def no_muse_catalog(monkeypatch, tmp_path_factory):
     from art_crit.harness import MuseCode
     monkeypatch.setattr(MuseCode, "CATALOG_DIR", tmp_path_factory.getbasetemp() / "no-muse-catalog")
 
+
+@pytest.fixture(autouse=True)
+def no_global_mcp_config(monkeypatch, tmp_path):
+    """agy and muse get MCP servers through entries in the user's global config: tests write a temp copy, never the
+    real ~/.gemini or ~/.config/muse, and the proxy goes to a temp cache."""
+    from art_crit.harness import Agy, MuseCode
+    monkeypatch.setattr(Agy, "MCP_CONFIG", tmp_path / "global" / "agy-mcp_config.json")
+    monkeypatch.setattr(MuseCode, "MCP_CONFIG", tmp_path / "global" / "muse-settings.json")
+    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path / "cache"))
+
 ENGINE_BYTES = {
     "index.wasm": b"FAKE-WASM-BYTES-0001",
     "index.js": b"FAKE-JS-BYTES-0001",

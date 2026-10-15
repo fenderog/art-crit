@@ -17,7 +17,7 @@ from .util import CritError, mask
 
 # Files under work/ that are never part of the copied source (editor cache, npm packages: bundled into a
 # packaged page, never published as source). export_presets.cfg is one of a Godot project's own files and stays.
-SOURCE_SKIP = {".DS_Store", ".godot", "node_modules", ".pi"}  # .pi: a run's pi MCP config
+SOURCE_SKIP = {".DS_Store", ".godot", "node_modules", ".pi", ".grok"}  # .pi, .grok: a run's MCP config
 # A transcript image (the agent reading a render or screenshot) bigger than this is published as a JPEG at most
 # IMAGE_WIDTH wide: pi keeps the full file as base64, and a run that looks at its renders ten times made a 15 MB
 # conversation.json (Pages takes at most 25 MiB per file). The run directory keeps the originals.

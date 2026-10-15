@@ -431,7 +431,22 @@ With MCP servers (blender), pi's built-in MCP support (which `-ne` leaves out, a
 loaded with `-e builtin:mcp --approve`: the servers go in `work/.pi/mcp.json` (`exposure: "direct"`, `timeout: 600`), a
 project config that `--approve` trusts for this run only, and the hidden tools go to `--exclude-tools`. `.pi/` is never
 published as source. Codex gets them as `-c mcp_servers.<name>.{command,args,env,disabled_tools,tool_timeout_sec=600,
-startup_timeout_sec=60}` overrides. agy, grok-build and muse-code take none, so a blender batch refuses them at planning.
+startup_timeout_sec=60}` overrides. agy and muse-code read MCP servers only from the user's global config (measured: muse
+ignores a project `.muse/settings.json`, and `--trust-workspace` would turn on its sub-agents), so each gets one permanent
+`art-crit-<name>` entry there (`install_proxy_entries`: `~/.gemini/config/mcp_config.json` with `timeoutSeconds: 600` and
+`tools: {<visible tool>: {eager: true}}`, since agy declares a tool up front only when named that way; `~/.config/muse/
+settings.json` with `type: "stdio", mode: "optional"`; other entries and keys kept, written only when changed, a config
+with comments or muse's legacy `mcp_servers` key refused). The entry runs `python3 ~/.cache/art-crit/mcp_proxy.py <name>`
+(a stdlib copy of `src/art_crit/mcp_proxy.py`), started by the harness in the run's `work/`: it reads the run's servers
+from `<run>/harness/art-crit-mcp.json` (written per run; not an env var, because muse passes MCP servers only an allowlist
+of the environment), runs that server, relays stdio line by line and drops the `hidden` tools from `tools/list`.
+Outside an art-crit run there is no such file and the proxy is an MCP server with no tools, so the user's own sessions
+see nothing. grok-build writes `work/.grok/config.toml` (a project config, never published as source) whose server
+runs the same proxy (Grok has no field that hides tools) and runs grok with `GROK_FOLDER_TRUST=0` (project servers
+start only in a trusted folder, and `--trust` would record every run dir in `~/.grok/trusted_folders.toml`). Grok's
+models reach MCP tools only through its `search_tool`/`use_tool` meta-tools. Transcripts name every MCP call
+`mcp__<server>__<tool>` (agy's `call_mcp_tool` and muse's `mcp__art_crit_<server>__<tool>` are converted). The planning
+check still refuses a harness without `supports_mcp` for a kind that needs MCP.
 Every `openrouter/` run adds `-e src/art_crit/pi_ext/openrouter_routing.ts` (explicit `-e` paths still load under
 `-ne`) and sets `ART_CRIT_ROUTE_LOG=<harness dir>/route.jsonl` in that run's environment. A pinned run (`MODEL@slug`)
 passes the base id to `--model` and also sets `ART_CRIT_OPENROUTER_ROUTING={"only": [...], "allow_fallbacks": false}`

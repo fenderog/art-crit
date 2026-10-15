@@ -200,8 +200,9 @@ Each run gets its own windowless Blender, and the agent works in it through the 
 [Blender MCP server](https://projects.blender.org/lab/blender_mcp): it runs `bpy` code, searches the API docs, and
 renders to check its work. It saves a `.glb` of the model (≤ 15 MB, no Draco/meshopt compression) and renders (`.png`/`.jpg`)
 in `./output/`. Renders go through the media checks, and the `.glb` must be a glTF 2.0 binary the viewer can read.
-On the site a model is a "View in 3D" button over its render that opens an orbit/zoom/pan view (three.js). Only
-harnesses that take per-run MCP servers can run it: pi, `claude-code:` and `codex:`. The first batch installs the
+On the site a model is a "View in 3D" button over its render that opens an orbit/zoom/pan view (three.js). Every
+harness can run it: pi, Claude Code, Codex and Grok get the server per run; agy and Muse only read a global MCP
+config, so each holds one permanent `art-crit-blender` entry (a proxy that has no tools outside art-crit runs). The first batch installs the
 add-on into `~/.cache/art-crit/` (your own Blender isn't touched) and fetches the server with `uvx`.
 
 One kind per page: you can't add a media prompt to a Godot page, and so on.

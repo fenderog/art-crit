@@ -27,18 +27,78 @@ MCP_TIMEOUT_S = 600  # per MCP tool call; a Blender render can take minutes (the
 
 
 def write_mcp_config(path, servers):
-    """A run's MCP servers as the `mcpServers` JSON that pi and Claude Code read (`hidden` is ours: each
-    harness hides those tools its own way)."""
+    """A run's MCP servers as the `mcpServers` JSON that pi and Claude Code read (`hidden` and `tools` are ours:
+    each harness hides those tools its own way)."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    servers = {name: {k: v for k, v in spec.items() if k != "hidden"} for name, spec in servers.items()}
+    servers = {name: {k: v for k, v in spec.items() if k not in ("hidden", "tools")} for name, spec in servers.items()}
     path.write_text(json.dumps({"mcpServers": servers}, indent=2) + "\n")
     return path
+
+
+PROXY_SOURCE = Path(__file__).parent / "mcp_proxy.py"
+SPEC_FILE = "art-crit-mcp.json"  # = mcp_proxy.SPEC_FILE (the proxy is copied out and runs on its own)
+_global_config_lock = threading.Lock()
+
+
+def proxy_path():
+    """Where the MCP proxy is installed for global entries: a stable path outside the repo (it has moved before)."""
+    cache = Path(os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache")
+    return cache / "art-crit" / "mcp_proxy.py"
+
+
+def install_proxy(mcp, session_dir):
+    """Copy the proxy to proxy_path() (when it changed) and write the run's servers to <harness>/art-crit-mcp.json,
+    where the proxy (started in <run>/work/) finds them. Not an env var: muse passes MCP servers only an allowlist of
+    the environment. Returns the proxy's path."""
+    proxy = proxy_path()
+    with _global_config_lock:
+        if not proxy.is_file() or proxy.read_text() != PROXY_SOURCE.read_text():
+            proxy.parent.mkdir(parents=True, exist_ok=True)
+            proxy.write_text(PROXY_SOURCE.read_text())
+    (Path(session_dir) / SPEC_FILE).write_text(json.dumps(mcp, indent=2) + "\n")
+    return proxy
+
+
+def install_proxy_entries(config_path, mcp, session_dir, extra=lambda spec: {}):
+    """For harnesses that only read a global MCP config (agy, muse): make sure it has one permanent `art-crit-<name>`
+    entry per server, pointing at the proxy (mcp_proxy.py, copied to proxy_path()), plus `extra(spec)` (harness-specific
+    fields), and write the run's servers for the proxy (`install_proxy`). Other entries and keys of the config are
+    kept; it is only written when it changes."""
+    proxy = install_proxy(mcp, session_dir)
+    with _global_config_lock:
+        config_path = Path(config_path)
+        try:
+            text = config_path.read_text() if config_path.is_file() else ""
+            config = json.loads(text) if text.strip() else {}
+        except ValueError:
+            raise CritError(f"{config_path} isn't plain JSON (comments?); add the art-crit entries by hand or remove the comments")
+        if "mcp_servers" in config:  # muse drops every server when both keys are present
+            raise CritError(f"{config_path} uses the legacy mcp_servers key; rename it to mcpServers first")
+        servers = config.setdefault("mcpServers", {})
+        for name in mcp:
+            servers[f"art-crit-{name}"] = {"command": "python3", "args": [str(proxy), name], **extra(mcp[name])}
+        text = json.dumps(config, indent=2) + "\n"
+        if not config_path.is_file() or config_path.read_text() != text:
+            config_path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = config_path.with_name(config_path.name + ".art-crit-tmp")
+            tmp.write_text(text)
+            tmp.replace(config_path)
 
 
 def hidden_mcp_tools(mcp):
     """The hidden tools by their client-side names (`mcp__<server>__<tool>`, the same in pi and Claude Code)."""
     return [f"mcp__{name}__{tool}" for name, spec in (mcp or {}).items() for tool in spec.get("hidden", ())]
+
+
+def grok_mcp_toml(mcp, proxy):
+    """A run's MCP servers as Grok `[mcp_servers.<name>]` tables, each running the proxy (Grok has no setting that hides
+    tools; `disabled_tools` is an unknown field there). JSON strings and lists are valid TOML."""
+    lines = []
+    for name in mcp:
+        lines += [f"[mcp_servers.{name}]", 'command = "python3"', f"args = {json.dumps([str(proxy), name])}",
+                  f"tool_timeout_sec = {MCP_TIMEOUT_S}", "startup_timeout_sec = 60", "enabled = true", ""]
+    return "\n".join(lines)
 
 
 def codex_mcp_args(mcp):
@@ -152,9 +212,11 @@ class Harness:
     supports_mcp = False  # whether `command` can give the agent MCP servers (kinds like blender need it)
 
     def command(self, model, level, brief, session_dir, mcp=None):
-        """The agent's argv. `mcp` = {name: {command, args, env, hidden}}: stdio MCP servers for this run only
-        (never the user's global config), `hidden` = tool names the model must not get. Only harnesses with
-        `supports_mcp` take it. The agent's cwd is always the run's work/ (a sibling of session_dir)."""
+        """The agent's argv. `mcp` = {name: {command, args, env, hidden, tools}}: stdio MCP servers for this run
+        only, `hidden` = tool names the model must not get, `tools` = the ones it gets (optional; agy needs them).
+        Only harnesses with `supports_mcp` take it. The agent's cwd is always the run's work/ (a sibling of session_dir).
+        Harnesses with a per-run config use it; agy and muse only read a global one, which gets permanent proxy
+        entries (`install_proxy_entries`)."""
         raise NotImplementedError
 
     def env(self, model=None, harness_dir=None):
@@ -700,10 +762,15 @@ def claude_metrics(events, level=None):
 
 
 class Agy(Harness):
-    """Antigravity's headless NDJSON stream. Model slugs include the effort tier."""
+    """Antigravity's headless NDJSON stream. Model slugs include the effort tier.
+
+    agy reads MCP servers only from the user's global config, so a run's servers go through the permanent
+    `art-crit-<name>` proxy entries there (`install_proxy_entries`) and the run's harness/art-crit-mcp.json."""
 
     name = "agy"
     tag = "agy"
+    supports_mcp = True
+    MCP_CONFIG = Path.home() / ".gemini" / "config" / "mcp_config.json"
 
     def __init__(self, binary="agy"):
         self.binary = binary
@@ -742,9 +809,16 @@ class Agy(Harness):
         return f"{vendor}/{model}"
 
     def command(self, model, level, brief, session_dir, mcp=None):
-        return [self.binary, "-p", brief, "--model", f"{model}-{level}",
-                "--output-format", "stream-json", "--dangerously-skip-permissions",
-                "--disable-slash-commands"]
+        cmd = [self.binary, "-p", brief, "--model", f"{model}-{level}",
+               "--output-format", "stream-json", "--dangerously-skip-permissions",
+               "--disable-slash-commands"]
+        if not mcp:
+            return cmd
+        # A tool is declared up front only when named in `tools` with eager (a "*" key doesn't work, measured): otherwise
+        # the model gets a file to read for each tool's schema first.
+        install_proxy_entries(self.MCP_CONFIG, mcp, session_dir, lambda spec: {
+            "timeoutSeconds": MCP_TIMEOUT_S, "tools": {t: {"eager": True} for t in spec.get("tools", ())}})
+        return cmd
 
     def session_file(self, session_dir):
         path = Path(session_dir) / "events.jsonl"
@@ -760,10 +834,13 @@ class Agy(Harness):
 
 
 class GrokBuild(Harness):
-    """Grok Build's Messages-compatible headless stream (not Grok's ACP delta stream)."""
+    """Grok Build's Messages-compatible headless stream (not Grok's ACP delta stream). A run's MCP servers go in
+    the project config work/.grok/config.toml (never published as source), through the proxy. Grok's models reach MCP
+    tools only through its search_tool/use_tool meta-tools, never as declared tools."""
 
     name = "grok-build"
     tag = "gb"
+    supports_mcp = True
     # Grok's `models` command lists ids but not supported effort levels. Mirrors its current
     # model menus; update when the CLI's catalog changes (an unsupported tier can be ignored).
     MODELS = {"grok-4.7": ["low", "medium", "high", "xhigh"],
@@ -799,10 +876,19 @@ class GrokBuild(Harness):
         return f"xai/{model}"
 
     def command(self, model, level, brief, session_dir, mcp=None):
-        return [self.binary, "-p", brief, "--model", model, "--reasoning-effort", level,
-                "--output-format", "streaming-messages-json", "--always-approve", "--verbatim",
-                "--tools", "run_terminal_cmd,read_file,write_file,search_replace,grep,list_dir",
-                "--disallowed-tools", "Agent", "--disable-web-search", "--no-subagents"]
+        cmd = [self.binary, "-p", brief, "--model", model, "--reasoning-effort", level,
+               "--output-format", "streaming-messages-json", "--always-approve", "--verbatim",
+               "--tools", "run_terminal_cmd,read_file,write_file,search_replace,grep,list_dir",
+               "--disallowed-tools", "Agent", "--disable-web-search", "--no-subagents"]
+        if not mcp:
+            return cmd
+        # --tools above allows built-in tools only; MCP tools come from the project config, which grok starts only in
+        # a trusted folder. GROK_FOLDER_TRUST=0 lifts that gate for this process (--trust would record every run dir
+        # in ~/.grok/trusted_folders.toml); the work dir is fresh, so it holds nothing else to trust.
+        config = Path(session_dir).parent / "work" / ".grok" / "config.toml"
+        config.parent.mkdir(parents=True, exist_ok=True)
+        config.write_text(grok_mcp_toml(mcp, install_proxy(mcp, session_dir)))
+        return ["env", "GROK_FOLDER_TRUST=0", *cmd]
 
     def session_file(self, session_dir):
         path = Path(session_dir) / "events.jsonl"
@@ -830,6 +916,8 @@ class MuseCode(Harness):
 
     name = "muse-code"
     tag = "mc"
+    supports_mcp = True  # through the permanent art-crit-<name> proxy entries in the user's settings (see Agy)
+    MCP_CONFIG = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "muse" / "settings.json"
     # `muse` has no command that lists models, but it caches the provider's catalog (with each model's effort
     # tiers) in CATALOG_DIR whenever its TUI fetches it (opening /model), and that is the source. MODELS is the
     # fallback when there is no cache yet; update it when the CLI changes.
@@ -894,10 +982,15 @@ class MuseCode(Harness):
     def command(self, model, level, brief, session_dir, mcp=None):
         # No approval prompts or sandbox (like the other harnesses); the workspace stays untrusted, which
         # also leaves delegation off. No web, reminder agents or other tools' rules/skills.
+        # MCP servers: muse reads them only from the user's settings (a project .muse/settings.json is ignored, and
+        # --trust-workspace would also turn on sub-agents), so they go through the proxy entries there.
         session_id = str(uuid.uuid4())
-        return ["bash", "-c", self.WRAPPER, "muse-code", self.binary, session_id, str(Path(session_dir) / "export.json"),
-                "--json", "--session-id", session_id, "--model", model, "--reasoning-effort", level, "--disable-approval", "--disable-sandbox",
-                "--disable-web-tools", "--disable-reminders", "--no-foreign-personal-context", "--", brief]
+        cmd = ["bash", "-c", self.WRAPPER, "muse-code", self.binary, session_id, str(Path(session_dir) / "export.json"),
+               "--json", "--session-id", session_id, "--model", model, "--reasoning-effort", level, "--disable-approval", "--disable-sandbox",
+               "--disable-web-tools", "--disable-reminders", "--no-foreign-personal-context", "--", brief]
+        if mcp:
+            install_proxy_entries(self.MCP_CONFIG, mcp, session_dir, lambda spec: {"type": "stdio", "mode": "optional"})
+        return cmd
 
     def session_file(self, session_dir):
         path = Path(session_dir) / "export.json"
@@ -995,6 +1088,8 @@ def _muse_tool_call(call, cwd):
         name, args = "edit", {"path": rel(args.get("path")), "edits": [{"oldText": args.get("find", ""), "newText": args.get("replace", "")}]}
     elif name == "read_file":
         name, args = "read", {"path": rel(args.get("path")), **{k: v for k, v in args.items() if k in ("offset", "limit")}}
+    elif name.startswith("mcp__art_crit_"):  # the proxy entry art-crit-<server> -> mcp__<server>__<tool>, like the others
+        name = "mcp__" + name.removeprefix("mcp__art_crit_")
     return {"type": "toolCall", "id": call.get("call_id") or call.get("id"), "name": name, "arguments": args}
 
 
@@ -1102,6 +1197,12 @@ def convert_agy_stream(events, brief, level):
         if name == "run_command":
             call = {"type": "toolCall", "id": f"agy-{s.get('step_index')}", "name": "bash",
                     "arguments": {"command": args.get("CommandLine", "")}}
+        elif name == "call_mcp_tool":  # agy's generic MCP call -> the mcp__<server>__<tool> name the other harnesses use
+            server = str(args.get("ServerName", "")).removeprefix("art-crit-")
+            call = {"type": "toolCall", "id": f"agy-{s.get('step_index')}", "name": f"mcp__{server}__{args.get('ToolName', '')}",
+                    "arguments": args.get("Arguments") or {}}
+        elif m := re.fullmatch(r"mcp_art-crit-([A-Za-z0-9-]+)_(.+)", name):  # an eagerly declared MCP tool
+            call = {"type": "toolCall", "id": f"agy-{s.get('step_index')}", "name": f"mcp__{m[1]}__{m[2]}", "arguments": args}
         else:
             call = {"type": "toolCall", "id": f"agy-{s.get('step_index')}", "name": name, "arguments": args}
         entries.append({"type": "message", "message": {"role": "assistant", "content": [call]}})

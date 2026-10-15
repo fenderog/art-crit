@@ -80,7 +80,7 @@ uv run art-crit serve --port 8000        # preview docs/ exactly like GitHub Pag
 uv run art-crit run --dry-run "prompt" -m openai-codex/gpt-6-sol:low   # plan only, no model calls
 uv run art-crit run --dry-run --kind media "an SVG pelican" -m openai-codex/gpt-6-sol:low
 uv run art-crit run --dry-run --kind web "a three.js horse" -m openai-codex/gpt-6-sol:low   # needs esbuild + npm
-uv run art-crit run --dry-run --kind blender "a low-poly fox" -m claude-code:opus:low   # needs blender + uvx; pi/claude-code/codex only
+uv run art-crit run --dry-run --kind blender "a low-poly fox" -m claude-code:opus:low   # needs blender + uvx
 uv run art-crit run --dry-run "prompt" --set cheap   # a model set from art-crit.toml [sets] (or a file path)
 uv run art-crit run --dry-run "prompt"                # no -m/--set: pick harness, models and levels interactively (-i/--pick)
 uv run art-crit run --dry-run --page <slug> -m MODEL:LEVEL   # add runs to an existing page (reuses its prompt + kind)
@@ -145,8 +145,12 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   headers to the API, or add another write path. Only GitHub ids are stored (never tokens), and votes are not in git.
   `tallies` is kept only by the triggers in `cloudflare/schema.sql`: never write it from the Worker. Apply the schema to D1
   *before* deploying a Worker that needs it (an older Worker runs on a newer schema, not the reverse).
-- **Per-run MCP config only** (ADR-0025): a kind's MCP servers reach the agent through flags or files in the run's own
-  dirs (`--mcp-config`, `-c mcp_servers.*`, `work/.pi/mcp.json` + `--approve`), never `~/.pi`, `~/.claude` or `~/.codex`.
+- **Per-run MCP config** (ADR-0025): a kind's MCP servers reach the agent through flags or files in the run's own
+  dirs (`--mcp-config`, `-c mcp_servers.*`, `work/.pi/mcp.json` + `--approve`, `work/.grok/config.toml`), never `~/.pi`,
+  `~/.claude`, `~/.codex` or `~/.grok`. The one exception, with the user's consent: agy and muse read MCP servers only
+  globally, so `~/.gemini/config/mcp_config.json` and `~/.config/muse/settings.json` each hold a permanent
+  `art-crit-blender` entry running `~/.cache/art-crit/mcp_proxy.py`, which is inert (no tools) outside a run. Tests point
+  both configs and the cache at temp dirs (conftest); never write the real ones from a test.
   The blender add-on lives in `~/.cache/art-crit/`, never in the user's Blender. A .glb is shown only by `model.js`
   (three.js parses it; nothing in it runs).
 - **Untrusted text** (model output, transcripts) goes through `textContent` or `renderMarkdown()`, which
@@ -300,6 +304,14 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   - `FAKE_PI_BLENDER_LIVE=1` with the fake pi on PATH runs the real Blender + MCP server through a whole `art-crit run`
     (point `--root` at a throwaway site copy): the cheapest full check after changing this kind.
   - The viewer's three.js bundle is one esbuild-minified module; rebuild it with the command in its header comment.
+  - agy and muse MCP (measured 2026-10-15): agy passes its env to MCP servers but muse doesn't (fixed allowlist), hence
+    the spec file beside work/. agy declares a tool up front only when `tools` names it with `eager: true` ("*" doesn't
+    work); otherwise the model is told to view_file a schema under `~/.gemini/antigravity-cli/mcp/`. Muse ignores a project
+    `.muse/settings.json` even with `--trust-workspace`, and that flag adds `subagent_*` tools: never use it.
+  - Grok: project `.grok/config.toml` servers start only in a trusted folder (`grok mcp doctor` says "folder untrusted");
+    `GROK_FOLDER_TRUST=0` ungates it per process. `disabled_tools` is an unknown field there (`grok inspect` warns).
+    Grok also reads `~/.claude.json` and `.mcp.json` servers (compat sources), so the user's Claude MCP servers would
+    reach grok runs. Pointing Grok's base URLs at a local sink breaks its model lookup; check with `grok mcp doctor`.
   - Agents `read` their renders to check them, and pi keeps each read image as base64 in the session (a real DeepSeek run:
     10 reads, a 15 MB conversation.json). The importer shrinks transcript images over 48 KB to 800 px JPEGs
     (`importer.shrink_images`); never publish them raw (Pages limits files to 25 MiB).
