@@ -1,6 +1,12 @@
 """art-crit rm / rebuild / list, and the shape of pages.json / page.json."""
 
 import json
+import re
+import shutil
+import subprocess
+from pathlib import Path
+
+import pytest
 
 from art_crit.cli import main
 from art_crit.site import run_failed
@@ -249,3 +255,76 @@ def test_rename_refuses_bad_targets(bench_root, batch_dir):
     assert main(["rename", "voxel-horse", "Bad Slug", "--root", root]) != 0
     assert main(["rename", "voxel-horse", "voxel-horse", "--root", root]) != 0
     assert (bench_root / "docs/data/voxel-horse").is_dir()
+
+
+needs_ffmpeg = pytest.mark.skipif(not shutil.which("ffmpeg") or not shutil.which("ffprobe"), reason="needs ffmpeg")
+
+
+@needs_ffmpeg
+def test_rebuild_backfills_thumbnails_of_older_runs(bench_root, batch_dir):
+    """Runs published before thumbnails existed (ADR-0029): a godot run's full-size thumb.png becomes thumb.jpg,
+    media items get media/<stem>.thumb.jpg, and run.json / page.json / pages.json follow."""
+    main(["import", str(batch_dir), "--root", str(bench_root)])
+    data = bench_root / "docs/data/voxel-horse"
+    high = data / "runs" / _high_id(bench_root)
+    assert json.loads((high / "run.json").read_text())["thumb"] == "thumb.png"  # the fixture's frame isn't a real PNG
+    subprocess.run(["ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i", "testsrc=size=1280x720", "-frames:v", "1", str(high / "thumb.png")], check=True)
+    # a media run from before item thumbnails, by hand
+    old = data / "runs" / "old-media-low-20260101-000000"
+    (old / "media").mkdir(parents=True)
+    subprocess.run(["ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i", "testsrc=size=64x48", "-frames:v", "1", str(old / "media/a.png")], check=True)
+    template = json.loads((high / "run.json").read_text())
+    (old / "run.json").write_text(json.dumps({
+        **template, "id": old.name, "kind": "media", "effort": "low", "started_at": "2026-01-01T00:00:00Z", "thumb": "media/a.png",
+        "output": {"kind": "media", "items": [{"type": "image", "path": "media/a.png", "width": 64, "height": 48, "bytes": 1}], "ok": True, "verified": True, "error": None},
+    }))
+
+    main(["rebuild", "--root", str(bench_root)])
+    high_run = json.loads((high / "run.json").read_text())
+    assert high_run["thumb"] == "thumb.jpg" and (high / "thumb.jpg").is_file() and not (high / "thumb.png").exists()
+    old_run = json.loads((old / "run.json").read_text())
+    assert old_run["thumb"] == "media/a.thumb.jpg" and old_run["output"]["items"][0]["thumb"] == "media/a.thumb.jpg"
+    assert "rank" not in old_run and "rank" not in high_run  # rebuild wrote the run records, not page.json's copies
+    runs = {r["id"]: r for r in json.loads((data / "page.json").read_text())["runs"]}
+    assert runs[high.name]["thumb"] == "thumb.jpg" and runs[old.name]["thumb"] == "media/a.thumb.jpg"
+    assert json.loads((bench_root / "docs/data/pages.json").read_text())[0]["thumb"] == f"data/voxel-horse/runs/{high.name}/thumb.jpg"
+    # a run that is current is left alone: the second rebuild rewrites nothing
+    stamps = {p: p.stat().st_mtime_ns for p in (high / "run.json", old / "run.json")}
+    main(["rebuild", "--root", str(bench_root)])
+    assert {p: p.stat().st_mtime_ns for p in stamps} == stamps
+
+
+DOCS = Path(__file__).parent.parent / "docs"
+IMPORT = re.compile(r'''import\s*(?:\(|[^'"]*?\sfrom)\s*["'](\./[^"']+)["']''')  # static and import()
+STATIC_IMPORT = re.compile(r'''^import\s[^;]*?["'](\./[^"']+)["']''', re.M)
+
+
+def _imports(module, pattern):
+    text = (DOCS / "assets" / module).read_text()
+    return {str(Path(module).parent / m[2:]).replace("\\", "/") for m in pattern.findall(text)}
+
+
+def _closure(entry, pattern):
+    seen, todo = set(), {entry}
+    while todo:
+        m = todo.pop()
+        seen.add(m)
+        todo |= _imports(m, pattern) - seen
+    return seen - {entry}
+
+
+@pytest.mark.parametrize("html", ["index.html", "page.html", "compare.html", "run.html", "play.html", "monitor.html"])
+def test_html_preloads_exactly_the_modules_its_script_imports(html):
+    """Each page's <link rel=modulepreload> list is the static import closure of its entry module (so the whole graph
+    loads in one round trip, ADR-0029) plus, where listed, modules it always imports dynamically. The three.js bundle is
+    loaded on a click only and must never be preloaded."""
+    text = (DOCS / html).read_text()
+    [entry] = re.findall(r'<script type="module" src="assets/([^"]+)"', text)
+    preloaded = set(re.findall(r'<link rel="modulepreload" href="assets/([^"]+)">', text))
+    static = _closure(entry, STATIC_IMPORT)
+    assert static <= preloaded, f"{html} is missing modulepreload for {sorted(static - preloaded)}"
+    reachable = _closure(entry, IMPORT)
+    assert preloaded <= reachable, f"{html} preloads modules {entry} never imports: {sorted(preloaded - reachable)}"
+    assert not any("three" in m for m in preloaded)
+    for m in preloaded:
+        assert (DOCS / "assets" / m).is_file(), m

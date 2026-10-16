@@ -33,7 +33,7 @@
         "tokens_reasoning": 143,
         "tokens_cache_read": 13594
       },
-      "thumb": "media/robie.png",
+      "thumb": "media/robie.thumb.jpg",
       "output": {
         "kind": "blender",
         "items": [
@@ -50,7 +50,8 @@
             "width": 800,
             "height": 800,
             "bytes": 579688,
-            "path": "media/robie.png"
+            "path": "media/robie.png",
+            "thumb": "media/robie.thumb.jpg"
           }
         ],
         "ok": true,
@@ -89,7 +90,7 @@
         "tokens_reasoning": 463,
         "tokens_cache_read": 88895
       },
-      "thumb": "media/robie.png",
+      "thumb": "media/robie.thumb.jpg",
       "output": {
         "kind": "blender",
         "items": [
@@ -98,7 +99,8 @@
             "width": 900,
             "height": 900,
             "bytes": 748693,
-            "path": "media/robie.png"
+            "path": "media/robie.png",
+            "thumb": "media/robie.thumb.jpg"
           },
           {
             "type": "model",
@@ -145,7 +147,7 @@
         "tokens_reasoning": 5716,
         "tokens_cache_read": 600647
       },
-      "thumb": "media/robie_back.png",
+      "thumb": "media/robie_back.thumb.jpg",
       "output": {
         "kind": "blender",
         "items": [
@@ -154,21 +156,24 @@
             "width": 1200,
             "height": 1200,
             "bytes": 1523657,
-            "path": "media/robie_back.png"
+            "path": "media/robie_back.png",
+            "thumb": "media/robie_back.thumb.jpg"
           },
           {
             "type": "image",
             "width": 1200,
             "height": 1200,
             "bytes": 1560063,
-            "path": "media/robie_front_left.png"
+            "path": "media/robie_front_left.png",
+            "thumb": "media/robie_front_left.thumb.jpg"
           },
           {
             "type": "image",
             "width": 1200,
             "height": 1200,
             "bytes": 1551976,
-            "path": "media/robie_front_right.png"
+            "path": "media/robie_front_right.png",
+            "thumb": "media/robie_front_right.thumb.jpg"
           },
           {
             "type": "model",
@@ -220,7 +225,7 @@
         "tokens_reasoning": 57526,
         "tokens_cache_read": 3336191
       },
-      "thumb": "media/robie_back_view.png",
+      "thumb": "media/robie_back_view.thumb.jpg",
       "output": {
         "kind": "blender",
         "items": [
@@ -229,28 +234,32 @@
             "width": 1280,
             "height": 1024,
             "bytes": 1297752,
-            "path": "media/robie_back_view.png"
+            "path": "media/robie_back_view.png",
+            "thumb": "media/robie_back_view.thumb.jpg"
           },
           {
             "type": "image",
             "width": 1280,
             "height": 1024,
             "bytes": 1432128,
-            "path": "media/robie_closeup.png"
+            "path": "media/robie_closeup.png",
+            "thumb": "media/robie_closeup.thumb.jpg"
           },
           {
             "type": "image",
             "width": 1280,
             "height": 1024,
             "bytes": 1217779,
-            "path": "media/robie_coin_slot_view.png"
+            "path": "media/robie_coin_slot_view.png",
+            "thumb": "media/robie_coin_slot_view.thumb.jpg"
           },
           {
             "type": "image",
             "width": 1280,
             "height": 1024,
             "bytes": 1340195,
-            "path": "media/robie_front_three_quarter.png"
+            "path": "media/robie_front_three_quarter.png",
+            "thumb": "media/robie_front_three_quarter.thumb.jpg"
           },
           {
             "type": "model",

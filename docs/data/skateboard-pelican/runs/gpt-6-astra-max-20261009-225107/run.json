@@ -24,7 +24,7 @@
     "tokens_reasoning": 8411,
     "tokens_cache_read": 272000
   },
-  "thumb": "media/pelican-cruiser.png",
+  "thumb": "media/pelican-cruiser.thumb.jpg",
   "output": {
     "kind": "media",
     "items": [
@@ -33,7 +33,8 @@
         "width": 2100,
         "height": 1800,
         "bytes": 529746,
-        "path": "media/pelican-cruiser.png"
+        "path": "media/pelican-cruiser.png",
+        "thumb": "media/pelican-cruiser.thumb.jpg"
       },
       {
         "type": "image",

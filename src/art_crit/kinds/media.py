@@ -37,17 +37,74 @@ def probe(path):
     }
 
 
+# The widest a thumbnail is shown: a card or table row at 2x (ADR-0029). The run page shows the file itself.
+THUMB_WIDTH = 800
+
+
 def thumbnail(raw, width=320):
-    """Image bytes -> a small JPEG (at most `width` px wide), or None when ffmpeg is missing or fails."""
+    """Image bytes -> a small JPEG (at most `width` px wide), or None when ffmpeg is missing or fails.
+    Transparent pixels are composited over white (JPEG has no alpha; left alone they'd come out black)."""
     if not shutil.which("ffmpeg"):
         return None
-    cmd = ["ffmpeg", "-v", "error", "-i", "pipe:0", "-vf", f"scale='min({width},iw)':-2", "-frames:v", "1",
+    scaled = f"scale='min({width},iw)':-2,split[a][b];[b]drawbox=c=white:t=fill[bg];[bg][a]overlay=format=auto,format=yuvj420p"
+    cmd = ["ffmpeg", "-v", "error", "-i", "pipe:0", "-vf", scaled, "-frames:v", "1",
            "-q:v", "6", "-f", "image2pipe", "-c:v", "mjpeg", "pipe:1"]
     try:
         r = subprocess.run(cmd, input=raw, capture_output=True, timeout=60)
     except (OSError, subprocess.TimeoutExpired):
         return None
     return r.stdout if r.returncode == 0 and r.stdout else None
+
+
+def write_thumb(src, dest, width=THUMB_WIDTH):
+    """The image file `src` -> a JPEG at most `width` px wide at `dest`. False when ffmpeg is missing or can't read it."""
+    try:
+        raw = Path(src).read_bytes()
+    except OSError:
+        return False
+    data = thumbnail(raw, width)
+    if not data:
+        return False
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_bytes(data)
+    return True
+
+
+def screenshot_thumb(out_dir, run_dir):
+    """The verify step's first screenshot as a godot/web run's thumbnail: `thumb.jpg`, or the screenshot copied as
+    `thumb.png` when ffmpeg can't make one. None without a screenshot."""
+    frame = out_dir / "verification" / "frame-1.png"
+    if not frame.is_file():
+        return None
+    if write_thumb(frame, run_dir / "thumb.jpg"):
+        return "thumb.jpg"
+    shutil.copy(frame, run_dir / "thumb.png")
+    return "thumb.png"
+
+
+def _thumb_source(item):
+    """The published file an item's thumbnail is made from: a video's poster or a raster image itself. None for an
+    SVG (ffmpeg rasterizes it only with librsvg, and it's small) and a model."""
+    if item["type"] == "video":
+        return item.get("poster")
+    if item["type"] == "image" and not item["path"].lower().endswith(SVG_EXT):
+        return item["path"]
+    return None
+
+
+def add_thumbs(run_dir, items):
+    """Give every item that can have one a `thumb` (`media/<stem>.thumb.jpg` beside it under run_dir; an item whose
+    name is already taken, x.png after x.jpg, goes without) and return the run's thumb: the first thumbnail, or the
+    first image or poster as is when none could be made. Idempotent, so `rebuild` can backfill old runs."""
+    for item in items:
+        src = _thumb_source(item)
+        if item.get("thumb") or not src:
+            continue
+        name = f"media/{Path(item['path']).stem}.thumb.jpg"
+        if not (run_dir / name).exists() and write_thumb(run_dir / src, run_dir / name):
+            item["thumb"] = name
+    return next((i["thumb"] for i in items if i.get("thumb")),
+                next((i.get("poster") or i["path"] for i in items if i["type"] == "image" or i.get("poster")), None))
 
 
 def _ffmpeg(*args):
@@ -240,5 +297,4 @@ class Media(Kind):
                 out["poster"] = f"media/{item['poster']}"
                 shutil.copy(out_dir / item["poster"], run_dir / out["poster"])
             items.append(out)
-        thumb = next((i.get("poster") or i["path"] for i in items if i["type"] == "image" or i.get("poster")), None)
-        return Staged({"items": items}, thumb)
+        return Staged({"items": items}, add_thumbs(run_dir, items))

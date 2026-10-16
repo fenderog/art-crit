@@ -26,7 +26,7 @@
     "cost_estimated": true,
     "cost_estimate_proxy": "meta/muse-wonder-1.0"
   },
-  "thumb": "media/eiffel_tower_snes.png",
+  "thumb": "media/eiffel_tower_snes.thumb.jpg",
   "output": {
     "kind": "media",
     "items": [
@@ -35,7 +35,8 @@
         "width": 256,
         "height": 224,
         "bytes": 8632,
-        "path": "media/eiffel_tower_snes.png"
+        "path": "media/eiffel_tower_snes.png",
+        "thumb": "media/eiffel_tower_snes.thumb.jpg"
       }
     ],
     "ok": true,

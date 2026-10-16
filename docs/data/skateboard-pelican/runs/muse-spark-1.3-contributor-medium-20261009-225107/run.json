@@ -24,7 +24,7 @@
     "tokens_reasoning": 3975,
     "tokens_cache_read": 199982
   },
-  "thumb": "media/pelican-skateboard.poster.jpg",
+  "thumb": "media/pelican-skateboard.thumb.jpg",
   "output": {
     "kind": "media",
     "items": [
@@ -36,7 +36,8 @@
         "bytes": 596913,
         "transcoded": false,
         "path": "media/pelican-skateboard.mp4",
-        "poster": "media/pelican-skateboard.poster.jpg"
+        "poster": "media/pelican-skateboard.poster.jpg",
+        "thumb": "media/pelican-skateboard.thumb.jpg"
       },
       {
         "type": "image",

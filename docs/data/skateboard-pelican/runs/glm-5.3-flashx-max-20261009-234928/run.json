@@ -31,7 +31,7 @@
     "tokens_reasoning": 37111,
     "tokens_cache_read": 1217728
   },
-  "thumb": "media/pelican_ride.poster.jpg",
+  "thumb": "media/pelican_ride.thumb.jpg",
   "output": {
     "kind": "media",
     "items": [
@@ -43,14 +43,16 @@
         "bytes": 58000,
         "transcoded": false,
         "path": "media/pelican_ride.mp4",
-        "poster": "media/pelican_ride.poster.jpg"
+        "poster": "media/pelican_ride.poster.jpg",
+        "thumb": "media/pelican_ride.thumb.jpg"
       },
       {
         "type": "image",
         "width": 800,
         "height": 600,
         "bytes": 22868,
-        "path": "media/pelican_skateboard.png"
+        "path": "media/pelican_skateboard.png",
+        "thumb": "media/pelican_skateboard.thumb.jpg"
       },
       {
         "type": "image",

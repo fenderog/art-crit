@@ -31,7 +31,7 @@
     "tokens_reasoning": 51436,
     "tokens_cache_read": 1406976
   },
-  "thumb": "media/awkward-robot-family-portrait.poster.jpg",
+  "thumb": "media/awkward-robot-family-portrait.thumb.jpg",
   "output": {
     "kind": "media",
     "items": [
@@ -43,7 +43,8 @@
         "bytes": 75254,
         "transcoded": false,
         "path": "media/awkward-robot-family-portrait.mp4",
-        "poster": "media/awkward-robot-family-portrait.poster.jpg"
+        "poster": "media/awkward-robot-family-portrait.poster.jpg",
+        "thumb": "media/awkward-robot-family-portrait.thumb.jpg"
       },
       {
         "type": "image",

@@ -33,7 +33,7 @@
         "tokens_reasoning": 222,
         "tokens_cache_read": 21402
       },
-      "thumb": "media/eiffel_tower_pixel.jpg",
+      "thumb": "media/eiffel_tower_pixel.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -42,7 +42,8 @@
             "width": 768,
             "height": 1024,
             "bytes": 16815,
-            "path": "media/eiffel_tower_pixel.jpg"
+            "path": "media/eiffel_tower_pixel.jpg",
+            "thumb": "media/eiffel_tower_pixel.thumb.jpg"
           }
         ],
         "ok": true,
@@ -86,7 +87,7 @@
         "tokens_reasoning": 307,
         "tokens_cache_read": 21327
       },
-      "thumb": "media/eiffel_tower_pixel.jpg",
+      "thumb": "media/eiffel_tower_pixel.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -95,7 +96,8 @@
             "width": 640,
             "height": 800,
             "bytes": 60981,
-            "path": "media/eiffel_tower_pixel.jpg"
+            "path": "media/eiffel_tower_pixel.jpg",
+            "thumb": "media/eiffel_tower_pixel.thumb.jpg"
           }
         ],
         "ok": true,
@@ -139,7 +141,7 @@
         "tokens_reasoning": 1137,
         "tokens_cache_read": 24989
       },
-      "thumb": "media/eiffel_tower_16bit.jpg",
+      "thumb": "media/eiffel_tower_16bit.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -148,7 +150,8 @@
             "width": 1024,
             "height": 896,
             "bytes": 316384,
-            "path": "media/eiffel_tower_16bit.jpg"
+            "path": "media/eiffel_tower_16bit.jpg",
+            "thumb": "media/eiffel_tower_16bit.thumb.jpg"
           }
         ],
         "ok": true,
@@ -192,7 +195,7 @@
         "tokens_reasoning": 570,
         "tokens_cache_read": 12731
       },
-      "thumb": "media/eiffel_tower_16bit.jpg",
+      "thumb": "media/eiffel_tower_16bit.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -201,7 +204,8 @@
             "width": 640,
             "height": 800,
             "bytes": 92008,
-            "path": "media/eiffel_tower_16bit.jpg"
+            "path": "media/eiffel_tower_16bit.jpg",
+            "thumb": "media/eiffel_tower_16bit.thumb.jpg"
           }
         ],
         "ok": true,
@@ -245,7 +249,7 @@
         "tokens_reasoning": 4155,
         "tokens_cache_read": 116272
       },
-      "thumb": "media/eiffel_tower_16bit.jpg",
+      "thumb": "media/eiffel_tower_16bit.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -254,7 +258,8 @@
             "width": 1024,
             "height": 896,
             "bytes": 262488,
-            "path": "media/eiffel_tower_16bit.jpg"
+            "path": "media/eiffel_tower_16bit.jpg",
+            "thumb": "media/eiffel_tower_16bit.thumb.jpg"
           }
         ],
         "ok": true,
@@ -299,7 +304,7 @@
         "tokens_reasoning": 1208,
         "tokens_cache_read": 25482
       },
-      "thumb": "media/eiffel_pixel_16bit.jpg",
+      "thumb": "media/eiffel_pixel_16bit.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -308,7 +313,8 @@
             "width": 800,
             "height": 1000,
             "bytes": 286694,
-            "path": "media/eiffel_pixel_16bit.jpg"
+            "path": "media/eiffel_pixel_16bit.jpg",
+            "thumb": "media/eiffel_pixel_16bit.thumb.jpg"
           }
         ],
         "ok": true,
@@ -352,7 +358,7 @@
         "tokens_reasoning": 64004,
         "tokens_cache_read": 934435
       },
-      "thumb": "media/eiffel_tower_16bit.jpg",
+      "thumb": "media/eiffel_tower_16bit.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -361,7 +367,8 @@
             "width": 2560,
             "height": 1920,
             "bytes": 118693,
-            "path": "media/eiffel_tower_16bit.jpg"
+            "path": "media/eiffel_tower_16bit.jpg",
+            "thumb": "media/eiffel_tower_16bit.thumb.jpg"
           }
         ],
         "ok": true,
@@ -405,7 +412,7 @@
         "tokens_reasoning": 34617,
         "tokens_cache_read": 451127
       },
-      "thumb": "media/eiffel_tower_pixel_16bit.jpg",
+      "thumb": "media/eiffel_tower_pixel_16bit.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -414,7 +421,8 @@
             "width": 772,
             "height": 1024,
             "bytes": 244638,
-            "path": "media/eiffel_tower_pixel_16bit.jpg"
+            "path": "media/eiffel_tower_pixel_16bit.jpg",
+            "thumb": "media/eiffel_tower_pixel_16bit.thumb.jpg"
           }
         ],
         "ok": true,
@@ -458,7 +466,7 @@
         "tokens_reasoning": 70,
         "tokens_cache_read": 5120
       },
-      "thumb": "media/eiffel_16bit.jpg",
+      "thumb": "media/eiffel_16bit.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -467,7 +475,8 @@
             "width": 960,
             "height": 1200,
             "bytes": 195744,
-            "path": "media/eiffel_16bit.jpg"
+            "path": "media/eiffel_16bit.jpg",
+            "thumb": "media/eiffel_16bit.thumb.jpg"
           }
         ],
         "ok": true,
@@ -512,7 +521,7 @@
         "tokens_reasoning": 516,
         "tokens_cache_read": 11904
       },
-      "thumb": "media/eiffel_tower.jpg",
+      "thumb": "media/eiffel_tower.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -521,7 +530,8 @@
             "width": 960,
             "height": 1152,
             "bytes": 216960,
-            "path": "media/eiffel_tower.jpg"
+            "path": "media/eiffel_tower.jpg",
+            "thumb": "media/eiffel_tower.thumb.jpg"
           }
         ],
         "ok": true,
@@ -566,7 +576,7 @@
         "tokens_reasoning": 1553,
         "tokens_cache_read": 21248
       },
-      "thumb": "media/eiffel_tower_16bit.jpg",
+      "thumb": "media/eiffel_tower_16bit.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -575,7 +585,8 @@
             "width": 1200,
             "height": 1500,
             "bytes": 545600,
-            "path": "media/eiffel_tower_16bit.jpg"
+            "path": "media/eiffel_tower_16bit.jpg",
+            "thumb": "media/eiffel_tower_16bit.thumb.jpg"
           }
         ],
         "ok": true,
@@ -620,7 +631,7 @@
         "tokens_reasoning": 74,
         "tokens_cache_read": 8320
       },
-      "thumb": "media/eiffel-pixel.jpg",
+      "thumb": "media/eiffel-pixel.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -629,7 +640,8 @@
             "width": 960,
             "height": 1200,
             "bytes": 246976,
-            "path": "media/eiffel-pixel.jpg"
+            "path": "media/eiffel-pixel.jpg",
+            "thumb": "media/eiffel-pixel.thumb.jpg"
           }
         ],
         "ok": true,
@@ -674,7 +686,7 @@
         "tokens_reasoning": 87,
         "tokens_cache_read": 7808
       },
-      "thumb": "media/eiffel-tower.jpg",
+      "thumb": "media/eiffel-tower.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -683,7 +695,8 @@
             "width": 1152,
             "height": 1440,
             "bytes": 292431,
-            "path": "media/eiffel-tower.jpg"
+            "path": "media/eiffel-tower.jpg",
+            "thumb": "media/eiffel-tower.thumb.jpg"
           }
         ],
         "ok": true,
@@ -728,7 +741,7 @@
         "tokens_reasoning": 760,
         "tokens_cache_read": 9216
       },
-      "thumb": "media/eiffel_twilight.jpg",
+      "thumb": "media/eiffel_twilight.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -737,7 +750,8 @@
             "width": 1152,
             "height": 1344,
             "bytes": 526658,
-            "path": "media/eiffel_twilight.jpg"
+            "path": "media/eiffel_twilight.jpg",
+            "thumb": "media/eiffel_twilight.thumb.jpg"
           }
         ],
         "ok": true,
@@ -782,7 +796,7 @@
         "tokens_reasoning": 3903,
         "tokens_cache_read": 35072
       },
-      "thumb": "media/eiffel-tower-pixel-art.jpg",
+      "thumb": "media/eiffel-tower-pixel-art.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -791,7 +805,8 @@
             "width": 1536,
             "height": 1920,
             "bytes": 720216,
-            "path": "media/eiffel-tower-pixel-art.jpg"
+            "path": "media/eiffel-tower-pixel-art.jpg",
+            "thumb": "media/eiffel-tower-pixel-art.thumb.jpg"
           }
         ],
         "ok": true,
@@ -836,7 +851,7 @@
         "tokens_reasoning": 4118,
         "tokens_cache_read": 39168
       },
-      "thumb": "media/eiffel_twilight.jpg",
+      "thumb": "media/eiffel_twilight.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -845,7 +860,8 @@
             "width": 1536,
             "height": 1920,
             "bytes": 313188,
-            "path": "media/eiffel_twilight.jpg"
+            "path": "media/eiffel_twilight.jpg",
+            "thumb": "media/eiffel_twilight.thumb.jpg"
           }
         ],
         "ok": true,
@@ -890,7 +906,7 @@
         "tokens_reasoning": 3710,
         "tokens_cache_read": 59029
       },
-      "thumb": "media/eiffel_tower_16bit.jpg",
+      "thumb": "media/eiffel_tower_16bit.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -899,7 +915,8 @@
             "width": 640,
             "height": 800,
             "bytes": 46434,
-            "path": "media/eiffel_tower_16bit.jpg"
+            "path": "media/eiffel_tower_16bit.jpg",
+            "thumb": "media/eiffel_tower_16bit.thumb.jpg"
           }
         ],
         "ok": true,
@@ -943,7 +960,7 @@
         "tokens_reasoning": 6352,
         "tokens_cache_read": 50045
       },
-      "thumb": "media/eiffel_tower_16color.jpg",
+      "thumb": "media/eiffel_tower_16color.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -952,7 +969,8 @@
             "width": 512,
             "height": 512,
             "bytes": 135668,
-            "path": "media/eiffel_tower_16color.jpg"
+            "path": "media/eiffel_tower_16color.jpg",
+            "thumb": "media/eiffel_tower_16color.thumb.jpg"
           }
         ],
         "ok": true,
@@ -996,7 +1014,7 @@
         "tokens_reasoning": 20325,
         "tokens_cache_read": 77451
       },
-      "thumb": "media/eiffel-16bit.jpg",
+      "thumb": "media/eiffel-16bit.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1005,7 +1023,8 @@
             "width": 600,
             "height": 750,
             "bytes": 126476,
-            "path": "media/eiffel-16bit.jpg"
+            "path": "media/eiffel-16bit.jpg",
+            "thumb": "media/eiffel-16bit.thumb.jpg"
           }
         ],
         "ok": true,
@@ -1049,7 +1068,7 @@
         "tokens_reasoning": 33526,
         "tokens_cache_read": 145943
       },
-      "thumb": "media/eiffel_tower_16bit.jpg",
+      "thumb": "media/eiffel_tower_16bit.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1058,7 +1077,8 @@
             "width": 640,
             "height": 800,
             "bytes": 67667,
-            "path": "media/eiffel_tower_16bit.jpg"
+            "path": "media/eiffel_tower_16bit.jpg",
+            "thumb": "media/eiffel_tower_16bit.thumb.jpg"
           }
         ],
         "ok": true,
@@ -1102,7 +1122,7 @@
         "tokens_reasoning": 353,
         "tokens_cache_read": 17589
       },
-      "thumb": "media/eiffel-16bit.jpg",
+      "thumb": "media/eiffel-16bit.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1111,7 +1131,8 @@
             "width": 384,
             "height": 480,
             "bytes": 23902,
-            "path": "media/eiffel-16bit.jpg"
+            "path": "media/eiffel-16bit.jpg",
+            "thumb": "media/eiffel-16bit.thumb.jpg"
           }
         ],
         "ok": true,
@@ -1156,7 +1177,7 @@
         "tokens_reasoning": 1174,
         "tokens_cache_read": 76507
       },
-      "thumb": "media/eiffel-tower-16bit.jpg",
+      "thumb": "media/eiffel-tower-16bit.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1165,7 +1186,8 @@
             "width": 480,
             "height": 600,
             "bytes": 10098,
-            "path": "media/eiffel-tower-16bit.jpg"
+            "path": "media/eiffel-tower-16bit.jpg",
+            "thumb": "media/eiffel-tower-16bit.thumb.jpg"
           }
         ],
         "ok": true,
@@ -1210,7 +1232,7 @@
         "tokens_reasoning": 1538,
         "tokens_cache_read": 28597
       },
-      "thumb": "media/eiffel-16bit.jpg",
+      "thumb": "media/eiffel-16bit.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1219,7 +1241,8 @@
             "width": 640,
             "height": 800,
             "bytes": 71138,
-            "path": "media/eiffel-16bit.jpg"
+            "path": "media/eiffel-16bit.jpg",
+            "thumb": "media/eiffel-16bit.thumb.jpg"
           }
         ],
         "ok": true,
@@ -1264,7 +1287,7 @@
         "tokens_reasoning": 3061,
         "tokens_cache_read": 57608
       },
-      "thumb": "media/eiffel-16bit.jpg",
+      "thumb": "media/eiffel-16bit.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1273,7 +1296,8 @@
             "width": 512,
             "height": 768,
             "bytes": 12778,
-            "path": "media/eiffel-16bit.jpg"
+            "path": "media/eiffel-16bit.jpg",
+            "thumb": "media/eiffel-16bit.thumb.jpg"
           }
         ],
         "ok": true,
@@ -1318,7 +1342,7 @@
         "tokens_reasoning": 6621,
         "tokens_cache_read": 106346
       },
-      "thumb": "media/eiffel-tower-16bit.jpg",
+      "thumb": "media/eiffel-tower-16bit.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1327,7 +1351,8 @@
             "width": 512,
             "height": 640,
             "bytes": 10680,
-            "path": "media/eiffel-tower-16bit.jpg"
+            "path": "media/eiffel-tower-16bit.jpg",
+            "thumb": "media/eiffel-tower-16bit.thumb.jpg"
           }
         ],
         "ok": true,

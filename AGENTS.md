@@ -51,13 +51,15 @@ src/art_crit/          CLI, standard library only (argparse, json, subprocess, t
                     cost to `ART_CRIT_ROUTE_LOG`, and pins the upstream from `ART_CRIT_OPENROUTER_ROUTING` (`MODEL@slug`)
   kinds/            one class per kind, registered in `KINDS` (ADR-0018): `Kind` = brief, tools, finalize, verify, stage
     godot.py        headless Godot export, boot check, engine dedupe + index.html rewrite
-    media.py        check/normalize work/output/ files with ffprobe/ffmpeg -> output/manifest.json
+    media.py        check/normalize work/output/ files with ffprobe/ffmpeg -> output/manifest.json; also the thumbnail
+                    helpers every kind and `rebuild` use (`write_thumb`, `add_thumbs`, `screenshot_thumb`; ADR-0029)
     web.py          inline the page's scripts/stylesheets with esbuild -> output/index.html (one file)
     blender.py      a Media with `.glb`: `prepare` installs the MCP add-on, `agent_session` = the run's own Blender
     <kind>.md       brief template per kind ({prompt}, and {tools} from [run].tools, are substituted)
   browser.py        the headless-Chrome check the godot and web kinds share (Playwright is optional, imported lazily)
 docs/               the site: vanilla JS ES modules, no viewer build step, no framework
   index.html page.html run.html compare.html play.html monitor.html, assets/*.js, assets/style.css
+  _headers          Cloudflare Pages cache policy: run dirs a day, vendor + engines immutable (ADR-0029)
   assets/dom.js fmt.js runs.js output.js   shared helpers: DOM + fetch, formatting, run/rank/vendor helpers, and
                     output.js, which holds all sandbox-critical code (sandboxedGame, mediaElement, renderOutput, KIND_UI);
                     model.js = the .glb viewer (three.js bundle vendor/three-gltf.min.js, loaded on click);
@@ -276,6 +278,18 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   The effort cell's text must stay exactly the level name (the meter is a CSS `::before`); tests read it.
 - **Screenshots of every page type** (desktop/phone, light/dark) are a quick visual check after UI changes: Python
   Playwright with `channel="chrome"` and `color_scheme="dark"` on the context, against `art-crit serve`.
+- **Thumbnails are made at import, 800 px JPEGs** (`media.write_thumb`; ADR-0029): `run.thumb` and each media item's `thumb`.
+  Cards, tables and overlays show those; only the run page shows the file itself. JPEG has no alpha, so transparency is
+  composited over white in `thumbnail()`. `rebuild` backfills missing ones (and turns an old full-size `thumb.png` into
+  `thumb.jpg`), so expect it to touch `run.json` files the first time after a change like this; it never remakes existing ones.
+  A test fixture whose `frame-1.png` isn't a real PNG gets `thumb.png` (the ffmpeg-less fallback), which is why the
+  synthetic godot batch still expects it.
+- **Each HTML head preloads its script's import closure** (`<link rel="modulepreload">`, ADR-0029). Adding an `import`
+  to a viewer module fails `test_html_preloads_exactly_the_modules_its_script_imports`, which names the missing module;
+  never preload `vendor/three-gltf.min.js` (640 KB, loaded on a click).
+- **Cache headers live in `docs/_headers`** (Pages honours it for `Cache-Control`; it was only `Content-Encoding` it couldn't
+  force). Don't give `assets/*.js` or `style.css` a long `max-age` until cache-busting exists (ADR-0012): it would pair
+  new HTML with old scripts for everyone, not just the 10-minute Pages cache window.
 - **Viewer data JSON is fetched with `cache: "no-cache"`** (`getJSON()`); without it the browser's heuristic cache
   showed stale results after saving a ranking (and after a publish).
 - **Tests address table cells by `data-col`**, not position: adding a column (like Rank) shifted `nth()` indexes.

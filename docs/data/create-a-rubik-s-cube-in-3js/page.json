@@ -33,7 +33,7 @@
         "tokens_reasoning": 58,
         "tokens_cache_read": 18094
       },
-      "thumb": "thumb.png",
+      "thumb": "thumb.jpg",
       "output": {
         "kind": "web",
         "entry": "game/index.html",
@@ -85,7 +85,7 @@
         "tokens_reasoning": 665,
         "tokens_cache_read": 17866
       },
-      "thumb": "thumb.png",
+      "thumb": "thumb.jpg",
       "output": {
         "kind": "web",
         "entry": "game/index.html",
@@ -137,7 +137,7 @@
         "tokens_reasoning": 1989,
         "tokens_cache_read": 44516
       },
-      "thumb": "thumb.png",
+      "thumb": "thumb.jpg",
       "output": {
         "kind": "web",
         "entry": "game/index.html",
@@ -190,7 +190,7 @@
         "tokens_reasoning": 647,
         "tokens_cache_read": 17887
       },
-      "thumb": "thumb.png",
+      "thumb": "thumb.jpg",
       "output": {
         "kind": "web",
         "entry": "game/index.html",
@@ -242,7 +242,7 @@
         "tokens_reasoning": 13590,
         "tokens_cache_read": 273628
       },
-      "thumb": "thumb.png",
+      "thumb": "thumb.jpg",
       "output": {
         "kind": "web",
         "entry": "game/index.html",
@@ -294,7 +294,7 @@
         "tokens_reasoning": 4924,
         "tokens_cache_read": 37106
       },
-      "thumb": "thumb.png",
+      "thumb": "thumb.jpg",
       "output": {
         "kind": "web",
         "entry": "game/index.html",
@@ -347,7 +347,7 @@
         "tokens_reasoning": 64013,
         "tokens_cache_read": 2862903
       },
-      "thumb": "thumb.png",
+      "thumb": "thumb.jpg",
       "output": {
         "kind": "web",
         "entry": "game/index.html",
@@ -404,7 +404,7 @@
         "tokens_reasoning": 66210,
         "tokens_cache_read": 4804199
       },
-      "thumb": "thumb.png",
+      "thumb": "thumb.jpg",
       "output": {
         "kind": "web",
         "entry": "game/index.html",
@@ -462,7 +462,7 @@
         "tokens_reasoning": 62,
         "tokens_cache_read": 30720
       },
-      "thumb": "thumb.png",
+      "thumb": "thumb.jpg",
       "output": {
         "kind": "web",
         "entry": "game/index.html",
@@ -516,7 +516,7 @@
         "tokens_reasoning": 334,
         "tokens_cache_read": 48128
       },
-      "thumb": "thumb.png",
+      "thumb": "thumb.jpg",
       "output": {
         "kind": "web",
         "entry": "game/index.html",
@@ -570,7 +570,7 @@
         "tokens_reasoning": 2921,
         "tokens_cache_read": 210048
       },
-      "thumb": "thumb.png",
+      "thumb": "thumb.jpg",
       "output": {
         "kind": "web",
         "entry": "game/index.html",
@@ -625,7 +625,7 @@
         "tokens_reasoning": 19910,
         "tokens_cache_read": 1253632
       },
-      "thumb": "thumb.png",
+      "thumb": "thumb.jpg",
       "output": {
         "kind": "web",
         "entry": "game/index.html",
@@ -679,7 +679,7 @@
         "tokens_reasoning": 8475,
         "tokens_cache_read": 127872
       },
-      "thumb": "thumb.png",
+      "thumb": "thumb.jpg",
       "output": {
         "kind": "web",
         "entry": "game/index.html",
@@ -733,7 +733,7 @@
         "tokens_reasoning": 44871,
         "tokens_cache_read": 2984192
       },
-      "thumb": "thumb.png",
+      "thumb": "thumb.jpg",
       "output": {
         "kind": "web",
         "entry": "game/index.html",

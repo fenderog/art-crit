@@ -77,7 +77,7 @@
     "tokens_reasoning": 123741,
     "tokens_cache_read": 1246337
   },
-  "thumb": "media/robbie_front.png",
+  "thumb": "media/robbie_front.thumb.jpg",
   "output": {
     "kind": "blender",
     "items": [
@@ -86,7 +86,8 @@
         "width": 1000,
         "height": 1000,
         "bytes": 655310,
-        "path": "media/robbie_front.png"
+        "path": "media/robbie_front.png",
+        "thumb": "media/robbie_front.thumb.jpg"
       },
       {
         "type": "model",
@@ -101,14 +102,16 @@
         "width": 1000,
         "height": 1000,
         "bytes": 623623,
-        "path": "media/robbie_three_quarter.png"
+        "path": "media/robbie_three_quarter.png",
+        "thumb": "media/robbie_three_quarter.thumb.jpg"
       },
       {
         "type": "image",
         "width": 1000,
         "height": 1000,
         "bytes": 700466,
-        "path": "media/robbie_top.png"
+        "path": "media/robbie_top.png",
+        "thumb": "media/robbie_top.thumb.jpg"
       }
     ],
     "ok": true,

@@ -649,16 +649,19 @@ def test_media_run_publishes_output_files(run_root):
     assert set(by_path) == {"media/clip.mp4", "media/dot.png", "media/drawing.svg"}
     assert by_path["media/drawing.svg"]["width"] == 120
     assert by_path["media/clip.mp4"]["poster"] == "media/clip.poster.jpg"
-    assert run["thumb"] == "media/clip.poster.jpg"  # first item, sorted by name
+    # Cards show 800 px JPEG thumbnails made at import (a video's from its poster), never SVGs; the run's is the first item's.
+    assert by_path["media/clip.mp4"]["thumb"] == "media/clip.thumb.jpg" and by_path["media/dot.png"]["thumb"] == "media/dot.thumb.jpg"
+    assert "thumb" not in by_path["media/drawing.svg"]
+    assert run["thumb"] == "media/clip.thumb.jpg"  # first item, sorted by name
     run_dir = run_root / "docs/data/a-red-circle/runs" / run["id"]
-    for rel in [*by_path, "media/clip.poster.jpg"]:
+    for rel in [*by_path, "media/clip.poster.jpg", "media/clip.thumb.jpg", "media/dot.thumb.jpg"]:
         assert (run_dir / rel).is_file()
     assert str(Path.home()) not in (run_dir / "media/drawing.svg").read_text()  # SVGs are cleaned
     # Source is the text code only: media files in ./output/ and the leftover binary frame aren't source.
     assert run["source"]["files"] == ["make.py"]
     pages = json.loads((run_root / "docs/data/pages.json").read_text())
     assert pages[0]["kind"] == "media"
-    assert pages[0]["thumb"] == f"data/a-red-circle/runs/{run['id']}/media/clip.poster.jpg"
+    assert pages[0]["thumb"] == f"data/a-red-circle/runs/{run['id']}/media/clip.thumb.jpg"
 
 
 @needs_ffmpeg

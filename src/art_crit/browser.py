@@ -1,7 +1,6 @@
 """The headless-Chrome check the Godot and web kinds share. See SPEC.md "art-crit run" step 7 (Verify)."""
 
 import json
-import shutil
 
 # The sandboxed check shows the page the way the site does: in an iframe sandboxed like sandboxedGame()
 # in docs/assets/output.js (opaque origin, so storage APIs throw), with every request but the page blocked.
@@ -89,11 +88,3 @@ def verify_page(out_dir, ready_js, judge, *, sandboxed=False, wait_s=30, settle_
     (verify_dir / "verify-report.json").write_text(json.dumps(report, indent=2) + "\n")
     return report
 
-
-def copy_thumb(out_dir, run_dir):
-    """The verification screenshot as the run's thumbnail, or None."""
-    frame = out_dir / "verification" / "frame-1.png"
-    if not frame.is_file():
-        return None
-    shutil.copy(frame, run_dir / "thumb.png")
-    return "thumb.png"

@@ -33,7 +33,7 @@
         "tokens_reasoning": 1366,
         "tokens_cache_read": 38623
       },
-      "thumb": "media/eiffel_snes.png",
+      "thumb": "media/eiffel_snes.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -42,7 +42,8 @@
             "width": 256,
             "height": 224,
             "bytes": 6080,
-            "path": "media/eiffel_snes.png"
+            "path": "media/eiffel_snes.png",
+            "thumb": "media/eiffel_snes.thumb.jpg"
           }
         ],
         "ok": true,
@@ -86,7 +87,7 @@
         "tokens_reasoning": 789,
         "tokens_cache_read": 22257
       },
-      "thumb": "media/eiffel_snes.png",
+      "thumb": "media/eiffel_snes.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -95,7 +96,8 @@
             "width": 256,
             "height": 224,
             "bytes": 3009,
-            "path": "media/eiffel_snes.png"
+            "path": "media/eiffel_snes.png",
+            "thumb": "media/eiffel_snes.thumb.jpg"
           }
         ],
         "ok": true,
@@ -139,7 +141,7 @@
         "tokens_reasoning": 10633,
         "tokens_cache_read": 244760
       },
-      "thumb": "media/eiffel_tower_snes.png",
+      "thumb": "media/eiffel_tower_snes.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -148,7 +150,8 @@
             "width": 256,
             "height": 224,
             "bytes": 7332,
-            "path": "media/eiffel_tower_snes.png"
+            "path": "media/eiffel_tower_snes.png",
+            "thumb": "media/eiffel_tower_snes.thumb.jpg"
           }
         ],
         "ok": true,
@@ -192,7 +195,7 @@
         "tokens_reasoning": 3148,
         "tokens_cache_read": 70598
       },
-      "thumb": "media/eiffel_snes.png",
+      "thumb": "media/eiffel_snes.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -201,7 +204,8 @@
             "width": 256,
             "height": 224,
             "bytes": 4072,
-            "path": "media/eiffel_snes.png"
+            "path": "media/eiffel_snes.png",
+            "thumb": "media/eiffel_snes.thumb.jpg"
           }
         ],
         "ok": true,
@@ -245,7 +249,7 @@
         "tokens_reasoning": 36808,
         "tokens_cache_read": 1136226
       },
-      "thumb": "media/eiffel_tower_snes.png",
+      "thumb": "media/eiffel_tower_snes.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -254,7 +258,8 @@
             "width": 256,
             "height": 224,
             "bytes": 6190,
-            "path": "media/eiffel_tower_snes.png"
+            "path": "media/eiffel_tower_snes.png",
+            "thumb": "media/eiffel_tower_snes.thumb.jpg"
           }
         ],
         "ok": true,
@@ -298,7 +303,7 @@
         "tokens_reasoning": 26994,
         "tokens_cache_read": 245080
       },
-      "thumb": "media/eiffel_snes.png",
+      "thumb": "media/eiffel_snes.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -307,7 +312,8 @@
             "width": 256,
             "height": 224,
             "bytes": 7026,
-            "path": "media/eiffel_snes.png"
+            "path": "media/eiffel_snes.png",
+            "thumb": "media/eiffel_snes.thumb.jpg"
           }
         ],
         "ok": true,
@@ -351,7 +357,7 @@
         "tokens_reasoning": 83145,
         "tokens_cache_read": 3269832
       },
-      "thumb": "media/eiffel_tower_snes.png",
+      "thumb": "media/eiffel_tower_snes.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -360,7 +366,8 @@
             "width": 256,
             "height": 224,
             "bytes": 8191,
-            "path": "media/eiffel_tower_snes.png"
+            "path": "media/eiffel_tower_snes.png",
+            "thumb": "media/eiffel_tower_snes.thumb.jpg"
           }
         ],
         "ok": true,
@@ -406,7 +413,7 @@
         "tokens_reasoning": 73489,
         "tokens_cache_read": 2511385
       },
-      "thumb": "media/eiffel_tower_snes.png",
+      "thumb": "media/eiffel_tower_snes.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -415,7 +422,8 @@
             "width": 256,
             "height": 224,
             "bytes": 7920,
-            "path": "media/eiffel_tower_snes.png"
+            "path": "media/eiffel_tower_snes.png",
+            "thumb": "media/eiffel_tower_snes.thumb.jpg"
           }
         ],
         "ok": true,
@@ -460,7 +468,7 @@
         "tokens_reasoning": 99,
         "tokens_cache_read": 4608
       },
-      "thumb": "media/eiffel_snes.png",
+      "thumb": "media/eiffel_snes.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -469,7 +477,8 @@
             "width": 256,
             "height": 224,
             "bytes": 4005,
-            "path": "media/eiffel_snes.png"
+            "path": "media/eiffel_snes.png",
+            "thumb": "media/eiffel_snes.thumb.jpg"
           }
         ],
         "ok": true,
@@ -514,7 +523,7 @@
         "tokens_reasoning": 593,
         "tokens_cache_read": 15744
       },
-      "thumb": "media/eiffel_twilight.png",
+      "thumb": "media/eiffel_twilight.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -523,7 +532,8 @@
             "width": 256,
             "height": 224,
             "bytes": 4373,
-            "path": "media/eiffel_twilight.png"
+            "path": "media/eiffel_twilight.png",
+            "thumb": "media/eiffel_twilight.thumb.jpg"
           }
         ],
         "ok": true,
@@ -568,7 +578,7 @@
         "tokens_reasoning": 1867,
         "tokens_cache_read": 23040
       },
-      "thumb": "media/eiffel_at_sunset.png",
+      "thumb": "media/eiffel_at_sunset.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -577,7 +587,8 @@
             "width": 256,
             "height": 224,
             "bytes": 4987,
-            "path": "media/eiffel_at_sunset.png"
+            "path": "media/eiffel_at_sunset.png",
+            "thumb": "media/eiffel_at_sunset.thumb.jpg"
           }
         ],
         "ok": true,
@@ -622,7 +633,7 @@
         "tokens_reasoning": 226,
         "tokens_cache_read": 7552
       },
-      "thumb": "media/eiffel-twilight.png",
+      "thumb": "media/eiffel-twilight.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -631,7 +642,8 @@
             "width": 256,
             "height": 224,
             "bytes": 3404,
-            "path": "media/eiffel-twilight.png"
+            "path": "media/eiffel-twilight.png",
+            "thumb": "media/eiffel-twilight.thumb.jpg"
           }
         ],
         "ok": true,
@@ -676,7 +688,7 @@
         "tokens_reasoning": 243,
         "tokens_cache_read": 7808
       },
-      "thumb": "media/paris-at-dusk.png",
+      "thumb": "media/paris-at-dusk.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -685,7 +697,8 @@
             "width": 256,
             "height": 224,
             "bytes": 3465,
-            "path": "media/paris-at-dusk.png"
+            "path": "media/paris-at-dusk.png",
+            "thumb": "media/paris-at-dusk.thumb.jpg"
           }
         ],
         "ok": true,
@@ -730,7 +743,7 @@
         "tokens_reasoning": 1336,
         "tokens_cache_read": 19456
       },
-      "thumb": "media/paris_at_the_golden_hour.png",
+      "thumb": "media/paris_at_the_golden_hour.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -739,7 +752,8 @@
             "width": 256,
             "height": 224,
             "bytes": 4223,
-            "path": "media/paris_at_the_golden_hour.png"
+            "path": "media/paris_at_the_golden_hour.png",
+            "thumb": "media/paris_at_the_golden_hour.thumb.jpg"
           }
         ],
         "ok": true,
@@ -784,7 +798,7 @@
         "tokens_reasoning": 6820,
         "tokens_cache_read": 101120
       },
-      "thumb": "media/eiffel_at_the_golden_hour.png",
+      "thumb": "media/eiffel_at_the_golden_hour.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -793,7 +807,8 @@
             "width": 256,
             "height": 224,
             "bytes": 5706,
-            "path": "media/eiffel_at_the_golden_hour.png"
+            "path": "media/eiffel_at_the_golden_hour.png",
+            "thumb": "media/eiffel_at_the_golden_hour.thumb.jpg"
           }
         ],
         "ok": true,
@@ -838,7 +853,7 @@
         "tokens_reasoning": 11803,
         "tokens_cache_read": 233472
       },
-      "thumb": "media/eiffel_twilight.png",
+      "thumb": "media/eiffel_twilight.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -847,7 +862,8 @@
             "width": 256,
             "height": 224,
             "bytes": 6164,
-            "path": "media/eiffel_twilight.png"
+            "path": "media/eiffel_twilight.png",
+            "thumb": "media/eiffel_twilight.thumb.jpg"
           }
         ],
         "ok": true,
@@ -892,7 +908,7 @@
         "tokens_reasoning": 8875,
         "tokens_cache_read": 142439
       },
-      "thumb": "media/eiffel_tower_snes.png",
+      "thumb": "media/eiffel_tower_snes.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -901,7 +917,8 @@
             "width": 256,
             "height": 224,
             "bytes": 3595,
-            "path": "media/eiffel_tower_snes.png"
+            "path": "media/eiffel_tower_snes.png",
+            "thumb": "media/eiffel_tower_snes.thumb.jpg"
           }
         ],
         "ok": true,
@@ -945,7 +962,7 @@
         "tokens_reasoning": 12202,
         "tokens_cache_read": 84575
       },
-      "thumb": "media/eiffel_tower_snes.png",
+      "thumb": "media/eiffel_tower_snes.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -954,7 +971,8 @@
             "width": 256,
             "height": 224,
             "bytes": 2874,
-            "path": "media/eiffel_tower_snes.png"
+            "path": "media/eiffel_tower_snes.png",
+            "thumb": "media/eiffel_tower_snes.thumb.jpg"
           }
         ],
         "ok": true,
@@ -998,7 +1016,7 @@
         "tokens_reasoning": 22641,
         "tokens_cache_read": 132747
       },
-      "thumb": "media/eiffel_tower_snes.png",
+      "thumb": "media/eiffel_tower_snes.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1007,7 +1025,8 @@
             "width": 256,
             "height": 224,
             "bytes": 3045,
-            "path": "media/eiffel_tower_snes.png"
+            "path": "media/eiffel_tower_snes.png",
+            "thumb": "media/eiffel_tower_snes.thumb.jpg"
           }
         ],
         "ok": true,
@@ -1051,7 +1070,7 @@
         "tokens_reasoning": 52753,
         "tokens_cache_read": 540563
       },
-      "thumb": "media/eiffel_tower_snes.png",
+      "thumb": "media/eiffel_tower_snes.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1060,7 +1079,8 @@
             "width": 256,
             "height": 224,
             "bytes": 4021,
-            "path": "media/eiffel_tower_snes.png"
+            "path": "media/eiffel_tower_snes.png",
+            "thumb": "media/eiffel_tower_snes.thumb.jpg"
           }
         ],
         "ok": true,
@@ -1104,7 +1124,7 @@
         "tokens_reasoning": 534,
         "tokens_cache_read": 27189
       },
-      "thumb": "media/eiffel-snes.png",
+      "thumb": "media/eiffel-snes.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1113,7 +1133,8 @@
             "width": 256,
             "height": 224,
             "bytes": 4091,
-            "path": "media/eiffel-snes.png"
+            "path": "media/eiffel-snes.png",
+            "thumb": "media/eiffel-snes.thumb.jpg"
           }
         ],
         "ok": true,
@@ -1158,7 +1179,7 @@
         "tokens_reasoning": 975,
         "tokens_cache_read": 27957
       },
-      "thumb": "media/eiffel-snes.png",
+      "thumb": "media/eiffel-snes.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1167,7 +1188,8 @@
             "width": 256,
             "height": 224,
             "bytes": 4095,
-            "path": "media/eiffel-snes.png"
+            "path": "media/eiffel-snes.png",
+            "thumb": "media/eiffel-snes.thumb.jpg"
           }
         ],
         "ok": true,
@@ -1212,7 +1234,7 @@
         "tokens_reasoning": 4090,
         "tokens_cache_read": 154429
       },
-      "thumb": "media/eiffel-snes.png",
+      "thumb": "media/eiffel-snes.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1221,7 +1243,8 @@
             "width": 256,
             "height": 224,
             "bytes": 6351,
-            "path": "media/eiffel-snes.png"
+            "path": "media/eiffel-snes.png",
+            "thumb": "media/eiffel-snes.thumb.jpg"
           }
         ],
         "ok": true,
@@ -1266,7 +1289,7 @@
         "tokens_reasoning": 6574,
         "tokens_cache_read": 214446
       },
-      "thumb": "media/eiffel-snes.png",
+      "thumb": "media/eiffel-snes.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1275,7 +1298,8 @@
             "width": 256,
             "height": 224,
             "bytes": 6868,
-            "path": "media/eiffel-snes.png"
+            "path": "media/eiffel-snes.png",
+            "thumb": "media/eiffel-snes.thumb.jpg"
           }
         ],
         "ok": true,
@@ -1320,7 +1344,7 @@
         "tokens_reasoning": 10634,
         "tokens_cache_read": 373693
       },
-      "thumb": "media/eiffel_snes.png",
+      "thumb": "media/eiffel_snes.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1329,7 +1353,8 @@
             "width": 256,
             "height": 224,
             "bytes": 7177,
-            "path": "media/eiffel_snes.png"
+            "path": "media/eiffel_snes.png",
+            "thumb": "media/eiffel_snes.thumb.jpg"
           }
         ],
         "ok": true,
@@ -1376,7 +1401,7 @@
         "cost_estimated": true,
         "cost_estimate_proxy": "meta/muse-wonder-1.0"
       },
-      "thumb": "media/eiffel-tower-snes.png",
+      "thumb": "media/eiffel-tower-snes.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1385,7 +1410,8 @@
             "width": 256,
             "height": 224,
             "bytes": 5779,
-            "path": "media/eiffel-tower-snes.png"
+            "path": "media/eiffel-tower-snes.png",
+            "thumb": "media/eiffel-tower-snes.thumb.jpg"
           }
         ],
         "ok": true,
@@ -1432,7 +1458,7 @@
         "cost_estimated": true,
         "cost_estimate_proxy": "meta/muse-wonder-1.0"
       },
-      "thumb": "media/eiffel-tower-snes.png",
+      "thumb": "media/eiffel-tower-snes.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1441,7 +1467,8 @@
             "width": 256,
             "height": 224,
             "bytes": 5279,
-            "path": "media/eiffel-tower-snes.png"
+            "path": "media/eiffel-tower-snes.png",
+            "thumb": "media/eiffel-tower-snes.thumb.jpg"
           }
         ],
         "ok": true,
@@ -1488,7 +1515,7 @@
         "cost_estimated": true,
         "cost_estimate_proxy": "meta/muse-wonder-1.0"
       },
-      "thumb": "media/eiffel_tower_snes.png",
+      "thumb": "media/eiffel_tower_snes.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1497,7 +1524,8 @@
             "width": 256,
             "height": 224,
             "bytes": 6492,
-            "path": "media/eiffel_tower_snes.png"
+            "path": "media/eiffel_tower_snes.png",
+            "thumb": "media/eiffel_tower_snes.thumb.jpg"
           }
         ],
         "ok": true,
@@ -1544,7 +1572,7 @@
         "cost_estimated": true,
         "cost_estimate_proxy": "meta/muse-wonder-1.0"
       },
-      "thumb": "media/eiffel_tower_snes.png",
+      "thumb": "media/eiffel_tower_snes.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1553,7 +1581,8 @@
             "width": 256,
             "height": 224,
             "bytes": 6417,
-            "path": "media/eiffel_tower_snes.png"
+            "path": "media/eiffel_tower_snes.png",
+            "thumb": "media/eiffel_tower_snes.thumb.jpg"
           }
         ],
         "ok": true,
@@ -1601,7 +1630,7 @@
         "cost_estimated": true,
         "cost_estimate_proxy": "meta/muse-wonder-1.0"
       },
-      "thumb": "media/eiffel_tower_snes.png",
+      "thumb": "media/eiffel_tower_snes.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1610,7 +1639,8 @@
             "width": 256,
             "height": 224,
             "bytes": 8632,
-            "path": "media/eiffel_tower_snes.png"
+            "path": "media/eiffel_tower_snes.png",
+            "thumb": "media/eiffel_tower_snes.thumb.jpg"
           }
         ],
         "ok": true,
@@ -1657,7 +1687,7 @@
         "cost_estimated": true,
         "cost_estimate_proxy": "meta/muse-wonder-1.0"
       },
-      "thumb": "media/eiffel_tower_snes.png",
+      "thumb": "media/eiffel_tower_snes.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1666,7 +1696,8 @@
             "width": 256,
             "height": 224,
             "bytes": 6767,
-            "path": "media/eiffel_tower_snes.png"
+            "path": "media/eiffel_tower_snes.png",
+            "thumb": "media/eiffel_tower_snes.thumb.jpg"
           }
         ],
         "ok": true,

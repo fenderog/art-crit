@@ -24,7 +24,7 @@
     "tokens_reasoning": 26994,
     "tokens_cache_read": 245080
   },
-  "thumb": "media/eiffel_snes.png",
+  "thumb": "media/eiffel_snes.thumb.jpg",
   "output": {
     "kind": "media",
     "items": [
@@ -33,7 +33,8 @@
         "width": 256,
         "height": 224,
         "bytes": 7026,
-        "path": "media/eiffel_snes.png"
+        "path": "media/eiffel_snes.png",
+        "thumb": "media/eiffel_snes.thumb.jpg"
       }
     ],
     "ok": true,

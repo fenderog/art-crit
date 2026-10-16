@@ -6,6 +6,7 @@ import re
 import shutil
 from datetime import datetime, timedelta, timezone
 
+from .kinds.media import add_thumbs, write_thumb
 from .util import CritError, effort_sort_key, title_from_slug
 
 
@@ -21,6 +22,20 @@ def _pick_thumb(runs):
         if run.get("thumb"):
             return run
     return None
+
+
+def backfill_thumbs(run_dir, run):
+    """Thumbnails for a run published before they existed (ADR-0029), made from its published files: a godot/web run's
+    full-size `thumb.png` becomes `thumb.jpg`, media items get `media/<stem>.thumb.jpg`. Nothing to do on a current
+    run. Returns whether run.json changed."""
+    before = json.dumps(run, sort_keys=True)
+    items = (run.get("output") or {}).get("items")
+    if items:
+        run["thumb"] = add_thumbs(run_dir, items)
+    elif run.get("thumb") == "thumb.png" and write_thumb(run_dir / "thumb.png", run_dir / "thumb.jpg"):
+        (run_dir / "thumb.png").unlink()
+        run["thumb"] = "thumb.jpg"
+    return json.dumps(run, sort_keys=True) != before
 
 
 def apply_ranking(page_dir, runs):
@@ -50,7 +65,10 @@ def rebuild(root):
             for run_dir in sorted(runs_dir.iterdir()):
                 rj = run_dir / "run.json"
                 if rj.is_file():
-                    runs.append(json.loads(rj.read_text()))
+                    run = json.loads(rj.read_text())
+                    if backfill_thumbs(run_dir, run):
+                        rj.write_text(json.dumps(run, indent=2) + "\n")
+                    runs.append(run)
         if not runs:
             shutil.rmtree(page_dir)
             continue

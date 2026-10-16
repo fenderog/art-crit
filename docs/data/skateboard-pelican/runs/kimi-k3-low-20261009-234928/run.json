@@ -31,7 +31,7 @@
     "tokens_reasoning": 2477,
     "tokens_cache_read": 73408
   },
-  "thumb": "media/pelican-skateboard.png",
+  "thumb": "media/pelican-skateboard.thumb.jpg",
   "output": {
     "kind": "media",
     "items": [
@@ -40,7 +40,8 @@
         "width": 1600,
         "height": 1000,
         "bytes": 611451,
-        "path": "media/pelican-skateboard.png"
+        "path": "media/pelican-skateboard.png",
+        "thumb": "media/pelican-skateboard.thumb.jpg"
       },
       {
         "type": "image",

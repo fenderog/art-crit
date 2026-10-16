@@ -33,7 +33,7 @@
         "tokens_reasoning": 457,
         "tokens_cache_read": 50952
       },
-      "thumb": "thumb.png",
+      "thumb": "thumb.jpg",
       "output": {
         "kind": "godot",
         "entry": "game/index.html",
@@ -91,7 +91,7 @@
         "tokens_reasoning": 3007,
         "tokens_cache_read": 83464
       },
-      "thumb": "thumb.png",
+      "thumb": "thumb.jpg",
       "output": {
         "kind": "godot",
         "entry": "game/index.html",
@@ -154,7 +154,7 @@
         "tokens_reasoning": 37357,
         "tokens_cache_read": 303744
       },
-      "thumb": "thumb.png",
+      "thumb": "thumb.jpg",
       "output": {
         "kind": "godot",
         "entry": "game/index.html",
@@ -215,7 +215,7 @@
         "tokens_reasoning": 6263,
         "tokens_cache_read": 219197
       },
-      "thumb": "thumb.png",
+      "thumb": "thumb.jpg",
       "output": {
         "kind": "godot",
         "entry": "game/index.html",
@@ -282,7 +282,7 @@
         "tokens_reasoning": 12247,
         "tokens_cache_read": 180480
       },
-      "thumb": "thumb.png",
+      "thumb": "thumb.jpg",
       "output": {
         "kind": "godot",
         "entry": "game/index.html",
@@ -337,7 +337,7 @@
         "tokens_reasoning": 28845,
         "tokens_cache_read": 218775
       },
-      "thumb": "thumb.png",
+      "thumb": "thumb.jpg",
       "output": {
         "kind": "godot",
         "entry": "game/index.html",
@@ -406,7 +406,7 @@
         "tokens_reasoning": 37140,
         "tokens_cache_read": 619694
       },
-      "thumb": "thumb.png",
+      "thumb": "thumb.jpg",
       "output": {
         "kind": "godot",
         "entry": "game/index.html",
@@ -471,7 +471,7 @@
         "tokens_reasoning": 99806,
         "tokens_cache_read": 1013824
       },
-      "thumb": "thumb.png",
+      "thumb": "thumb.jpg",
       "output": {
         "kind": "godot",
         "entry": "game/index.html",
@@ -530,7 +530,7 @@
         "tokens_reasoning": 11191,
         "tokens_cache_read": 262656
       },
-      "thumb": "thumb.png",
+      "thumb": "thumb.jpg",
       "output": {
         "kind": "godot",
         "entry": "game/index.html",
@@ -587,7 +587,7 @@
         "tokens_reasoning": 5150,
         "tokens_cache_read": 158208
       },
-      "thumb": "thumb.png",
+      "thumb": "thumb.jpg",
       "output": {
         "kind": "godot",
         "entry": "game/index.html",
@@ -646,7 +646,7 @@
         "tokens_reasoning": 59622,
         "tokens_cache_read": 2769536
       },
-      "thumb": "thumb.png",
+      "thumb": "thumb.jpg",
       "output": {
         "kind": "godot",
         "entry": "game/index.html",

@@ -201,7 +201,8 @@ def test_blender_run_publishes_model_and_render(run_root, tmp_path, monkeypatch)
     assert (run["output"]["ok"], run["output"]["verified"], run["output"]["error"]) == (True, True, None)
     by_path = {i["path"]: i for i in run["output"]["items"]}
     assert by_path["media/scene.glb"]["type"] == "model" and by_path["media/scene.glb"]["triangles"] == 1
-    assert run["thumb"] == "media/render.png"
+    assert run["thumb"] == "media/render.thumb.jpg" and by_path["media/render.png"]["thumb"] == "media/render.thumb.jpg"
+    assert "thumb" not in by_path["media/scene.glb"]
     run_dir = run_root / "docs/data/a-triangle/runs" / run["id"]
     assert (run_dir / "media/scene.glb").read_bytes()[:4] == b"glTF"
     # pi got the run's Blender as a project MCP server; that config is never published as source

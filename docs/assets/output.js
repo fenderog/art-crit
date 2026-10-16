@@ -65,24 +65,30 @@ export function buildGameFrame(entryUrl, thumbUrl) {
 // SVG included, is shown through <img> (which never runs them) and never inlined or framed.
 // Videos never autoplay: like games, they start on an explicit click. The recorded size goes on as width/height, so
 // a full-size gallery reserves the space and an SVG without its own size isn't drawn at the default 300×150.
-export function mediaElement(item, base, poster = null) {
-  if (item.type === "model") return modelElement(item, base, poster);
+// `compact` (a card) shows the item's thumbnail where it has one (`item.thumb`, an 800 px JPEG made at import,
+// ADR-0029) instead of the file itself; the run page's gallery always shows the file.
+export function mediaElement(item, base, poster = null, { compact = false } = {}) {
+  if (item.type === "model") return modelElement(item, base, poster, { compact });
   const size = { width: item.width ?? null, height: item.height ?? null };
   if (item.type === "video") {
+    const still = (compact && item.thumb) || item.poster;
     return el("video", {
-      attrs: { src: base + item.path, poster: item.poster ? base + item.poster : null, controls: "", preload: "none", playsinline: "", loop: "", ...size },
+      attrs: { src: base + item.path, poster: still ? base + still : null, controls: "", preload: "none", playsinline: "", loop: "", ...size },
     });
   }
-  return el("img", { attrs: { src: base + item.path, alt: "", loading: "lazy", ...size } });
+  return el("img", { attrs: { src: base + shown(item, compact), alt: "", loading: "lazy", ...size } });
 }
+
+// The file a card (`compact`) or the run page shows for an image item: its thumbnail, or the image itself.
+const shown = (item, compact) => (compact && item.thumb) || item.path;
 
 // A .glb (blender kind) as a click-to-view box: the run's first render (if any) behind a "View in 3D" button, replaced in
 // place by the interactive viewer (model.js) on click. Like games, nothing loads (three.js or the model) until then.
-export function modelElement(item, base, poster = null) {
+export function modelElement(item, base, poster = null, { compact = false } = {}) {
   const box = el("div", { class: "model-view" });
   const overlay = el("button", { class: "play-overlay", attrs: { type: "button", "aria-label": "View the 3D model" } },
     [el("span", { class: "play-icon", text: "\u29BF" }), el("span", { class: "play-label", text: "View in 3D" })]);
-  if (poster) overlay.style.backgroundImage = `url("${base + poster.path}")`;
+  if (poster) overlay.style.backgroundImage = `url("${base + shown(poster, compact)}")`;
   overlay.addEventListener("click", () => {
     const stage = el("div", { class: "model-stage" });
     box.replaceChildren(stage, el("p", { class: "model-hint", text: "drag to orbit · scroll to zoom · right-drag to pan" }));
@@ -132,7 +138,7 @@ export function mediaCard(items, base, href = null) {
   const box = el("div", { class: "media-box" });
   const poster = posterOf(items);
   const thumbs = items.length > 1 ? items.map((item, i) => {
-    const src = item.type === "video" ? item.poster : item.type === "model" ? poster?.path : item.path;
+    const src = item.type === "video" ? item.thumb || item.poster : item.type === "model" ? poster && shown(poster, true) : shown(item, true);
     const label = item.path.split("/").pop();
     return el("button", {
       class: item.type === "image" ? "media-thumb" : `media-thumb is-${item.type}`,
@@ -141,7 +147,7 @@ export function mediaCard(items, base, href = null) {
     }, [src ? el("img", { attrs: { src: base + src, alt: "", loading: "lazy" } }) : null]);
   }) : [];
   const show = (i) => {
-    const media = mediaElement(items[i], base, poster);
+    const media = mediaElement(items[i], base, poster, { compact: true });
     const hero = href && items[i].type === "image" ? el("a", { class: "media-link", attrs: { href, title: "Open the run" } }, [media]) : media;
     box.replaceChildren(...[hero, items.length > 1 ? el("span", { class: "media-count", text: mediaCount(items) }) : null].filter(Boolean));
     thumbs.forEach((t, j) => t.setAttribute("aria-current", String(j === i)));
