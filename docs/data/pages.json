@@ -3,7 +3,7 @@
     "slug": "ai-logo-company",
     "title": "AI Logo Company",
     "kind": "media",
-    "n_runs": 32,
+    "n_runs": 33,
     "models": [
       "anthropic/claude-haiku-5-5",
       "anthropic/claude-opus-5-5",
@@ -14,7 +14,7 @@
       "openai-codex/gpt-6-astra",
       "openai-codex/gpt-6.1-sol"
     ],
-    "updated": "2026-10-16T18:06:17Z",
+    "updated": "2026-10-16T18:07:06Z",
     "thumb": "data/ai-logo-company/runs/muse-wonder-full-1.0-mc-medium-20261016-105541/media/forma-logo-dark.svg"
   },
   {
