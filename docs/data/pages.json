@@ -3,14 +3,14 @@
     "slug": "3d-octopus-ramen-shop",
     "title": "3D Octopus Ramen Shop",
     "kind": "blender",
-    "n_runs": 15,
+    "n_runs": 16,
     "models": [
       "anthropic/claude-opus-5-5",
       "anthropic/claude-sonnet-5-5",
       "openai-codex/gpt-6-astra",
       "openai-codex/gpt-6.1-sol"
     ],
-    "updated": "2026-10-16T18:45:29Z",
+    "updated": "2026-10-16T18:45:39Z",
     "thumb": "data/3d-octopus-ramen-shop/runs/gpt-6-astra-xhigh-20261016-092538/media/chef-closeup.thumb.jpg"
   },
   {
