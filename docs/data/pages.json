@@ -3,14 +3,14 @@
     "slug": "robbie-the-banker-with-reference",
     "title": "Robbie the Banker with reference",
     "kind": "blender",
-    "n_runs": 12,
+    "n_runs": 13,
     "models": [
       "anthropic/claude-opus-5-5",
       "meta/muse-wonder-1.0",
       "openai/gpt-6-sol",
       "openai/gpt-6.1-sol"
     ],
-    "updated": "2026-10-16T00:29:02Z",
+    "updated": "2026-10-16T00:29:41Z",
     "thumb": "data/robbie-the-banker-with-reference/runs/muse-wonder-1.0-mc-max-20261015-172349/media/robie_front.png"
   },
   {
