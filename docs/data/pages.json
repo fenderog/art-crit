@@ -3,7 +3,7 @@
     "slug": "octopus-ramen-shop",
     "title": "Octopus ramen shop",
     "kind": "media",
-    "n_runs": 24,
+    "n_runs": 25,
     "models": [
       "anthropic/claude-haiku-5-5",
       "anthropic/claude-opus-5-5",
@@ -13,8 +13,8 @@
       "openai-codex/gpt-6-astra",
       "openai-codex/gpt-6.1-sol"
     ],
-    "updated": "2026-10-16T06:13:21Z",
-    "thumb": "data/octopus-ramen-shop/runs/muse-wonder-1.0-mc-medium-20261015-230204/media/octopus-ramen-chef.svg"
+    "updated": "2026-10-16T06:13:27Z",
+    "thumb": "data/octopus-ramen-shop/runs/muse-wonder-1.0-mc-high-20261015-230204/media/octopus-chef-ramen-booth.svg"
   },
   {
     "slug": "ceate-an-svg-of-an-awkward",
