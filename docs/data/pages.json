@@ -3,7 +3,7 @@
     "slug": "ai-logo-company",
     "title": "AI Logo Company",
     "kind": "media",
-    "n_runs": 16,
+    "n_runs": 17,
     "models": [
       "anthropic/claude-haiku-5-5",
       "anthropic/claude-opus-5-5",
@@ -12,8 +12,8 @@
       "openai-codex/gpt-6-astra",
       "openai-codex/gpt-6.1-sol"
     ],
-    "updated": "2026-10-16T17:59:33Z",
-    "thumb": "data/ai-logo-company/runs/muse-spark-1.3-mc-minimal-20261016-105541/media/logo-icon.svg"
+    "updated": "2026-10-16T17:59:48Z",
+    "thumb": "data/ai-logo-company/runs/muse-spark-1.3-mc-low-20261016-105541/media/loam-logo.thumb.jpg"
   },
   {
     "slug": "3d-octopus-ramen-shop",
