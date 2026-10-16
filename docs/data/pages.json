@@ -1,5 +1,17 @@
 [
   {
+    "slug": "3d-octopus-ramen-shop",
+    "title": "3D Octopus Ramen Shop",
+    "kind": "blender",
+    "n_runs": 8,
+    "models": [
+      "anthropic/claude-opus-5-5",
+      "anthropic/claude-sonnet-5-5"
+    ],
+    "updated": "2026-10-16T18:05:46Z",
+    "thumb": "data/3d-octopus-ramen-shop/runs/claude-sonnet-5-5-cc-xhigh-20261016-092538/media/01_front_view.thumb.jpg"
+  },
+  {
     "slug": "ai-logo-company",
     "title": "AI Logo Company",
     "kind": "media",
@@ -16,18 +28,6 @@
     ],
     "updated": "2026-10-16T18:05:46Z",
     "thumb": "data/ai-logo-company/runs/muse-wonder-full-1.0-mc-minimal-20261016-105541/media/01-merea-primary.svg"
-  },
-  {
-    "slug": "3d-octopus-ramen-shop",
-    "title": "3D Octopus Ramen Shop",
-    "kind": "blender",
-    "n_runs": 7,
-    "models": [
-      "anthropic/claude-opus-5-5",
-      "anthropic/claude-sonnet-5-5"
-    ],
-    "updated": "2026-10-16T17:28:05Z",
-    "thumb": "data/3d-octopus-ramen-shop/runs/claude-sonnet-5-5-cc-high-20261016-092538/media/ramen_octopus_closeup.thumb.jpg"
   },
   {
     "slug": "octopus-ramen-shop",
