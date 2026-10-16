@@ -3,11 +3,12 @@
     "slug": "ai-logo-company",
     "title": "AI Logo Company",
     "kind": "media",
-    "n_runs": 2,
+    "n_runs": 3,
     "models": [
+      "anthropic/claude-opus-5-5",
       "anthropic/claude-sonnet-5-5"
     ],
-    "updated": "2026-10-16T17:56:00Z",
+    "updated": "2026-10-16T17:56:01Z",
     "thumb": "data/ai-logo-company/runs/claude-sonnet-5-5-cc-medium-20261016-105541/media/logo.svg"
   },
   {
