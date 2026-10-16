@@ -3,7 +3,7 @@
     "slug": "ai-logo-company",
     "title": "AI Logo Company",
     "kind": "media",
-    "n_runs": 37,
+    "n_runs": 38,
     "models": [
       "anthropic/claude-haiku-5-5",
       "anthropic/claude-opus-5-5",
@@ -16,7 +16,7 @@
       "openai-codex/gpt-6.1-sol",
       "xai/grok-4.7"
     ],
-    "updated": "2026-10-16T18:15:13Z",
+    "updated": "2026-10-16T18:19:03Z",
     "thumb": "data/ai-logo-company/runs/gemini-3.8-flash-agy-low-20261016-105541/media/logo-brand-sheet.svg"
   },
   {
