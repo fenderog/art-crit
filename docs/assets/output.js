@@ -103,8 +103,9 @@ const posterOf = (items) => items.find((i) => i.type === "image") ?? null;
 
 // A run's media items as captioned figures (file name, size, duration) with download links.
 // Downloads use the `download` attribute so an SVG is saved, never opened as a page here. `full` (the run page) shows
-// them one below the other at their own size (never wider than the page) instead of in fixed 4:3 boxes.
-export function mediaGallery(items, base, { full = false } = {}) {
+// them one below the other at their own size (never wider than the page) instead of in fixed 4:3 boxes. `tools(item)`
+// returns extra nodes for an item's caption (the owner's local cover buttons).
+export function mediaGallery(items, base, { full = false, tools = null } = {}) {
   const grid = el("div", { class: full ? "media-grid is-full" : "media-grid" });
   for (const item of items || []) {
     const name = item.path.split("/").pop();
@@ -114,6 +115,7 @@ export function mediaGallery(items, base, { full = false } = {}) {
     const caption = el("figcaption", {}, [
       el("span", { text: [name, dims, dur, tris, fmtBytes(item.bytes)].filter(Boolean).join(" · ") }),
       el("a", { text: "download", attrs: { href: base + item.path, download: name } }),
+      ...(tools?.(item) ?? []),
     ]);
     const boxClass = item.type === "model" && full ? "media-full is-model" : full ? "media-full" : "media-box";
     grid.append(el("figure", { class: item.type === "model" ? "media-item is-model" : "media-item" }, [el("div", { class: boxClass }, [mediaElement(item, base, posterOf(items))]), caption]));
@@ -162,11 +164,11 @@ export function mediaCard(items, base, href = null) {
 // opening the row or the window); `frameClass` is the wrapper of an autoplaying frame. `compact` (cards)
 // shows media as one hero with a thumbnail strip instead of the full captioned gallery, its image linking to `href`;
 // `full` (the run page) shows the gallery at full size.
-export function renderOutput(run, base, { autoplay = false, frameClass = "game-frame", compact = false, href = null, full = false } = {}) {
+export function renderOutput(run, base, { autoplay = false, frameClass = "game-frame", compact = false, href = null, full = false, tools = null } = {}) {
   const out = run.output;
   const nodes = out?.error ? [el("p", { class: "run-error", text: out.error })] : [];
   if (!out?.ok) return [...nodes, el("p", { class: "msg", text: kindUi(run.kind).none })];
-  if (out.items) return [...nodes, compact ? mediaCard(out.items || [], base, href) : mediaGallery(out.items || [], base, { full })];
+  if (out.items) return [...nodes, compact ? mediaCard(out.items || [], base, href) : mediaGallery(out.items || [], base, { full, tools })];
   const entry = base + out.entry;
   return [...nodes, autoplay ? el("div", { class: frameClass }, [sandboxedGame(entry)]) : buildGameFrame(entry, run.thumb ? base + run.thumb : null)];
 }

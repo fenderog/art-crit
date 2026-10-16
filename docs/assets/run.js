@@ -1,6 +1,6 @@
 import { qs, el, loadPage, getJSON, getText, showMessage, badge } from "./dom.js";
 import { fmtNum, fmtDuration, fmtCost, fmtDate } from "./fmt.js";
-import { runDir, harnessLabel, stateBadge, effortPill, modelParts, rankBy, ordinal, LOWER_IS_BETTER, isComplete, rankChip, playUrl } from "./runs.js";
+import { runDir, harnessLabel, stateBadge, effortPill, modelParts, rankBy, ordinal, LOWER_IS_BETTER, isComplete, rankChip, playUrl, canEditCovers, saveCover } from "./runs.js";
 import { outputBadge, outputVerified, isPlayable, renderOutput, kindUi } from "./output.js";
 import { loadVotes, renderAuth, voteBar } from "./votes.js";
 import { setupAside } from "./aside.js";
@@ -12,6 +12,7 @@ const main = document.getElementById("main");
 setupAside();
 const [page, votes] = await Promise.all([loadPage(slug), loadVotes(slug)]);
 renderAuth(votes);
+const canCover = page ? await canEditCovers() : false;
 if (page) {
   const run = page.runs.find((r) => r.id === runId);
   if (!runId) showMessage(main, "Missing ?r=<run_id> in the URL.", "error");
@@ -140,10 +141,58 @@ function setupTabs() {
   open(fromHash || buttons[0]);
 }
 
+// Local only (`art-crit serve`): buttons that override this run's main thumbnail and the page's home-page picture, which
+// otherwise follow the default picks. Each is a toggle; the choice is saved to covers.json, so publish to share it.
+// `image` is a path inside the run (null = the run's own thumbnail); `item` is null for a game or page (one picture).
+function coverButtons(run, image, status) {
+  const isThumb = () => image != null && run.thumb === image;
+  const isPage = () => page.cover?.run === run.id && (page.cover.image ?? run.thumb) === (image ?? run.thumb);
+  const make = (label, current, save) => {
+    const b = el("button", { class: "cover-btn", text: label, attrs: { type: "button" } });
+    const sync = () => b.setAttribute("aria-pressed", String(current()));
+    sync();
+    b.addEventListener("click", async () => {
+      try {
+        await save(!current());
+        status.textContent = "Saved to covers.json: publish to share it.";
+        status.classList.remove("is-error");
+      } catch (err) {
+        status.textContent = `Could not save: ${err.message}`;
+        status.classList.add("is-error");
+      }
+      for (const other of document.querySelectorAll(".cover-btn")) other.dispatchEvent(new Event("sync"));
+    });
+    b.addEventListener("sync", sync);
+    return b;
+  };
+  const buttons = [];
+  if (image != null) {
+    buttons.push(make("Use as run thumbnail", isThumb, async (on) => {
+      await saveCover(slug, { thumb: { run: run.id, path: on ? image : null } });
+      run.thumb = on ? image : null; // cleared: the default one applies again after a reload
+    }));
+  }
+  buttons.push(make("Use as page cover", isPage, async (on) => {
+    await saveCover(slug, { page: on ? { run: run.id, ...(image != null ? { image } : {}) } : null });
+    page.cover = on ? { run: run.id, image: image ?? run.thumb } : undefined;
+  }));
+  return buttons;
+}
+
 function renderGame(run, base) {
   const panel = document.getElementById("panel-game");
   document.querySelector('#tabs button[data-tab="game"]').textContent = kindUi(run.kind).tab;
-  panel.append(...renderOutput(run, base, { full: true }));
+  const status = el("span", { class: "cover-status", attrs: { role: "status" } });
+  const itemImage = (item) => (item.type === "model" ? null : item.thumb || (item.type === "image" ? item.path : item.poster ?? null));
+  const tools = canCover ? (item) => {
+    const image = itemImage(item);
+    return image ? [el("span", { class: "cover-tools" }, coverButtons(run, image, status))] : [];
+  } : null;
+  panel.append(...renderOutput(run, base, { full: true, tools }));
+  if (canCover) {
+    // A game or page has one picture (its screenshot): only the page cover applies. Media runs get buttons per file.
+    panel.append(el("div", { class: "cover-bar" }, [...(run.output?.items ? [] : coverButtons(run, null, status)), status]));
+  }
   if (isPlayable(run)) {
     panel.append(
       el("div", { class: "game-links" }, [

@@ -92,7 +92,7 @@ if (pages.length) {
 // Each page's picture comes from one of its highest-effort runs that made its output (and has a cover picture: its thumbnail, or the one covers.json names), so the cover
 // shows a model at its best. Going down the list, a model (then a vendor) that already covers another page is avoided,
 // so the covers don't all come from the same model. Ties go to the page owner's rank, then model order. A page whose
-// data can't be read keeps the thumbnail from pages.json.
+// data can't be read keeps the thumbnail from pages.json. A page's `cover` (the owner's pick) wins over all of this.
 async function pickThumbs(pages) {
   const usedModel = new Map(), usedVendor = new Map();
   const level = (r) => EFFORTS.indexOf(r.effort); // -1 for an unknown effort: never above a known one
@@ -100,6 +100,13 @@ async function pickThumbs(pages) {
   pages.forEach((p, i) => {
     p.data = datas[i];
     const runs = (datas[i]?.runs || []).filter((r) => !isFailed(r) && coverOf(r));
+    // The owner's own pick for this page (covers.json, set through `art-crit serve`) replaces the default choice below.
+    const chosen = datas[i]?.cover && runs.find((r) => r.id === datas[i].cover.run);
+    if (chosen) {
+      p.pickedThumb = runDir(p.slug, chosen.id) + datas[i].cover.image;
+      p.pickedFrom = chosen;
+      return;
+    }
     if (!runs.length) return;
     const top = Math.max(...runs.map(level));
     const score = (r) => (usedModel.get(r.model) ?? 0) * 100 + (usedVendor.get(vendorOf(r.model)) ?? 0);

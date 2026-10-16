@@ -754,6 +754,14 @@ td.rank-cell .rank { font-size: 1.35rem; font-variant-numeric: tabular-nums; fon
   font: inherit; font-size: 13px; padding: 3px 4px; border: 1px solid var(--line-strong); border-radius: var(--r-sm);
   background: var(--surface); color: var(--ink); cursor: pointer;
 }
+/* Local-only cover overrides on the run page (run.js coverButtons) */
+.cover-tools { display: flex; gap: 6px; flex: none; }
+.cover-bar { margin-top: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.cover-btn { font: 600 12px var(--font); padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink-2); cursor: pointer; }
+.cover-btn:hover { border-color: var(--accent); color: var(--ink); }
+.cover-btn[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.cover-status { font-size: 12.5px; color: var(--ink-3); }
+.cover-status.is-error { color: var(--bad); }
 .rank-status { font-size: 12.5px; color: var(--ink-3); }
 .rank-status.is-error { color: var(--bad); }
 .rank-chip { font-size: 1rem; line-height: 1; }

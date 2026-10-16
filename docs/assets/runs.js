@@ -247,6 +247,25 @@ export async function saveRanks(slug, ranks) {
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`);
 }
 
+// Covers (the main thumbnail of a run, the home-page picture of a page) are likewise set only through `art-crit serve`:
+// body = {thumb: {run, path|null}} and/or {page: {run, image?}|null}. Overrides only; with none set the default picks apply.
+export async function canEditCovers() {
+  if (!["localhost", "127.0.0.1", "[::1]"].includes(location.hostname)) return false;
+  try {
+    const res = await fetch("api/local", { cache: "no-store" });
+    return res.ok && (await res.json()).cover === true;
+  } catch {
+    return false;
+  }
+}
+
+export async function saveCover(slug, body) {
+  const res = await fetch(`api/cover?p=${encodeURIComponent(slug)}`, {
+    method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`);
+}
+
 export function ordinal(n) {
   const s = ["th", "st", "nd", "rd"];
   const v = n % 100;
