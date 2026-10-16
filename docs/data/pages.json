@@ -1,5 +1,16 @@
 [
   {
+    "slug": "octopus-ramen-shop",
+    "title": "Octopus ramen shop",
+    "kind": "media",
+    "n_runs": 1,
+    "models": [
+      "anthropic/claude-sonnet-5-5"
+    ],
+    "updated": "2026-10-16T06:02:37Z",
+    "thumb": "data/octopus-ramen-shop/runs/claude-sonnet-5-5-cc-low-20261015-230204/media/octopus_ramen.svg"
+  },
+  {
     "slug": "ceate-an-svg-of-an-awkward",
     "title": "Awkward Robot Family",
     "kind": "media",
