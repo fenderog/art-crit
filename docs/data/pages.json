@@ -1,5 +1,16 @@
 [
   {
+    "slug": "ai-logo-company",
+    "title": "AI Logo Company",
+    "kind": "media",
+    "n_runs": 1,
+    "models": [
+      "anthropic/claude-sonnet-5-5"
+    ],
+    "updated": "2026-10-16T17:55:53Z",
+    "thumb": "data/ai-logo-company/runs/claude-sonnet-5-5-cc-low-20261016-105541/media/logo.svg"
+  },
+  {
     "slug": "3d-octopus-ramen-shop",
     "title": "3D Octopus Ramen Shop",
     "kind": "blender",
