@@ -2,27 +2,19 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self'; connect-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self'; connect-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>art-crit</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/lanes/lanes.css">
 </head>
-<body>
+<body class="v2">
 <header class="site-header">
   <a class="brand" href="index.html"><img src="assets/logo.svg" alt="art-crit" width="99" height="24"></a>
+  <a href="classic/index.html" id="current-link" class="v2-classic">classic view</a>
 </header>
-<main class="container">
-  <div class="hero">
-    <div class="eyebrow">A crit for LLMs</div>
-    <h1>Creative tasks for models, for you to <span class="hl-pill">judge</span></h1>
-    <p class="lede">Each page is one visual or spatial prompt, run by different models at different
-      reasoning-effort levels. Open one to judge their work side by side, with cost, time, tokens and the full agent transcript.</p>
-    <div class="hero-actions" id="hero-actions" hidden></div>
-  </div>
-  <section class="section requests" id="requests" aria-label="Requested prompts" hidden></section>
-  <div id="cards" class="card-grid"></div>
-</main>
-<script type="module" src="assets/home.js"></script>
+<main class="v2-wrap" id="main"></main>
+<script type="module" src="assets/lanes/index.js"></script>
 </body>
 </html>

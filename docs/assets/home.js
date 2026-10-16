@@ -26,7 +26,7 @@ function renderCard(p) {
   const date = updated && !Number.isNaN(updated.getTime())
     ? el("span", { text: updated.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }), attrs: { title: `updated ${updated.toLocaleString()}` } })
     : null;
-  return el("a", { class: "card", attrs: { href: `page.html?p=${encodeURIComponent(p.slug)}` } }, [
+  return el("a", { class: "card", attrs: { href: `classic/page.html?p=${encodeURIComponent(p.slug)}` } }, [
     el("div", { class: "card-media" }, [thumb, el("span", { class: "kind-chip", text: kindUi(p.kind).label, attrs: { "data-kind": p.kind } })]),
     el("div", { class: "card-body" }, [
       el("div", { class: "card-title", text: p.title }),

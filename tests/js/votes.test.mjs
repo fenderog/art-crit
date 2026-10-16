@@ -9,6 +9,7 @@ const RUNS = ["run-a", "run-b", "run-c"];
 const USERS = { alice: { id: 101, login: "alice" }, bob: { id: 202, login: "bob" }, carol: { id: 303, login: "carol" } };
 const env = () => ({ DB: memoryD1(), GITHUB_CLIENT_ID: "client-id", GITHUB_CLIENT_SECRET: "client-secret", SESSION_SECRET: "test-secret" });
 
+const issues = []; // every issue the Worker asked GitHub to open
 globalThis.fetch = async (url, options = {}) => {
   url = String(url);
   if (url === "https://art-crit.pages.dev/data/demo/page.json") return Response.json({ runs: RUNS.map((id) => ({ id })) });
@@ -21,6 +22,14 @@ globalThis.fetch = async (url, options = {}) => {
     return Response.json(body.code.startsWith("code-") ? { access_token: `token-${body.code.slice(5)}` } : { error: "bad_verification_code" });
   }
   if (url === "https://api.github.com/user") return Response.json(USERS[options.headers.Authorization.slice("Bearer token-".length)]);
+  if (url === "https://api.github.com/repos/fenderog/art-crit/issues") {
+    assert.equal(options.method, "POST");
+    assert.equal(options.headers.Authorization, "Bearer bot-token");
+    const issue = JSON.parse(options.body);
+    issues.push(issue);
+    if (issue.title.includes("make github fail")) return new Response("nope", { status: 500 });
+    return Response.json({ number: issues.length, html_url: `https://github.com/fenderog/art-crit/issues/${issues.length}` }, { status: 201 });
+  }
   throw new Error(`unexpected fetch ${url}`);
 };
 
@@ -277,4 +286,74 @@ test("voting is off until it is configured, and unknown routes are 404", async (
   assert.equal((await call({}, "/votes?p=demo")).status, 503);
   assert.equal((await call(env(), "/constructor")).status, 404);
   assert.equal((await call(env(), "/rank", { method: "PUT", body: {} })).status, 404);
+});
+
+// ---- prompt requests (adr/0029)
+const withBot = () => ({ ...env(), GITHUB_ISSUES_TOKEN: "bot-token" });
+const request = (e, cookie, body, opts = {}) => call(e, "/request", { method: "POST", cookie, body, ...opts });
+const PROMPT = "Draw a pelican riding a bicycle, as an SVG";
+
+test("a signed-in visitor's prompt request becomes a labeled issue, opened with the bot token", async () => {
+  const e = withBot();
+  const alice = await signIn(e, "alice");
+  const before = issues.length;
+  const res = await request(e, alice, { prompt: `  ${PROMPT}\nwith a @someone mention and \`\`\` fences  `, kind: "media", note: "watch the wheels" });
+  assert.equal(res.status, 201);
+  const { number, url } = await res.json();
+  assert.equal(url, `https://github.com/fenderog/art-crit/issues/${number}`);
+  assert.equal(issues.length, before + 1);
+  const issue = issues.at(-1);
+  assert.equal(issue.title, `Prompt request: ${PROMPT}`);
+  assert.deepEqual(issue.labels, ["prompt request"]);
+  assert.match(issue.body, /\*\*Kind:\*\* Vector \(`--kind media`\)/);
+  assert.match(issue.body, /`alice`/);
+  // the prompt and note are fenced (longer than any backtick run inside), so GitHub shows them verbatim
+  assert.match(issue.body, /````text\nDraw a pelican[\s\S]*fences\n````/);
+  assert.match(issue.body, /```text\nwatch the wheels\n```/);
+  assert.deepEqual(e.DB.sql("SELECT user_id, issue FROM prompt_requests").map((r) => ({ ...r })), [{ user_id: 101, issue: number }]);
+});
+
+test("prompt requests need a session, the site's origin, a real kind and a sensible prompt", async () => {
+  const e = withBot();
+  const alice = await signIn(e, "alice");
+  const before = issues.length;
+  assert.equal((await request(e, null, { prompt: PROMPT, kind: "media" })).status, 401);
+  assert.equal((await request(e, alice, { prompt: PROMPT, kind: "media" }, { origin: "https://evil.example" })).status, 403);
+  assert.equal((await request(e, alice, { prompt: PROMPT, kind: "media" }, { origin: null })).status, 403);
+  assert.equal((await request(e, alice, { prompt: PROMPT, kind: "pdf" })).status, 400);
+  assert.equal((await request(e, alice, { prompt: PROMPT, kind: "constructor" })).status, 400);
+  assert.equal((await request(e, alice, { prompt: "too short", kind: "media" })).status, 400);
+  assert.equal((await request(e, alice, { prompt: "x".repeat(4001), kind: "media" })).status, 400);
+  assert.equal((await request(e, alice, { prompt: PROMPT, kind: "media", note: "n".repeat(1001) })).status, 400);
+  assert.equal((await call(e, "/request", { method: "GET", cookie: alice })).status, 405);
+  assert.equal(issues.length, before);
+});
+
+test("prompt requests are capped per user and per day, and GitHub trouble is a clean error", async () => {
+  const e = withBot();
+  const alice = await signIn(e, "alice");
+  for (let i = 0; i < 5; i++) assert.equal((await request(e, alice, { prompt: `${PROMPT} #${i}`, kind: "godot" })).status, 201);
+  const sixth = await request(e, alice, { prompt: PROMPT, kind: "godot" });
+  assert.equal(sixth.status, 429);
+  const bob = await signIn(e, "bob");
+  assert.equal((await request(e, bob, { prompt: PROMPT, kind: "web" })).status, 201); // the cap is per user
+  e.DB.run("UPDATE prompt_requests SET at = at - 25 * 3600"); // a day later
+  assert.equal((await request(e, alice, { prompt: PROMPT, kind: "blender" })).status, 201);
+  // the site-wide cap
+  for (let i = 0; i < 50; i++) e.DB.run(`INSERT INTO prompt_requests (user_id, at, issue) VALUES (${900 + i}, ${Math.floor(Date.now() / 1000)}, 0)`);
+  assert.equal((await request(e, bob, { prompt: PROMPT, kind: "web" })).status, 429);
+
+  const f = withBot();
+  const carol = await signIn(f, "carol");
+  const failed = await request(f, carol, { prompt: "please make github fail for this one", kind: "media" });
+  assert.equal(failed.status, 502);
+  assert.match((await failed.json()).error, /GitHub/);
+  assert.deepEqual(f.DB.sql("SELECT * FROM prompt_requests"), []); // nothing counted when no issue was made
+});
+
+test("prompt requests are off until the bot token is configured", async () => {
+  const e = env();
+  const alice = await signIn(e, "alice");
+  const res = await request(e, alice, { prompt: PROMPT, kind: "media" });
+  assert.equal(res.status, 503);
 });

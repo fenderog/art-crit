@@ -15,7 +15,7 @@ renderAuth(votes);
 if (page) {
   const link = document.getElementById("page-link");
   link.textContent = page.title;
-  link.href = `page.html?p=${encodeURIComponent(slug)}`;
+  link.href = `classic/page.html?p=${encodeURIComponent(slug)}`;
   document.title = `Compare – ${page.title} – art-crit`;
   document.getElementById("title").textContent = page.title;
   if (page.prompt) {

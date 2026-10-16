@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self'; connect-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- The classic design, kept for a while after the lanes redesign (ADR-0029). URLs resolve from docs/, like before. -->
+<base href="../">
+<title>Page &ndash; art-crit</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="classic/index.html"><img src="assets/logo.svg" alt="art-crit" width="99" height="24"></a>
+  <span class="crumb">/ <a href="classic/index.html">prompts</a></span>
+</header>
+<main class="container page-container" id="main">
+  <div class="page-layout" id="page-layout" data-aside="open">
+    <aside class="page-aside" id="page-aside" aria-label="About this prompt">
+      <div class="aside-head">
+        <span class="aside-title">Details</span>
+        <button class="aside-close" id="aside-close" type="button" aria-label="Hide details" title="Hide details">&times;</button>
+      </div>
+      <div class="page-meta" id="page-meta"></div>
+      <section class="prompt-box" id="prompt-box" hidden>
+        <div class="prompt-label">Prompt</div>
+        <div class="prompt-text" id="prompt"></div>
+      </section>
+      <section class="refs-box" id="refs-box" hidden>
+        <div class="prompt-label">Reference</div>
+        <div class="refs-grid" id="refs"></div>
+      </section>
+      <details class="final-prompt" id="final-prompt-box" hidden>
+        <summary>Final prompt <span class="muted">&mdash; the full brief each run received</span></summary>
+        <div class="prompt-text" id="final-prompt"></div>
+      </details>
+      <div class="highlights" id="highlights" hidden></div>
+    </aside>
+    <div class="aside-backdrop" id="aside-backdrop"></div>
+
+    <section class="page-main" id="runs-section">
+      <div class="section-head">
+        <button class="aside-toggle" id="aside-toggle" type="button" aria-controls="page-aside" aria-expanded="true" aria-label="Details"></button>
+        <h1 id="title">Loading&hellip;</h1>
+        <span class="count" id="runs-count"></span>
+        <span class="spacer"></span>
+        <div class="view-toggle" role="group" aria-label="View">
+          <button type="button" class="chip" data-view="grid">Grid</button>
+          <button type="button" class="chip" data-view="table">Table</button>
+        </div>
+        <button id="play-all" class="btn" type="button" hidden title="Each game runs in its own sandbox and downloads its own copy of the engine (about 38 MB for Godot), so starting many at once downloads a lot.">&#9654; Play all</button>
+      </div>
+      <div class="filters" id="filters" role="group" aria-label="Filter runs" hidden></div>
+      <div id="grid" class="run-grid" hidden></div>
+      <div class="table-wrap" id="table-wrap">
+        <table class="runs" id="runs-table">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</main>
+<div class="select-bar" id="select-bar" role="region" aria-label="Selected runs" hidden>
+  <span id="select-count"></span>
+  <a id="compare-selected" class="btn" href="#">Compare</a>
+  <button id="select-clear" class="btn btn-secondary" type="button">Clear</button>
+</div>
+<script type="module" src="assets/page.js"></script>
+</body>
+</html>

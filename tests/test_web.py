@@ -33,6 +33,7 @@ def site(tmp_path_factory):
     root = tmp_path_factory.mktemp("site")
     for f in REPO.glob("docs/*.html"):
         shutil.copy(f, root / f.name)
+    shutil.copytree(REPO / "docs/classic", root / "classic")
     shutil.copytree(REPO / "docs/assets", root / "assets")
     shutil.copytree(FIXTURE_DATA, root / "data")
 
@@ -102,7 +103,7 @@ ART_HIGH_ID = "model-x-high-20260102-000000"
 
 # ---------------------------------------------------------------- home page
 def test_home_lists_page(site, page):
-    page.goto(site)
+    page.goto(site + "classic/index.html")
     page.wait_for_selector(".card")
     cards = page.locator(".card")
     assert cards.count() == 2
@@ -115,7 +116,7 @@ def test_home_lists_page(site, page):
 
 
 def test_request_a_prompt_is_local_only(site, page):
-    page.goto(site)  # the published site has no api/requests: no button, no list
+    page.goto(site + "classic/index.html")  # the published site has no api/requests: no button, no list
     page.wait_for_selector(".card")
     assert page.locator("#request-open").count() == 0 and page.locator("#requests").is_hidden()
     assert_no_errors(page)
@@ -138,7 +139,7 @@ def test_request_a_prompt_saves_and_lists_it_with_its_run_command(site, page):
         route.fallback()
 
     page.route("**/api/**", api)
-    page.goto(site)
+    page.goto(site + "classic/index.html")
     page.locator("#request-open").click()
     dialog = page.locator(".request-dialog")
     assert dialog.is_visible()
@@ -157,7 +158,7 @@ def test_request_a_prompt_saves_and_lists_it_with_its_run_command(site, page):
 
 # ---------------------------------------------------------------- page.html
 def test_page_table_and_sorting(site, page):
-    page.goto(f"{site}page.html?p=demo&view=table")
+    page.goto(f"{site}classic/page.html?p=demo&view=table")
     page.wait_for_selector("table.runs tbody tr")
     rows = page.locator("table.runs tbody tr")
     assert rows.count() == 3
@@ -181,10 +182,10 @@ def test_muse_api_estimates_are_marked_in_all_views(site, page):
         route.fulfill(json=body)
 
     page.route("**/data/demo/page.json*", estimate)
-    page.goto(f"{site}page.html?p=demo&view=table")
+    page.goto(f"{site}classic/page.html?p=demo&view=table")
     page.wait_for_selector("table.runs tbody tr")
     assert "≈$0.000042" in page.locator('td[data-col="cost_usd"]').first.inner_text()
-    page.goto(f"{site}compare.html?p=demo")
+    page.goto(f"{site}classic/compare.html?p=demo")
     page.wait_for_selector(".compare-col")
     assert "≈$0.000042" in page.locator(".compare-metrics").first.inner_text()
     page.goto(f"{site}run.html?p=demo&r={LOW_ID}")
@@ -194,7 +195,7 @@ def test_muse_api_estimates_are_marked_in_all_views(site, page):
 
 
 def test_clicking_a_row_expands_the_game_inline(site, page):
-    page.goto(f"{site}page.html?p=demo&view=table")
+    page.goto(f"{site}classic/page.html?p=demo&view=table")
     page.wait_for_selector("table.runs tbody tr.run-row")
     assert page.locator("iframe").count() == 0
 
@@ -223,7 +224,7 @@ def test_clicking_a_row_expands_the_game_inline(site, page):
 
 def test_page_harness_column_and_failed_badge(site, page):
     page.set_viewport_size({"width": 1440, "height": 900})  # wide enough for every column beside the details sidebar
-    page.goto(f"{site}page.html?p=demo&view=table")
+    page.goto(f"{site}classic/page.html?p=demo&view=table")
     page.wait_for_selector("table.runs tbody tr")
     rows = page.locator("tr.run-row")
     row = lambda effort: rows.filter(has=page.locator("td", has_text=effort)).first
@@ -244,7 +245,7 @@ def test_page_harness_column_and_failed_badge(site, page):
 
 
 def test_page_shows_labeled_prompt(site, page):
-    page.goto(f"{site}page.html?p=demo&view=table")
+    page.goto(f"{site}classic/page.html?p=demo&view=table")
     page.wait_for_selector("#prompt-box:not([hidden])")
     assert page.locator("#prompt-box .prompt-label").inner_text().strip().lower() == "prompt"
     assert page.locator("#prompt").inner_text().startswith("build a tiny demo project")
@@ -258,7 +259,7 @@ def test_page_shows_labeled_prompt(site, page):
 
 
 def test_page_shows_reference_thumbnails(site, page):
-    page.goto(f"{site}page.html?p=demo")
+    page.goto(f"{site}classic/page.html?p=demo")
     page.wait_for_selector("#refs-box:not([hidden])")
     imgs = page.locator("#refs img")
     assert imgs.count() == 2  # any number of references, one thumbnail each
@@ -273,7 +274,7 @@ def test_page_shows_reference_thumbnails(site, page):
 
 def test_every_column_header_has_hover_help(site, page):
     page.set_viewport_size({"width": 1440, "height": 900})  # wide enough for every column beside the details sidebar
-    page.goto(f"{site}page.html?p=demo&view=table")
+    page.goto(f"{site}classic/page.html?p=demo&view=table")
     page.wait_for_selector("table.runs tbody tr")
     headers = page.locator("table.runs thead th")
     assert headers.count() == 13  # caret, thumb, 11 data columns
@@ -310,7 +311,7 @@ def test_runs_table_never_scrolls_horizontally(site, browser, width):
         route.fulfill(json=body)
 
     pg.route("**/data/demo/page.json*", long_name)
-    pg.goto(f"{site}page.html?p=demo&view=table")
+    pg.goto(f"{site}classic/page.html?p=demo&view=table")
     pg.wait_for_selector("table.runs tbody tr")
     assert pg.locator(".model-via").first.is_visible()
     m = pg.evaluate("""() => { const w = document.querySelector('.table-wrap');
@@ -325,7 +326,7 @@ def test_runs_table_never_scrolls_horizontally(site, browser, width):
 
 def test_unreported_zero_cost_is_never_the_cheapest(site, page):
     medium_exported(page, cost=0)  # medium reports no cost, as Agy and Muse do: only high has one, nothing to compare
-    page.goto(f"{site}page.html?p=demo&view=table")
+    page.goto(f"{site}classic/page.html?p=demo&view=table")
     page.wait_for_selector("table.runs tbody tr")
     hl = page.locator("#highlights")
     assert hl.locator(".hl", has_text="Cheapest").count() == 0
@@ -339,7 +340,7 @@ def test_page_details_sidebar_collapses_and_remembers(site, browser):
     (more table columns) and is remembered. Narrow: it is a drawer, closed until opened."""
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
     pg = ctx.new_page()
-    pg.goto(f"{site}page.html?p=demo&view=table")
+    pg.goto(f"{site}classic/page.html?p=demo&view=table")
     pg.wait_for_selector("table.runs tbody tr")
     aside, toggle = pg.locator("#page-aside"), pg.locator("#aside-toggle")
     assert aside.is_visible() and aside.locator("#prompt").is_visible() and aside.locator("#highlights").is_visible()
@@ -368,7 +369,7 @@ def test_page_details_sidebar_collapses_and_remembers(site, browser):
 
 
 def test_runs_table_has_run_time_and_no_output_tokens_column(site, page):
-    page.goto(f"{site}page.html?p=demo&view=table")
+    page.goto(f"{site}classic/page.html?p=demo&view=table")
     page.wait_for_selector("table.runs tbody tr")
     assert page.locator('th[data-key="tokens_output"]').count() == 0
     assert page.locator('td[data-col="tokens_output"]').count() == 0
@@ -379,7 +380,7 @@ def test_runs_table_has_run_time_and_no_output_tokens_column(site, page):
 
 
 def test_runs_table_shows_each_runs_image(site, page):
-    page.goto(f"{site}page.html?p=demo&view=table")
+    page.goto(f"{site}classic/page.html?p=demo&view=table")
     page.wait_for_selector("table.runs tbody tr")
     assert page.locator("#gallery").count() == 0  # images live in the table, no separate gallery
     thumbs = page.locator("table.runs img.row-thumb")
@@ -399,7 +400,7 @@ def test_runs_table_shows_each_runs_image(site, page):
 
 def test_page_orders_by_effort_and_highlights_best_completed_run(site, page):
     medium_exported(page)
-    page.goto(f"{site}page.html?p=demo&view=table")
+    page.goto(f"{site}classic/page.html?p=demo&view=table")
     page.wait_for_selector("table.runs tbody tr")
     efforts = lambda: page.locator("table.runs tbody tr td[data-col='effort']").all_inner_texts()
     assert efforts() == ["low", "medium", "high"]  # default: model, then effort low -> max (not alphabetical)
@@ -423,7 +424,7 @@ def test_page_orders_by_effort_and_highlights_best_completed_run(site, page):
 
 
 def test_runs_are_tinted_by_vendor(site, page):
-    for url, sel in ((f"{site}page.html?p=demo&view=table", "table.runs tbody tr.run-row"), (f"{site}compare.html?p=demo", ".compare-col")):
+    for url, sel in ((f"{site}classic/page.html?p=demo&view=table", "table.runs tbody tr.run-row"), (f"{site}classic/compare.html?p=demo", ".compare-col")):
         page.goto(url)
         page.wait_for_selector(sel)
         vendors = page.locator(sel).evaluate_all("els => els.map(e => [e.dataset.vendor, e.style.getPropertyValue('--vh')])")
@@ -444,7 +445,7 @@ def test_run_page_ranks_and_tabs(site, page):
 
 
 def test_page_defaults_to_the_grid_and_remembers_the_view(site, page):
-    page.goto(f"{site}page.html?p=demo")
+    page.goto(f"{site}classic/page.html?p=demo")
     page.wait_for_selector("#grid .compare-col")
     assert page.locator("#grid .compare-col").count() == 3
     assert page.locator("#table-wrap").is_hidden() and page.locator("iframe").count() == 0  # games wait for a click
@@ -459,20 +460,20 @@ def test_page_defaults_to_the_grid_and_remembers_the_view(site, page):
     page.locator('[data-view="table"]').click()
     assert "view=table" in page.url and page.locator("tr.run-row").count() == 3
     assert page.locator("#grid").is_hidden() and play_all.is_hidden()
-    page.goto(f"{site}page.html?p=demo")  # remembered in localStorage
+    page.goto(f"{site}classic/page.html?p=demo")  # remembered in localStorage
     page.wait_for_selector("tr.run-row")
     assert page.locator("#grid").is_hidden() and page.locator('[data-view="table"]').get_attribute("aria-pressed") == "true"
-    page.goto(f"{site}page.html?p=demo&view=grid")  # the URL wins
+    page.goto(f"{site}classic/page.html?p=demo&view=grid")  # the URL wins
     page.wait_for_selector("#grid .compare-col")
     assert page.locator("#table-wrap").is_hidden()
-    page.goto(f"{site}page.html?p=art&view=grid")  # media pages have nothing to play
+    page.goto(f"{site}classic/page.html?p=art&view=grid")  # media pages have nothing to play
     page.wait_for_selector("#grid .compare-col")
     assert page.locator("#play-all").is_hidden()
     assert_no_errors(page)
 
 
 def test_grid_orders_by_rank_and_tints_by_vendor(site, page):
-    page.goto(f"{site}page.html?p=art")
+    page.goto(f"{site}classic/page.html?p=art")
     page.wait_for_selector("#grid .compare-col")
     first = page.locator("#grid .compare-col").first
     assert first.locator(".rank-chip").inner_text() == "🥇" and "high" in first.inner_text()
@@ -481,7 +482,7 @@ def test_grid_orders_by_rank_and_tints_by_vendor(site, page):
 
 
 def test_filter_runs_is_a_pure_helper(site, page):
-    page.goto(f"{site}page.html?p=demo")
+    page.goto(f"{site}classic/page.html?p=demo")
     page.wait_for_selector("#grid .compare-col")
     res = page.evaluate("""async () => {
       const { filterRuns } = await import("./assets/runs.js");
@@ -496,7 +497,7 @@ def test_filter_runs_is_a_pure_helper(site, page):
 
 def test_filter_bar_narrows_grid_and_table_and_lives_in_the_url(site, page):
     many_runs(page, 6)  # r0..r5: even = openai (low, high, medium...), odd = anthropic
-    page.goto(f"{site}page.html?p=demo")
+    page.goto(f"{site}classic/page.html?p=demo")
     page.wait_for_selector("#grid .compare-col")
     assert page.locator("#grid .compare-col").count() == 6 and page.locator(".vendor-group").count() == 0  # few runs: flat
     assert page.locator("#runs-count").inner_text() == "6 runs"
@@ -523,7 +524,7 @@ def test_filter_bar_narrows_grid_and_table_and_lives_in_the_url(site, page):
 
 
 def test_verified_and_failed_toggles_and_empty_result(site, page):
-    page.goto(f"{site}page.html?p=demo&view=table")
+    page.goto(f"{site}classic/page.html?p=demo&view=table")
     page.wait_for_selector("tr.run-row")
     assert page.locator("#filters .filter-chip").count() == 3  # one vendor and one model: only the effort chips
     page.get_by_label("Hide failed").check()  # low (agent failed) and medium (export failed) have nothing to show
@@ -532,14 +533,14 @@ def test_verified_and_failed_toggles_and_empty_result(site, page):
     page.get_by_label("Verified only").check()
     assert page.locator("tr.run-row").count() == 1 and "verified=1" in page.url
     assert page.locator("td.is-best").count() == 0  # a single run isn't compared with anything
-    page.goto(f"{site}page.html?p=demo&view=grid&vendor=nobody")
+    page.goto(f"{site}classic/page.html?p=demo&view=grid&vendor=nobody")
     page.wait_for_selector("#grid .msg")
     assert "No runs match" in page.locator("#grid").inner_text()
     assert_no_errors(page)
 
 
 def test_selecting_runs_shows_a_bar_that_compares_them(site, page):
-    page.goto(f"{site}page.html?p=demo")
+    page.goto(f"{site}classic/page.html?p=demo")
     page.wait_for_selector("#grid .compare-col")
     bar = page.locator("#select-bar")
     assert bar.is_hidden()
@@ -549,7 +550,7 @@ def test_selecting_runs_shows_a_bar_that_compares_them(site, page):
     boxes.nth(2).check()  # high
     assert bar.is_visible() and "2 selected" in bar.inner_text()
     link = page.locator("#compare-selected")
-    assert link.get_attribute("href") == f"compare.html?p=demo&r={LOW_ID},{HIGH_ID}"
+    assert link.get_attribute("href") == f"classic/compare.html?p=demo&r={LOW_ID},{HIGH_ID}"
 
     page.locator('[data-view="table"]').click()  # survives the other view...
     ticked = page.locator("tr.run-row input.run-select").evaluate_all("els => els.map(e => e.checked)")
@@ -570,19 +571,19 @@ def test_selecting_runs_shows_a_bar_that_compares_them(site, page):
     with page.expect_navigation():
         page.locator("#compare-selected").click()
     page.wait_for_selector(".compare-col")
-    assert page.url.endswith(f"compare.html?p=demo&r={MEDIUM_ID},{HIGH_ID}")
+    assert page.url.endswith(f"classic/compare.html?p=demo&r={MEDIUM_ID},{HIGH_ID}")
     assert page.locator(".compare-col").count() == 2 and page.locator(".vendor-group").count() == 0
     assert_no_errors(page)
 
 
 def test_page_missing_param_shows_message(site, page):
-    page.goto(f"{site}page.html")
+    page.goto(f"{site}classic/page.html")
     page.wait_for_selector(".msg")
     assert "p=" in page.locator(".msg").inner_text() or "slug" in page.locator(".msg").inner_text().lower()
 
 
 def test_page_invalid_slug_shows_message(site, page):
-    page.goto(f"{site}page.html?p=does-not-exist")
+    page.goto(f"{site}classic/page.html?p=does-not-exist")
     page.wait_for_selector(".msg-error")
     assert not page.locator("table.runs tbody tr").count()
     assert not page._page_errors
@@ -626,7 +627,7 @@ def test_run_whose_export_failed_is_a_finished_agent_run_without_a_build(site, p
 
 
 def test_page_shows_export_failed_as_a_badge_and_keeps_it_out_of_the_highlights(site, page):
-    page.goto(f"{site}page.html?p=demo&view=table")
+    page.goto(f"{site}classic/page.html?p=demo&view=table")
     page.wait_for_selector("table.runs tbody tr")
     row = page.locator("tr.run-row").filter(has=page.locator("td", has_text="medium")).first
     assert row.locator('td[data-col="verified"] .badge-bad').inner_text() == "export failed"
@@ -738,7 +739,7 @@ def test_run_invalid_run_id_shows_message(site, page):
 
 # ---------------------------------------------------------------- compare.html
 def test_compare_shows_metrics_and_games_only(site, page):
-    page.goto(f"{site}compare.html?p=demo")
+    page.goto(f"{site}classic/compare.html?p=demo")
     page.wait_for_selector(".compare-col")
     cols = page.locator(".compare-col")
     assert cols.count() == 3
@@ -761,7 +762,7 @@ def test_compare_shows_metrics_and_games_only(site, page):
 
 
 def test_compare_shows_harness_in_metrics_line(site, page):
-    page.goto(f"{site}compare.html?p=demo")
+    page.goto(f"{site}classic/compare.html?p=demo")
     page.wait_for_selector(".compare-col")
     cols = page.locator(".compare-col")
     for i in range(3):
@@ -775,7 +776,7 @@ def test_compare_shows_harness_in_metrics_line(site, page):
 
 
 def test_compare_popout_opens_sandboxed_play_window(site, page):
-    page.goto(f"{site}compare.html?p=demo")
+    page.goto(f"{site}classic/compare.html?p=demo")
     page.wait_for_selector(".compare-col")
     # only the run with a game gets the button (the other two have nothing to show)
     assert page.locator(".compare-col a.popout").count() == 1
@@ -820,7 +821,7 @@ def test_play_bad_params_show_messages(site, page):
 
 
 def test_compare_play_all_starts_every_game(site, page):
-    page.goto(f"{site}compare.html?p=demo")
+    page.goto(f"{site}classic/compare.html?p=demo")
     page.wait_for_selector(".compare-col")
     btn = page.locator("#play-all")
     assert btn.is_enabled() and page.locator("iframe").count() == 0
@@ -829,14 +830,14 @@ def test_compare_play_all_starts_every_game(site, page):
     assert page.locator("iframe").count() == 1
     assert btn.is_disabled()  # nothing left to play
 
-    page.goto(f"{site}compare.html?p=demo&r={LOW_ID}")  # no games at all
+    page.goto(f"{site}classic/compare.html?p=demo&r={LOW_ID}")  # no games at all
     page.wait_for_selector(".compare-col")
     assert page.locator("#play-all").is_disabled()
     assert_no_errors(page)
 
 
 def test_compare_can_be_limited_to_listed_runs(site, page):
-    page.goto(f"{site}compare.html?p=demo&r={MEDIUM_ID},{HIGH_ID}")
+    page.goto(f"{site}classic/compare.html?p=demo&r={MEDIUM_ID},{HIGH_ID}")
     page.wait_for_selector(".compare-col")
     assert page.locator(".compare-col").count() == 2
     assert_no_errors(page)
@@ -844,7 +845,7 @@ def test_compare_can_be_limited_to_listed_runs(site, page):
 
 # ---------------------------------------------------------------- media pages (kind "media")
 def test_media_table_shows_file_count_and_expands_outputs(site, page):
-    page.goto(f"{site}page.html?p=art&view=table")
+    page.goto(f"{site}classic/page.html?p=art&view=table")
     page.wait_for_selector("tr.run-row")
     assert page.locator("#gallery").count() == 0  # the grid replaced the old gallery
     rows = page.locator("tr.run-row")
@@ -861,7 +862,7 @@ def test_media_table_shows_file_count_and_expands_outputs(site, page):
 
 
 def test_media_card_has_badge_hero_and_swappable_strip(site, page):
-    page.goto(f"{site}page.html?p=art")
+    page.goto(f"{site}classic/page.html?p=art")
     page.wait_for_selector(".compare-col")
     card = page.locator(".compare-col").filter(has_text="high")
     assert card.locator(".media-count").inner_text() == "3 files · 1 video"
@@ -923,7 +924,7 @@ def test_media_run_without_output_says_so(site, page):
 
 
 def test_media_compare_shows_outputs_and_no_play_all(site, page):
-    page.goto(f"{site}compare.html?p=art")
+    page.goto(f"{site}classic/compare.html?p=art")
     page.wait_for_selector(".compare-col")
     assert page.locator(".compare-col").count() == 2
     assert page.locator(".compare-col .media-box").count() == 1 and page.locator(".compare-col .media-thumb").count() == 3
@@ -934,7 +935,7 @@ def test_media_compare_shows_outputs_and_no_play_all(site, page):
 
 
 def test_group_by_vendor_orders_groups_by_best_rank(site, page):
-    page.goto(f"{site}compare.html?p=demo")
+    page.goto(f"{site}classic/compare.html?p=demo")
     page.wait_for_selector(".compare-col")
     res = page.evaluate("""async () => {
       const { groupByVendor } = await import("./assets/runs.js");
@@ -964,14 +965,14 @@ def many_runs(page, n):
 
 def test_compare_with_few_runs_is_flat_equal_columns(site, page):
     many_runs(page, 4)  # two vendors, but 4 runs: no grouping
-    page.goto(f"{site}compare.html?p=demo")
+    page.goto(f"{site}classic/compare.html?p=demo")
     page.wait_for_selector(".compare-col")
     assert page.locator(".vendor-group").count() == 0
     boxes = [page.locator(".compare-col").nth(i).bounding_box() for i in range(4)]
     assert len({round(b["y"]) for b in boxes}) == 1 and len({round(b["width"]) for b in boxes}) == 1
     columns = page.locator(".compare-columns").bounding_box()
     assert boxes[3]["x"] + boxes[3]["width"] >= columns["x"] + columns["width"] - 1  # fills the page
-    page.goto(f"{site}compare.html?p=demo&r=r1")  # no grouping for a single run either
+    page.goto(f"{site}classic/compare.html?p=demo&r=r1")  # no grouping for a single run either
     page.wait_for_selector(".compare-col")
     assert page.locator(".vendor-group, .vendor-head").count() == 0
     assert_no_errors(page)
@@ -979,7 +980,7 @@ def test_compare_with_few_runs_is_flat_equal_columns(site, page):
 
 def test_compare_groups_five_or_more_runs_by_vendor(site, page):
     many_runs(page, 6)
-    page.goto(f"{site}compare.html?p=demo")
+    page.goto(f"{site}classic/compare.html?p=demo")
     page.wait_for_selector(".compare-col")
     assert page.locator(".vendor-group").count() == 2
     assert page.locator(".vendor-head").first.inner_text().split()[0].lower() in ("anthropic", "openai")
@@ -990,7 +991,7 @@ def test_compare_groups_five_or_more_runs_by_vendor(site, page):
 
 def test_compare_lays_runs_out_in_a_wrapping_grid(site, page):
     page.set_viewport_size({"width": 1280, "height": 900})
-    page.goto(f"{site}compare.html?p=demo")
+    page.goto(f"{site}classic/compare.html?p=demo")
     page.wait_for_selector(".compare-col")
     boxes = [page.locator(".compare-col").nth(i).bounding_box() for i in range(3)]
     assert len({round(b["y"]) for b in boxes}) == 1  # wide: 3 side by side, equal widths
@@ -1007,16 +1008,16 @@ def test_compare_lays_runs_out_in_a_wrapping_grid(site, page):
 
 # ---------------------------------------------------------------- your ranking
 def test_ranking_is_shown_read_only_on_the_published_site(site, page):
-    page.goto(f"{site}page.html?p=art&view=table")
+    page.goto(f"{site}classic/page.html?p=art&view=table")
     page.wait_for_selector("tr.run-row")
     assert page.locator('th[data-key="rank"]').get_attribute("aria-sort") == "ascending"  # ranked: default sort
     first = page.locator("tr.run-row").first
     assert first.locator('td[data-col="rank"]').inner_text() == "🥇" and "high" in first.inner_text()
     assert page.locator(".rank-select").count() == 0 and page.locator("#rank-status").count() == 0
-    page.goto(f"{site}page.html?p=art")  # the grid too: ranked first
+    page.goto(f"{site}classic/page.html?p=art")  # the grid too: ranked first
     page.wait_for_selector(".compare-col")
     assert page.locator(".compare-col").first.locator(".rank-chip").inner_text() == "🥇"
-    page.goto(f"{site}compare.html?p=art")
+    page.goto(f"{site}classic/compare.html?p=art")
     page.wait_for_selector(".compare-col")
     assert page.locator(".compare-col").first.locator(".rank-chip").inner_text() == "🥇"
     page.goto(f"{site}run.html?p=art&r={ART_HIGH_ID}")
@@ -1033,6 +1034,7 @@ def bench_served(tmp_path):
     docs.mkdir()
     for f in REPO.glob("docs/*.html"):
         shutil.copy(f, docs / f.name)
+    shutil.copytree(REPO / "docs/classic", docs / "classic")
     shutil.copytree(REPO / "docs/assets", docs / "assets")
     shutil.copytree(FIXTURE_DATA, docs / "data")
     server = serve_in_thread(docs)
@@ -1046,7 +1048,7 @@ def test_ranking_can_be_edited_through_bench_serve(bench_served, page):
     import re
 
     docs, base = bench_served
-    page.goto(f"{base}page.html?p=demo&view=table")
+    page.goto(f"{base}classic/page.html?p=demo&view=table")
     page.wait_for_selector(".rank-select")
     assert page.locator(".rank-select").count() == 3
     assert "publish" in page.locator("#rank-status").inner_text()
@@ -1139,7 +1141,7 @@ def medal(page, run_id, name):
 
 
 def test_no_vote_controls_where_there_is_no_vote_api(site, page):
-    for view in ("page.html?p=demo", "page.html?p=demo&view=table", "compare.html?p=demo", f"run.html?p=demo&r={HIGH_ID}"):
+    for view in ("classic/page.html?p=demo", "classic/page.html?p=demo&view=table", "classic/compare.html?p=demo", f"run.html?p=demo&r={HIGH_ID}"):
         page.goto(site + view)
         page.wait_for_selector("h1")
         page.wait_for_load_state("networkidle")
@@ -1149,7 +1151,7 @@ def test_no_vote_controls_where_there_is_no_vote_api(site, page):
 
 def test_signed_out_visitors_see_totals_and_sign_in_to_vote(site, page):
     vote_api(page, others={HIGH_ID: {"hearts": 7, "gold": 2}})
-    page.goto(f"{site}page.html?p=demo")
+    page.goto(f"{site}classic/page.html?p=demo")
     expect(card(page, HIGH_ID).locator(".votes-label")).to_have_text("Community votes")
     expect(heart(page, HIGH_ID).locator(".vote-n")).to_have_text("7")
     expect(medal(page, HIGH_ID, "gold").locator(".vote-n")).to_have_text("2")
@@ -1158,7 +1160,7 @@ def test_signed_out_visitors_see_totals_and_sign_in_to_vote(site, page):
 
     heart(page, HIGH_ID).click()  # goes to GitHub and comes back to this very page, signed in
     expect(page.locator(".auth")).to_contain_text("@alice")
-    assert page.url == f"{site}page.html?p=demo"
+    assert page.url == f"{site}classic/page.html?p=demo"
     expect(heart(page, HIGH_ID)).to_have_attribute("aria-pressed", "false")  # that click only signed in
     heart(page, HIGH_ID).click()
     expect(heart(page, HIGH_ID)).to_have_attribute("aria-pressed", "true")
@@ -1169,7 +1171,7 @@ def test_signed_out_visitors_see_totals_and_sign_in_to_vote(site, page):
 
 def test_hearts_toggle_and_a_user_can_heart_several_results(site, page):
     vote_api(page, signed_in=True)
-    page.goto(f"{site}page.html?p=demo")
+    page.goto(f"{site}classic/page.html?p=demo")
     for run_id in (LOW_ID, HIGH_ID):
         heart(page, run_id).click()
         expect(heart(page, run_id)).to_have_attribute("aria-pressed", "true")
@@ -1183,7 +1185,7 @@ def test_hearts_toggle_and_a_user_can_heart_several_results(site, page):
 
 def test_medals_move_between_results_and_can_be_taken_back(site, page):
     vote_api(page, signed_in=True)
-    page.goto(f"{site}page.html?p=demo")
+    page.goto(f"{site}classic/page.html?p=demo")
     medal(page, LOW_ID, "gold").click()
     expect(medal(page, LOW_ID, "gold")).to_have_attribute("aria-pressed", "true")
     medal(page, HIGH_ID, "gold").click()  # gold moves: a user has only one
@@ -1204,7 +1206,7 @@ def test_medals_move_between_results_and_can_be_taken_back(site, page):
 
 def test_vote_rows_line_up_across_a_row_of_cards(site, page):
     vote_api(page)
-    page.goto(f"{site}page.html?p=demo")
+    page.goto(f"{site}classic/page.html?p=demo")
     expect(page.locator(".votes")).to_have_count(3)
     # a long harness name or big numbers wrap one card's metrics onto a second line; the vote rows must still align
     page.evaluate("() => document.querySelectorAll('.compare-metrics')[1].append(' · ' + 'a-longer-metric '.repeat(8))")
@@ -1215,12 +1217,12 @@ def test_vote_rows_line_up_across_a_row_of_cards(site, page):
 
 def test_votes_are_on_every_view_and_leave_the_owners_rank_alone(site, page):
     vote_api(page, signed_in=True)
-    page.goto(f"{site}compare.html?p=demo")
+    page.goto(f"{site}classic/compare.html?p=demo")
     expect(page.locator(".votes")).to_have_count(3)
     expect(page.locator(".auth")).to_have_count(1)
     page.goto(f"{site}run.html?p=demo&r={HIGH_ID}")
     expect(page.locator("#metric-strip .votes")).to_have_count(1)
-    page.goto(f"{site}page.html?p=demo&view=table")
+    page.goto(f"{site}classic/page.html?p=demo&view=table")
     page.wait_for_selector("tr.run-row")
     expect(page.locator(".votes")).to_have_count(0)  # the table keeps its columns; each row's bar is in its expanded detail
     row = page.locator("tr.run-row").first
@@ -1230,7 +1232,7 @@ def test_votes_are_on_every_view_and_leave_the_owners_rank_alone(site, page):
     expect(page.locator("tr.run-detail .vote-heart")).to_have_attribute("aria-pressed", "true")
     expect(row).to_have_attribute("aria-expanded", "true")  # voting didn't collapse the row
     # the owner's ranking is a different thing and keeps its own chip
-    page.goto(f"{site}page.html?p=art")
+    page.goto(f"{site}classic/page.html?p=art")
     expect(page.locator(".compare-col .votes").first).to_be_visible()
     assert page.locator(".compare-col").first.locator(".rank-chip").inner_text() == "🥇"
     assert_no_errors(page)
@@ -1238,7 +1240,7 @@ def test_votes_are_on_every_view_and_leave_the_owners_rank_alone(site, page):
 
 def test_a_failed_vote_says_why_and_an_ended_session_is_noticed(site, page):
     api = vote_api(page, signed_in=True)
-    page.goto(f"{site}page.html?p=demo")
+    page.goto(f"{site}classic/page.html?p=demo")
     api.fail = "no such run"
     heart(page, LOW_ID).click()
     expect(card(page, LOW_ID).locator(".vote-note")).to_have_text("not saved: no such run")
@@ -1251,7 +1253,7 @@ def test_a_failed_vote_says_why_and_an_ended_session_is_noticed(site, page):
 
 def test_signing_out(site, page):
     api = vote_api(page, signed_in=True)
-    page.goto(f"{site}page.html?p=demo")
+    page.goto(f"{site}classic/page.html?p=demo")
     expect(page.locator(".auth")).to_contain_text("@alice")
     page.locator(".auth button", has_text="Sign out").click()
     expect(page.locator(".auth")).to_have_text("Sign in with GitHub")
@@ -1270,7 +1272,7 @@ def test_run_title_has_no_stray_text_for_unranked_runs(site, page):
 
 
 def test_model_parts_split_off_a_pinned_openrouter_upstream(site, page):
-    page.goto(f"{site}index.html")
+    page.goto(f"{site}classic/index.html")
     parts = page.evaluate("""async () => {
       const { modelParts, modelLabel } = await import("./assets/runs.js");
       const label = modelLabel("openrouter/deepseek/deepseek-v4.1-flash@deepinfra/fp8");
@@ -1284,9 +1286,12 @@ def test_model_parts_split_off_a_pinned_openrouter_upstream(site, page):
 
 
 @pytest.mark.parametrize("view,selector", [
-    ("index.html", ".card"),
-    ("page.html?p=demo&view=table", "tr.run-row"),
-    ("compare.html?p=demo", ".compare-col"),
+    ("index.html", ".v2-tile"),
+    ("page.html?p=demo", ".v2-card"),
+    (f"compare.html?p=demo&r={LOW_ID},{HIGH_ID}", ".v2-col"),
+    ("classic/index.html", ".card"),
+    ("classic/page.html?p=demo&view=table", "tr.run-row"),
+    ("classic/compare.html?p=demo", ".compare-col"),
     (f"run.html?p=demo&r={HIGH_ID}#transcript", ".transcript .content-md"),
     (f"play.html?p=demo&r={HIGH_ID}", "iframe"),
 ])
@@ -1306,7 +1311,7 @@ def test_viewer_uses_only_local_resources(site, page, view, selector):
 
 @pytest.mark.parametrize("view", ["page", "run"])
 def test_fullscreen_links_use_sandboxed_play(site, page, view):
-    page.goto(site + (f"run.html?p=demo&r={HIGH_ID}" if view == "run" else "page.html?p=demo&view=table"))
+    page.goto(site + (f"run.html?p=demo&r={HIGH_ID}" if view == "run" else "classic/page.html?p=demo&view=table"))
     if view == "page":
         page.locator("tr.run-row").filter(has=page.locator("td[data-col=effort]", has_text="high")).locator("td[data-col=effort]").click()
     link = page.locator(".game-links a", has_text="Open full screen")
@@ -1323,7 +1328,7 @@ def test_fullscreen_links_use_sandboxed_play(site, page, view):
 
 
 def test_markdown_tokens_render_without_html_or_external_network(site, page):
-    page.goto(site)
+    page.goto(site + "classic/index.html")
     page.wait_for_selector(".card")
     source = '''# Heading
 
@@ -1381,8 +1386,10 @@ if a < b && c > d:
 
 
 @pytest.mark.parametrize("view,selector", [
-    ("page.html?p=demo&view=table", "tr.run-row"),
-    ("compare.html?p=demo", ".compare-col"),
+    ("page.html?p=demo", ".v2-card"),
+    (f"compare.html?p=demo&r={LOW_ID},{HIGH_ID}", ".v2-col"),
+    ("classic/page.html?p=demo&view=table", "tr.run-row"),
+    ("classic/compare.html?p=demo", ".compare-col"),
     (f"run.html?p=demo&r={HIGH_ID}", "#title .effort"),
     (f"play.html?p=demo&r={HIGH_ID}", "iframe"),
 ])
@@ -1435,7 +1442,7 @@ def test_blender_card_shows_render_until_the_model_is_opened(site, gl_page):
     blender_page(page)
     requests = []
     page.on("request", lambda r: requests.append(r.url))
-    page.goto(f"{site}page.html?p=sculpt&view=grid")
+    page.goto(f"{site}classic/page.html?p=sculpt&view=grid")
     card = page.locator(".compare-col")
     overlay = card.locator(".media-box .model-view .play-overlay")
     expect(overlay).to_contain_text("View in 3D")
@@ -1478,6 +1485,7 @@ def monitor_site(tmp_path):
     docs.mkdir(parents=True)
     for f in REPO.glob("docs/*.html"):
         shutil.copy(f, docs / f.name)
+    shutil.copytree(REPO / "docs/classic", docs / "classic")
     shutil.copytree(REPO / "docs/assets", docs / "assets")
     shutil.copytree(FIXTURE_DATA, docs / "data")
     runs = root / "art-crit-runs"
@@ -1499,7 +1507,7 @@ def test_monitor_is_local_only_on_the_static_site(site, page):
     page.goto(site + "monitor.html")
     expect(page.locator("#local-only")).to_contain_text("art-crit serve")
     assert page.locator("#main").is_hidden()
-    page.goto(site + "index.html")
+    page.goto(site + "classic/index.html")
     page.wait_for_selector(".card")
     assert page.locator(".site-header .monitor-crumb").count() == 0
     assert_no_errors(page)
@@ -1521,7 +1529,7 @@ def test_monitor_lists_a_running_run_with_live_metrics(monitor_site, page):
 
 
 def test_monitor_link_appears_on_the_local_home_page(monitor_site, page):
-    page.goto(monitor_site + "index.html")
+    page.goto(monitor_site + "classic/index.html")
     page.wait_for_selector(".card")
     link = page.locator(".site-header .monitor-crumb")
     expect(link).to_have_text("Runs (local)")
@@ -1548,4 +1556,107 @@ def test_run_sidebar_lists_allowed_and_used_tools(site, page):
     assert box.locator(".tool-chip.is-used").all_inner_texts() == ["bash3", "render2"]
     assert box.locator(".tool-chip.is-hidden").all_inner_texts() == ["screenshot"]
     assert "MCP · blender" in box.inner_text() and "read" in box.inner_text()
+    assert_no_errors(page)
+
+
+# ---------------------------------------------------------------- the lanes design (index/page/compare, ADR-0029)
+def test_lanes_home_lists_prompts_with_covers_and_kind_filters(site, page):
+    page.goto(site + "index.html")
+    tiles = page.locator(".v2-tile")
+    expect(tiles).to_have_count(2)
+    expect(page.locator(".v2-feature h2")).to_have_text("Art")
+    # a cover comes from the page's highest-effort run that made its output
+    assert ART_HIGH_ID in page.locator(".v2-feature-media img").first.get_attribute("src")
+    expect(page.locator(".v2-feature-prompt")).to_contain_text("draw a red circle")
+    pills = page.locator(".v2-section-head .v2-pill")
+    expect(pills).to_have_text([re.compile(r"All\s*2"), re.compile(r"Vector\s*1"), re.compile(r"Game\s*1")])
+    pills.nth(2).click()
+    expect(tiles).to_have_count(1)
+    expect(tiles.first).to_have_attribute("href", "page.html?p=demo")
+    expect(page.locator(".site-header .v2-classic")).to_have_attribute("href", "classic/index.html")
+    assert_no_errors(page)
+
+
+def test_lanes_request_opens_githubs_prefilled_form_without_the_api(site, page):
+    page.goto(site + "index.html")
+    page.evaluate("() => { window.open = (url) => { window.__opened = url; return null; }; }")
+    page.locator("#request-open").click()
+    dialog = page.locator(".request-dialog")
+    dialog.locator("textarea[name=prompt]").fill("Draw a pelican riding a bicycle @someone")
+    dialog.locator("label.kind-option", has_text="Game").click()
+    dialog.get_by_role("button", name="Open the request").click()
+    expect(dialog).to_contain_text("GitHub's new-issue form opened")
+    url = page.evaluate("() => window.__opened")
+    assert url.startswith("https://github.com/fenderog/art-crit/issues/new?")
+    from urllib.parse import parse_qs, urlparse
+    q = parse_qs(urlparse(url).query)
+    assert q["title"] == ["Prompt request: Draw a pelican riding a bicycle @someone"]
+    assert q["labels"] == ["prompt request"]
+    assert "```text\nDraw a pelican riding a bicycle @someone\n```" in q["body"][0]
+    assert "(`--kind godot`)" in q["body"][0]
+    assert_no_errors(page)
+
+
+def test_lanes_request_through_the_api_links_the_new_issue(site, page):
+    sent = []
+    def fulfill(route):
+        sent.append(route.request.post_data_json)
+        route.fulfill(status=201, content_type="application/json",
+                      body=json.dumps({"number": 7, "url": "https://github.com/fenderog/art-crit/issues/7"}))
+    page.route("**/api/request", fulfill)
+    page.goto(site + "index.html")
+    page.locator("#request-open").click()
+    dialog = page.locator(".request-dialog")
+    dialog.locator("textarea[name=prompt]").fill("A voxel lighthouse at dusk")
+    dialog.locator("textarea[name=note]").fill("watch the beam")
+    dialog.get_by_role("button", name="Open the request").click()
+    expect(dialog.locator("a")).to_have_attribute("href", "https://github.com/fenderog/art-crit/issues/7")
+    assert sent == [{"prompt": "A voxel lighthouse at dusk", "kind": "media", "note": "watch the beam"}]
+    assert_no_errors(page)
+
+
+def test_lanes_page_has_a_lane_per_model_sorting_and_a_compare_tray(site, page):
+    page.goto(site + "page.html?p=demo")
+    expect(page.locator(".v2-lane")).to_have_count(1)
+    cards = page.locator(".v2-card")
+    expect(cards).to_have_count(3)
+    expect(cards.locator(".v2-card-head .effort")).to_have_text(["low", "medium", "high"])
+    page.locator(".v2-sort").click()
+    expect(cards.locator(".v2-card-head .effort")).to_have_text(["high", "medium", "low"])
+    assert "sort=effort-desc" in page.url
+    expect(cards.first.locator(".votes-label")).to_have_text("Your vote:")  # inactive here: no vote API
+
+    tray = page.locator(".v2-tray")
+    assert tray.is_hidden()
+    page.locator(f'.v2-card input[data-id="{HIGH_ID}"]').check()
+    expect(tray).to_contain_text("pick at least one more")
+    page.locator(f'.v2-card input[data-id="{LOW_ID}"]').check()
+    expect(tray.locator(".v2-tray-item")).to_have_count(2)
+    go = tray.locator(".v2-tray-go")
+    expect(go).to_have_attribute("href", f"compare.html?p=demo&r={HIGH_ID},{LOW_ID}")
+    with page.expect_navigation():
+        go.click()
+    expect(page.locator(".v2-col")).to_have_count(2)
+    assert_no_errors(page)
+
+
+def test_lanes_card_media_opens_the_run(site, page):
+    page.goto(site + "page.html?p=art")
+    media = page.locator(f'.v2-card:has(input[data-id="{ART_HIGH_ID}"]) .v2-media')
+    expect(media.locator("video[controls]")).to_have_count(0)  # card videos show their poster, a click opens the run
+    box = media.bounding_box()
+    with page.expect_navigation():
+        page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 3)
+    assert page.url.endswith(f"run.html?p=art&r={ART_HIGH_ID}")
+
+
+def test_lanes_compare_needs_two_runs_and_marks_the_best(site, page):
+    page.goto(f"{site}compare.html?p=demo&r={HIGH_ID}")
+    expect(page.locator("h1")).to_have_text("Pick at least two runs to compare")
+    page.goto(f"{site}compare.html?p=demo&r={MEDIUM_ID},{HIGH_ID}")
+    cols = page.locator(".v2-col")
+    expect(cols).to_have_count(2)
+    expect(cols.first.locator(".v2-metric")).to_have_count(3)
+    expect(page.locator(".v2-back-btn")).to_have_attribute("href", "page.html?p=demo")
+    expect(page.locator(".site-header .v2-classic")).to_have_attribute("href", f"classic/compare.html?p=demo&r={MEDIUM_ID},{HIGH_ID}")
     assert_no_errors(page)

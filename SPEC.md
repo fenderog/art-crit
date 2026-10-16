@@ -16,7 +16,7 @@ tomllib, http.server, subprocess). The site is vanilla JS ES modules, with one p
 - **Run**: one model × effort level attempt at a page's task, kept in one directory (`<batch>/<run id>/`, see
   "Run directory"). `art-crit import` publishes it to the site.
 - **Kind**: what a page's runs produce. `godot` = a Godot project, published as a playable web build;
-  `media` = image and/or video files; `web` = a web page (HTML + ES modules + npm packages), published as one
+  `media` (shown as "Vector" in the UI) = image and/or video files; `web` = a web page (HTML + ES modules + npm packages), published as one
   self-contained `index.html` packaged with esbuild; `blender` = a `.glb` model and/or renders made in a Blender of
   the run's own through the official Blender MCP server, the model shown in an interactive 3D viewer. Every run of a
   page has the page's kind.
@@ -550,8 +550,23 @@ The page owner ranks runs in the browser; there is no CLI command for it. Only `
 
 ## Prompt requests
 
-Ideas for new pages, collected on the home page under `art-crit serve` only (ADR-0024). The published site has no
-`api/requests`, so it never shows the button or the list.
+Ideas for new pages (ADR-0029). The lanes home page (`index.html`) has a **Request a prompt** button in the top bar
+(`docs/assets/lanes/request.js`) that opens a modal form: prompt (10–4000 chars), kind (one of `KIND_UI`'s, shown by
+label), note (optional, ≤ 1000). Submitting posts `{prompt, kind, note}` to `POST api/request` (see Community votes):
+
+- `201 {"number", "url"}`: the form says which issue it became, linked (only a URL under the repo's issues is linked).
+- `401`: the draft goes to `sessionStorage`, the visitor signs in (`api/login?return=<this page>#request`), and the
+  form reopens with the draft on the way back.
+- `404`, `503`, a non-JSON answer or a network error (no request API: `art-crit serve`, a static host, a Worker not
+  yet configured): the form opens `https://github.com/fenderog/art-crit/issues/new` in a new tab with the same title,
+  body and label the Worker would use, for the visitor to submit there.
+- anything else: the API's `error` is shown under the form.
+
+The issue: title `Prompt request: <first line, ≤ 80 chars>`, label `prompt request`, body `**Kind:** <label>
+(`--kind <id>`)`, the prompt and the note each in a fenced `text` block longer than any backtick run inside them (so
+GitHub shows them verbatim: no mentions, links or Markdown), and the requester's login in code formatting.
+
+The older local list stays on the classic home page (`classic/index.html`, ADR-0024): under `art-crit serve` only,
 
 - `GET api/requests` → `{"requests": [...], "sets": [...]}` (`sets`: the names in art-crit.toml `[sets]`).
 - `PUT api/requests` with `{"add": {"prompt", "kind", "title"?, "note"?, "set"?}}` or `{"remove": "<id>"}` →
@@ -559,9 +574,10 @@ Ideas for new pages, collected on the home page under `art-crit serve` only (ADR
   `note` ≤ 1000, `set` a name from `[sets]`; text is trimmed and empty optional fields are dropped. Each request gets
   an `id` (8 hex chars) and `created` (UTC). Errors are `400 {"error": ...}`; same write checks as the ranking API.
 - Stored in `requests.json` next to `docs/` (gitignored), never under `docs/`, so no publish step can push it.
-- The viewer (`requests.js`) shows a "Request a prompt" button in the hero that opens a modal form (prompt, kind,
+- `requests.js` shows a "Request a prompt" button in the classic hero that opens a modal form (prompt, kind,
   title, model set, note, and a live preview of the command), and a "Requested prompts" list, newest first, each
   card with its `uv run art-crit run -k KIND [-t TITLE] [-s SET] 'PROMPT'` command (POSIX-quoted), Copy and Remove.
+
 - `rebuild` copies each run's rank into `page.json.runs` (`rank`, `null` when unranked) and drops `ranking.json` entries
   for runs that no longer exist (e.g. after `art-crit rm`).
 - The viewer only asks `api/local` when served from localhost; when it answers, the page shows a rank picker per row.
@@ -599,12 +615,16 @@ newest first, with each run's state, metrics, prompt, files and transcript, and 
 ## Community votes
 
 Visitors signed in with GitHub can give each result a heart and hand out one gold, one silver and one bronze medal per
-page (ADR-0022). This is the only thing the published site writes; the owner's ranking above stays local. The API is
+page (ADR-0022). Votes and prompt requests (ADR-0029) are the only things the published site writes; the owner's ranking
+above stays local. The API is
 `cloudflare/votes.mjs`, served by the Worker at `/art-crit/api/*`, storing in D1 (`cloudflare/schema.sql`).
 
 Tables: `hearts(page, run, user_id)`, primary key all three. `medals(page, user_id, medal, run)` with `medal` in
 `gold|silver|bronze`, primary key `(page, user_id, medal)` and `UNIQUE (page, user_id, run)`: one of each medal per user
 per page, each on a different result. `user_id` is the GitHub numeric id; logins and tokens are never stored.
+
+`prompt_requests(user_id, at, issue)` counts prompt requests (unix seconds, the issue number), indexed by `(user_id, at)`
+and `(at)`; the text is never stored, only the issue on GitHub has it.
 
 `tallies(page, run, hearts, gold, silver, bronze)` holds the running totals and is maintained only by four triggers on
 `hearts` and `medals`, so every write keeps it exact, atomically. Showing a page therefore reads one `tallies` row per
@@ -620,11 +640,12 @@ drift and counts votes cast before the table existed. Apply the schema before de
 | `GET api/votes?p=<slug>` | `{"user": {"login"}\|null, "totals": {"<run id>": {"hearts", "gold", "silver", "bronze"}}, "mine": {"hearts": ["<run id>"], "gold": "<run id>"\|null, "silver", "bronze"}\|null}`. `totals` has an entry for every run of the page, `mine` is `null` signed out. Public, `Cache-Control: no-store`. |
 | `PUT api/heart` `{"p", "run", "on": true\|false}` | Adds or removes the user's heart; idempotent. Answers like `GET api/votes`. |
 | `PUT api/medal` `{"p", "medal", "run": "<id>"\|null}` | Puts the user's medal on `run` (`null` takes it back). In one transaction it removes that medal's old result and any other medal the user had on `run`. Answers like `GET api/votes`. |
+| `POST api/request` `{"prompt", "kind", "note"?}` | Opens a GitHub issue on `fenderog/art-crit` (see Prompt requests) with `GITHUB_ISSUES_TOKEN`, a fine-grained token with Issues: write on that repo; answers `201 {"number", "url"}`. Body ≤ 8 KiB; `prompt` 10–4000 chars after trimming, `kind` one of `media`/`godot`/`web`/`blender`, `note` ≤ 1000 (400 otherwise). 5 per user and 50 site-wide per rolling 24 h (429). GitHub refusing is 502 and counts nothing; without the token 503. |
 
 Cookies are `__Secure-` prefixed, `HttpOnly; Secure; SameSite=Lax`, `Path=/art-crit/api/`: the session (30 days) and the
 login state (10 minutes) are JSON payloads signed with HMAC-SHA-256 (`SESSION_SECRET`) and typed so one can't stand in for
 the other. Writes (`PUT`, `POST`) need a valid session (401), an `Origin` header equal to the request's own origin (403;
-sandboxed game frames send `null`), `Content-Type: application/json` (415), a body under 2 KiB (413), and a page and run
+sandboxed game frames send `null`), `Content-Type: application/json` (415), a body under 2 KiB (8 KiB for `api/request`) (413), and for votes a page and run
 that exist in the published `page.json` (404 for the page, which must come back as `application/json`, 400 for the run
 or a bad slug/medal/flag). Errors are
 `{"error": ...}`; no response sets CORS headers. Without D1 and the three secrets (`GITHUB_CLIENT_ID`,
@@ -666,6 +687,32 @@ at its old URL during migration; the Pages subdomain isn't the supported URL for
 
 ## Viewer (docs/)
 
+### Lanes design (index.html, page.html, compare.html; ADR-0029)
+
+The three main views are the lanes design: `docs/assets/lanes/{index,page,compare,common,lane,request}.js` and
+`lanes.css` (layered on `style.css`). They reuse the shared modules below, so rendering, sandboxing and votes behave as
+described there. The previous views live unchanged in `docs/classic/` (`<base href="../">`; base-uri `'self'` there),
+and each lanes page links to its classic counterpart ("classic view").
+
+- **Home**: a compact hero; the newest prompt as a featured card whose picture is a slideshow (crossfade every 4.5 s,
+  paused on hover/focus, in background tabs and under reduced motion) of up to four runs from different models (then
+  vendors) at the page's highest effort level, then the next level down; its prompt in a handwritten system font. Then
+  "All prompts": kind filter pills with counts and image-first tiles. Each prompt's cover is one of its highest-effort
+  runs that made its output, avoiding models (then vendors) already used for an earlier cover.
+- **Page**: a strip with the page thumbnail, title, kind, counts, the prompt (two lines) and a "View final prompt"
+  modal (with reference images), plus Cheapest/Fastest/Fewest-tokens tiles; sticky vendor/effort filter pills and an
+  effort sort (`?vendor=`, `?effort=`, `?sort=effort-desc`); one lane per model ("Vendor – Model"), vendors by best rank
+  then name, runs by effort. A lane slides by whole cards with ‹ › and can be dragged (with momentum, no snapping;
+  drags never start on a 3D stage, form control or a video's controls). Cards (320 px) show the output uncropped at
+  the card's width (every card in a lane equally tall, the picture at the top), a 44 px checkbox, the thumbnail pill
+  at the bottom of the media area, the model, effort, time/tokens/cost (best in green), and the vote row ("Your vote:",
+  inactive without the vote API). A click anywhere on the media opens the run (videos show their poster without
+  controls on cards). Checked runs fill a bottom tray (thumbnail, model, vendor · effort, remove) with "Compare in
+  detail →" from two runs.
+- **Compare** (`?p=<slug>&r=<id>,<id>…`, at least two): back link, title, the page line, prompt and final-prompt modal,
+  winner pills, and one equal-height column per run: the output uncropped, vendor logo, model, effort, vote buttons,
+  and Time/Tokens/Cost bars scaled to the largest value (best in green; an unreported cost is "n/a").
+
 All four page views use `loadPage(slug)` in dom.js: one fetch of `page.json`, which includes
 `runs` sorted by started_at then effort order with ranks applied. `run.json` stays the rebuild source of truth;
 `art-crit list` reads `page.json.runs`. Rebuild removes legacy `results.json`. The loader owns missing-page
@@ -700,7 +747,7 @@ immediate sandboxed frame, the media gallery, or the "no output" message, with t
 one `KIND_UI` table (chip label, tab label, no-output text and failure badge per kind); page, run, compare and play all call
 them. Any output with an `entry` is shown in the sandbox, so a new kind needs no viewer code.
 
-- **index.html**: cards per page (thumb, a Game/Media chip, title, one icon per model vendor (OpenRouter's provider icons, vendored under `assets/vendor/icons/`; its models on hover), n_runs, updated date) → page.html. Under `art-crit serve`, also the prompt requests (see Prompt requests) and a "Runs (local)" link to monitor.html (see Run monitor).
+- **index.html**: cards per page (thumb, a Game/Vector chip, title, one icon per model vendor (OpenRouter's provider icons, vendored under `assets/vendor/icons/`; its models on hover), n_runs, updated date) → page.html. Under `art-crit serve`, also the prompt requests (see Prompt requests) and a "Runs (local)" link to monitor.html (see Run monitor).
 - **page.html**: title, a details sidebar with a meta line (kind, n runs, n models), the Prompt (prompt.md) and a collapsed Final prompt,
   then **highlights**: the cheapest, fastest and fewest-tokens run among those that made their output (each links to it; a cost of 0 means unreported and never ranks) plus verified count, failed
   count and total spend. Then a runs table (thumb, rank, model, effort, harness,

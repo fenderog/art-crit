@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self'; connect-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- The classic design, kept for a while after the lanes redesign (ADR-0029). URLs resolve from docs/, like before. -->
+<base href="../">
+<title>Compare &ndash; art-crit</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="classic/index.html"><img src="assets/logo.svg" alt="art-crit" width="99" height="24"></a>
+  <span class="crumb">/ <a id="page-link" href="classic/index.html">page</a> / compare</span>
+</header>
+<main class="container" id="main">
+  <div class="page-head">
+    <div class="eyebrow">Compare</div>
+    <h1 id="title">Compare</h1>
+    <p class="lede" id="compare-prompt" hidden></p>
+  </div>
+  <div class="section-head">
+    <span class="count" id="compare-count"></span>
+    <span class="spacer"></span>
+    <button id="play-all" class="btn" type="button" disabled title="Each game runs in its own sandbox and downloads its own copy of the engine (about 38 MB for Godot), so starting many at once downloads a lot.">&#9654; Play all</button>
+  </div>
+  <div id="columns" class="vendor-groups"></div>
+</main>
+<script type="module" src="assets/compare.js"></script>
+</body>
+</html>

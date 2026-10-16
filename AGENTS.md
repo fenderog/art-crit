@@ -12,7 +12,7 @@ side by side, for comparisons you judge by eye rather than by a score (the name 
 - **Page** = one prompt/task (e.g. `voxel-horse`).
 - **Run** = one model × effort level attempt at that task.
 - **Kind** = what a page's runs produce: `godot` (a project, published as a playable web build), `media`
-  (image/video files the agent saved in `./output/`), `web` (a page with ES modules + npm packages, packaged
+  (shown as "Vector" in the UI; image/video files the agent saved in `./output/`), `web` (a page with ES modules + npm packages, packaged
   into one `index.html` with esbuild) or `blender` (a `.glb` + renders made in a per-run windowless Blender through
   the official Blender MCP server). One kind per page.
 
@@ -57,7 +57,10 @@ src/art_crit/          CLI, standard library only (argparse, json, subprocess, t
     <kind>.md       brief template per kind ({prompt}, and {tools} from [run].tools, are substituted)
   browser.py        the headless-Chrome check the godot and web kinds share (Playwright is optional, imported lazily)
 docs/               the site: vanilla JS ES modules, no viewer build step, no framework
-  index.html page.html run.html compare.html play.html monitor.html, assets/*.js, assets/style.css
+  index.html page.html compare.html = the lanes design (ADR-0029): assets/lanes/*.js + lanes.css, on the shared modules;
+                    lanes/request.js = "Request a prompt" -> Worker api/request (a GitHub issue), else GitHub's prefilled form
+  classic/          the previous index/page/compare (table, grid, rank editing, local requests), <base href="../">
+  run.html play.html monitor.html, assets/*.js, assets/style.css
   assets/dom.js fmt.js runs.js output.js   shared helpers: DOM + fetch, formatting, run/rank/vendor helpers, and
                     output.js, which holds all sandbox-critical code (sandboxedGame, mediaElement, renderOutput, KIND_UI);
                     model.js = the .glb viewer (three.js bundle vendor/three-gltf.min.js, loaded on click);
@@ -146,8 +149,10 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   the images as thumbnails (ADR-0026): never put them in anything but `<img>`, like model-made SVGs. `--page`
   adds runs to an existing page and adopts its published references (`runner.page_refs`) unless the batch passes
   its own `--ref` (ADR-0028), so a "use the reference image" prompt can't silently run with no image staged.
-- **Prompt requests are local only** (ADR-0024): `art-crit serve`'s `api/requests` keeps them in `requests.json` beside
-  `docs/` (gitignored). Never move them under `docs/` (`run --publish` stages all of it) or into the Worker.
+- **Prompt requests become GitHub issues** (ADR-0029): the lanes home posts to the Worker's `POST api/request`, which
+  opens the issue with the `GITHUB_ISSUES_TOKEN` bot token (never the visitor's token), fences the untrusted text, and
+  caps requests in D1 (`prompt_requests` keeps no text). Without that API the form opens GitHub's prefilled new-issue
+  page. The classic home's local list (ADR-0024) still keeps `requests.json` beside `docs/`: never move it under `docs/`.
 - **The run monitor is local only and never kills anything itself** (ADR-0027): `api/runs`/`api/run` need a loopback
   `Host` and are answered *without* `Access-Control-Allow-Origin` (never add it back for those two), the Stop button
   writes only `<run>/harness/stop`, and `runner.wait_agent` — in the process that owns the agent — is what kills its
@@ -155,9 +160,9 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   a live pi session keeps a base64 copy of every image the agent read.
 - **Rankings are only written by `art-crit serve` on the user's machine** (`PUT api/rank`, which refuses cross-site
   writes and any non-loopback `Host`, against DNS rebinding); the Worker answers 404 for it. (ADR-0010)
-- **Community votes are the one thing the published site writes**, through the Worker's `/art-crit/api/*` into D1
-  (ADR-0022). Writes need a session cookie *and* an `Origin` equal to the site's own; don't loosen either, add CORS
-  headers to the API, or add another write path. Only GitHub ids are stored (never tokens), and votes are not in git.
+- **Community votes and prompt-request issues are the only things the published site writes**, through the Worker's
+  `/art-crit/api/*` (ADR-0022, ADR-0029). Writes need a session cookie *and* an `Origin` equal to the site's own; don't
+  loosen either, add CORS headers to the API, or add another write path. Only GitHub ids are stored (never tokens), and votes are not in git.
   `tallies` is kept only by the triggers in `cloudflare/schema.sql`: never write it from the Worker. Apply the schema to D1
   *before* deploying a Worker that needs it (an older Worker runs on a newer schema, not the reverse).
 - **Per-run MCP config** (ADR-0025): a kind's MCP servers reach the agent through flags or files in the run's own

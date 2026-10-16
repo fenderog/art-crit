@@ -1,5 +1,5 @@
-// /art-crit/api/*: GitHub sign-in plus hearts and gold/silver/bronze medals, stored in D1 (adr/0022).
-// The only part of the site that writes data. Reads are public; writes need a session cookie *and* a same-origin
+// /art-crit/api/*: GitHub sign-in plus hearts and gold/silver/bronze medals, stored in D1 (adr/0022), and prompt
+// requests, which become GitHub issues opened by the site's bot token (adr/0029). The only part of the site that writes. Reads are public; writes need a session cookie *and* a same-origin
 // request, so a page on another origin (or a sandboxed game frame, whose Origin is "null") can't vote.
 
 const SITE = "/art-crit/";
@@ -148,12 +148,12 @@ async function readVotes(env, slug, runs, user) {
   return { user: user && { login: user.login }, totals, mine };
 }
 
-async function readBody(request) {
+async function readBody(request, max = MAX_BODY) {
   const type = (request.headers.get("Content-Type") ?? "").split(";")[0].trim();
   if (type !== "application/json") throw new HttpError(415, "expected application/json");
-  if (Number(request.headers.get("Content-Length")) > MAX_BODY) throw new HttpError(413, "request too large");
+  if (Number(request.headers.get("Content-Length")) > max) throw new HttpError(413, "request too large");
   const text = await request.text();
-  if (text.length > MAX_BODY) throw new HttpError(413, "request too large");
+  if (text.length > max) throw new HttpError(413, "request too large");
   try {
     const body = JSON.parse(text);
     if (body && typeof body === "object" && !Array.isArray(body)) return body;
@@ -186,6 +186,78 @@ async function vote(request, env, pages, user, kind) {
   return json(await readVotes(env, slug, runs, user));
 }
 
+// ---- prompt requests (adr/0029)
+// POST api/request {prompt, kind, note?}: a signed-in visitor's prompt idea becomes an issue on the repo, labeled
+// "prompt request". The issue is opened with GITHUB_ISSUES_TOKEN (a fine-grained token with Issues: write on this one
+// repo), never the visitor's own GitHub token, which the site doesn't keep. Each user gets REQUESTS_PER_DAY a day and
+// the whole site REQUESTS_PER_DAY_ALL, counted in D1, so the bot can't be used to flood the repo.
+const REPO = "fenderog/art-crit";
+const REQUEST_KINDS = { media: "Vector", godot: "Game", web: "Web", blender: "3D" };
+const REQUESTS_PER_DAY = 5;
+const REQUESTS_PER_DAY_ALL = 50;
+const MAX_REQUEST_BODY = 8192;
+const MAX_PROMPT = 4000;
+const MAX_NOTE = 1000;
+
+// Untrusted text inside a fence longer than any run of backticks in it: GitHub shows it verbatim (no Markdown, no
+// @mentions, no links), so a request can't ping people or dress itself up.
+function fenced(text) {
+  const longest = Math.max(0, ...(text.match(/`+/g) ?? []).map((run) => run.length));
+  const fence = "`".repeat(Math.max(3, longest + 1));
+  return `${fence}text\n${text}\n${fence}`;
+}
+
+export function issueFor({ prompt, kind, note }, login) {
+  const firstLine = prompt.split("\n")[0].replace(/\s+/g, " ").trim();
+  const title = `Prompt request: ${firstLine.length > 80 ? `${firstLine.slice(0, 79)}…` : firstLine}`;
+  const body = [
+    `**Kind:** ${REQUEST_KINDS[kind]} (\`--kind ${kind}\`)`,
+    "",
+    "**Prompt**",
+    "",
+    fenced(prompt),
+    ...(note ? ["", "**Note**", "", fenced(note)] : []),
+    "",
+    `Requested on the site by GitHub user \`${login}\`.`,
+  ].join("\n");
+  return { title, body, labels: ["prompt request"] };
+}
+
+async function requestPrompt(request, env, user) {
+  if (!env.GITHUB_ISSUES_TOKEN) throw new HttpError(503, "prompt requests are not configured");
+  const body = await readBody(request, MAX_REQUEST_BODY);
+  const prompt = typeof body.prompt === "string" ? body.prompt.trim() : "";
+  const note = typeof body.note === "string" ? body.note.trim() : "";
+  if (prompt.length < 10 || prompt.length > MAX_PROMPT) throw new HttpError(400, `the prompt must be 10 to ${MAX_PROMPT} characters`);
+  if (typeof body.kind !== "string" || !Object.hasOwn(REQUEST_KINDS, body.kind)) throw new HttpError(400, "unknown kind");
+  if (note.length > MAX_NOTE) throw new HttpError(400, `the note must be at most ${MAX_NOTE} characters`);
+
+  const db = env.DB;
+  const since = now() - 24 * 3600;
+  const [mine, all] = await db.batch([
+    db.prepare("SELECT COUNT(*) AS n FROM prompt_requests WHERE user_id = ? AND at > ?").bind(user.id, since),
+    db.prepare("SELECT COUNT(*) AS n FROM prompt_requests WHERE at > ?").bind(since),
+  ]);
+  if (mine.results[0].n >= REQUESTS_PER_DAY) throw new HttpError(429, `you can send ${REQUESTS_PER_DAY} requests a day; try again tomorrow`);
+  if (all.results[0].n >= REQUESTS_PER_DAY_ALL) throw new HttpError(429, "too many requests today; try again tomorrow");
+
+  const res = await fetch(`https://api.github.com/repos/${REPO}/issues`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.GITHUB_ISSUES_TOKEN}`, Accept: "application/vnd.github+json",
+      "Content-Type": "application/json", "User-Agent": "art-crit", "X-GitHub-Api-Version": "2022-11-28",
+    },
+    body: JSON.stringify(issueFor({ prompt, kind: body.kind, note }, user.login)),
+  });
+  if (!res.ok) {
+    console.error("GitHub issue not created", res.status); // never log the token or the request
+    throw new HttpError(502, "GitHub did not accept the request; try again later");
+  }
+  const issue = await res.json();
+  await db.batch([db.prepare("INSERT INTO prompt_requests (user_id, at, issue) VALUES (?, ?, ?)").bind(user.id, now(), issue.number)]);
+  return json({ number: issue.number, url: issue.html_url }, 201);
+}
+
 // ---- routing
 const ROUTES = {
   login: { GET: (c) => startLogin(c.url, c.env) },
@@ -199,6 +271,7 @@ const ROUTES = {
   },
   heart: { PUT: (c) => c.signedIn((user) => vote(c.request, c.env, c.pages, user, "heart")) },
   medal: { PUT: (c) => c.signedIn((user) => vote(c.request, c.env, c.pages, user, "medal")) },
+  request: { POST: (c) => c.signedIn((user) => requestPrompt(c.request, c.env, user)) },
 };
 
 export async function handleApi(request, env, pages) {

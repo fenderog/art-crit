@@ -16,9 +16,9 @@ engine to fit Pages' file-size limit. [SPEC.md](SPEC.md) is the full contract.
 
 ## What you'll see on the site
 
-- **Home:** one card per prompt — called a *page* — labeled Game, Media, or Web, with its models and run count.
+- **Home:** one card per prompt — called a *page* — labeled Game, Vector, or Web, with its models and run count.
 - **Page:** the prompt, the exact brief the agents saw, a summary (cheapest, fastest, fewest
-  tokens, how many passed checks, total spend), a gallery for media pages, and a sortable runs
+  tokens, how many passed checks, total spend), a gallery for Vector pages, and a sortable runs
   table. Effort is a meter, best numbers get a star, your own ranking comes first. Click a row
   to play the game or open the files. On phones the table collapses into cards.
 - **Run:** the output front and center, quick links to the same prompt's other runs, stats in
@@ -163,7 +163,7 @@ Entries take the same form as `-m`. `--set` also accepts a file (one `MODEL[:LEV
 Chrome to prove they run. The engine (~38 MB) lives once in `docs/engines/` and is shared, so each
 run adds only a few hundred KB.
 
-**Images and video** (`--kind media`):
+**Vector: images and video** (`--kind media`):
 
 ```sh
 uv run art-crit run --kind media "a pelican riding a bicycle, as a hand-written SVG" -m openai-codex/gpt-6-sol
@@ -206,7 +206,7 @@ harness can run it: pi, Claude Code, Codex and Grok get the server per run; agy 
 config, so each holds one permanent `art-crit-blender` entry (a proxy that has no tools outside art-crit runs). The first batch installs the
 add-on into `~/.cache/art-crit/` (your own Blender isn't touched) and fetches the server with `uvx`.
 
-One kind per page: you can't add a media prompt to a Godot page, and so on.
+One kind per page: you can't add a Vector prompt to a Godot page, and so on.
 
 ## Rank runs
 
@@ -223,10 +223,14 @@ site can't write rankings — only your local `art-crit serve` can.
 
 ## Request a prompt
 
-Under `art-crit serve`, the home page has a **Request a prompt** button: write the task, pick its kind (media,
-game or web), and optionally a title, a model set from `[sets]` and a note. Requests are listed on the home page
-with the exact `uv run art-crit run …` command to make each one a page (Copy puts it on the clipboard). They're
-kept in `requests.json` beside `docs/`, gitignored and never published; the live site doesn't show any of this.
+The home page's top bar has a **Request a prompt** button: write the task, pick its kind and add an optional note.
+On fenderog.com, after signing in with GitHub, the request becomes an issue on this repo labeled `prompt request`
+([ADR-0029](adr/0029-lanes-design-and-prompt-requests-as-issues.md); setup under *Prompt requests* below). Anywhere
+else (or before that setup) the button opens GitHub's own new-issue form with everything filled in.
+
+The classic home page (`classic/index.html`, under `art-crit serve`) still keeps the older local list: requests saved
+in `requests.json` beside `docs/`, gitignored and never published, each with the exact `uv run art-crit run …`
+command to make it a page.
 
 ## Watch a run in progress
 
@@ -307,6 +311,20 @@ are free, so if votes are ever stuffed, add a Cloudflare rate-limiting rule for 
 
 To upgrade after a change to `cloudflare/schema.sql`, run step 3 again and then step 5, in that order: an older Worker keeps
 working on a newer schema, but not the other way round. The schema is safe to re-apply; it recounts the tallies.
+
+### Prompt requests (one-time setup, after votes)
+
+The Worker opens the issues with a bot token, never the visitor's own account. Until it has one, the form falls back
+to GitHub's prefilled new-issue page.
+
+1. **Token**: GitHub → Settings → Developer settings → Fine-grained tokens → Generate. Repository access: only
+   `fenderog/art-crit`. Permissions: **Issues: Read and write** (nothing else).
+2. **Label** (optional, GitHub creates it on first use otherwise): `gh label create "prompt request" -R fenderog/art-crit`.
+3. **Secret**: `npx wrangler secret put GITHUB_ISSUES_TOKEN --config cloudflare/wrangler.jsonc`.
+4. **Tables and deploy**: run steps 3 and 5 of the votes setup again (the schema adds `prompt_requests`).
+
+Each signed-in user can send 5 requests a day, and the whole site 50 (counted in D1). The rate-limiting rule below
+covers `api/request` too.
 
 ### Rate limiting (recommended)
 

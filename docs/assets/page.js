@@ -114,7 +114,7 @@ function render(page, runs, editable) {
     const ids = selection.ids;
     document.getElementById("select-bar").hidden = !ids.length;
     document.getElementById("select-count").textContent = `${ids.length} selected`;
-    document.getElementById("compare-selected").href = `compare.html?p=${encodeURIComponent(slug)}&r=${ids.map(encodeURIComponent).join(",")}`;
+    document.getElementById("compare-selected").href = `classic/compare.html?p=${encodeURIComponent(slug)}&r=${ids.map(encodeURIComponent).join(",")}`;
     for (const box of document.querySelectorAll("input.run-select")) box.checked = selection.has(box.dataset.id);
   }
 

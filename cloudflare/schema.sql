@@ -22,6 +22,16 @@ CREATE TABLE IF NOT EXISTS medals (
   UNIQUE (page, user_id, run)
 );
 
+-- Prompt requests sent from the site (adr/0029): only who and when (and the issue they became), to cap them per user
+-- and per day. The prompt itself lives in the GitHub issue, not here.
+CREATE TABLE IF NOT EXISTS prompt_requests (
+  user_id INTEGER NOT NULL,
+  at INTEGER NOT NULL,       -- unix seconds
+  issue INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS prompt_requests_by_user ON prompt_requests (user_id, at);
+CREATE INDEX IF NOT EXISTS prompt_requests_by_time ON prompt_requests (at);
+
 -- Running totals per result, kept by the triggers below so that showing a page reads one row per run instead of
 -- counting every vote on it. Nothing writes this table directly.
 CREATE TABLE IF NOT EXISTS tallies (
