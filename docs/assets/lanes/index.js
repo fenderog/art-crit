@@ -1,5 +1,5 @@
 import { el, getJSON, showMessage } from "../dom.js";
-import { modelParts, vendorOf, vendorName, vendorMark, runDir, isFailed, EFFORTS, byRankThenModel, prettyModelName, effortPill } from "../runs.js";
+import { modelParts, vendorOf, vendorName, vendorMark, runDir, isFailed, coverOf, EFFORTS, byRankThenModel, prettyModelName, effortPill } from "../runs.js";
 import { kindUi } from "../output.js";
 import { plural } from "./common.js";
 import { setupRequestButton } from "./request.js";
@@ -89,7 +89,7 @@ if (pages.length) {
   showMessage(main, "No pages imported yet.");
 }
 
-// Each page's picture comes from one of its highest-effort runs that made its output (and has a thumbnail), so the cover
+// Each page's picture comes from one of its highest-effort runs that made its output (and has a cover picture: its thumbnail, or the one covers.json names), so the cover
 // shows a model at its best. Going down the list, a model (then a vendor) that already covers another page is avoided,
 // so the covers don't all come from the same model. Ties go to the page owner's rank, then model order. A page whose
 // data can't be read keeps the thumbnail from pages.json.
@@ -99,12 +99,12 @@ async function pickThumbs(pages) {
   const datas = await Promise.all(pages.map((p) => getJSON(`data/${encodeURIComponent(p.slug)}/page.json`).catch(() => null)));
   pages.forEach((p, i) => {
     p.data = datas[i];
-    const runs = (datas[i]?.runs || []).filter((r) => !isFailed(r) && r.thumb);
+    const runs = (datas[i]?.runs || []).filter((r) => !isFailed(r) && coverOf(r));
     if (!runs.length) return;
     const top = Math.max(...runs.map(level));
     const score = (r) => (usedModel.get(r.model) ?? 0) * 100 + (usedVendor.get(vendorOf(r.model)) ?? 0);
     const pick = runs.filter((r) => level(r) === top).sort((a, b) => score(a) - score(b) || byRankThenModel(a, b))[0];
-    p.pickedThumb = runDir(p.slug, pick.id) + pick.thumb;
+    p.pickedThumb = runDir(p.slug, pick.id) + coverOf(pick);
     p.pickedFrom = pick;
     usedModel.set(pick.model, (usedModel.get(pick.model) ?? 0) + 1);
     usedVendor.set(vendorOf(pick.model), (usedVendor.get(vendorOf(pick.model)) ?? 0) + 1);
@@ -117,7 +117,7 @@ async function pickThumbs(pages) {
 // reduced motion. The dots (bottom center) switch slides; each dot names its model for screen readers and on hover.
 function pickSlides(p, max = 4) {
   const level = (r) => EFFORTS.indexOf(r.effort);
-  const runs = (p.data?.runs || []).filter((r) => !isFailed(r) && r.thumb)
+  const runs = (p.data?.runs || []).filter((r) => !isFailed(r) && coverOf(r))
     .sort((a, b) => level(b) - level(a) || byRankThenModel(a, b));
   const out = [], models = new Set(), vendors = new Set();
   const take = (r) => { out.push(r); models.add(r.model); vendors.add(vendorOf(r.model)); };
@@ -140,7 +140,7 @@ function slideshow(p) {
     box.append(thumbOf(p), kindChip(p));
     return box;
   }
-  const imgs = slides.map((r, i) => el("img", { class: i ? "slide" : "slide is-on", attrs: { src: runDir(p.slug, r.id) + r.thumb, alt: "", loading: i ? "lazy" : null } }));
+  const imgs = slides.map((r, i) => el("img", { class: i ? "slide" : "slide is-on", attrs: { src: runDir(p.slug, r.id) + coverOf(r), alt: "", loading: i ? "lazy" : null } }));
   const dots = slides.map((r, i) => el("button", {
     class: "v2-dot", attrs: { type: "button", "aria-label": `Show ${prettyModelName(modelParts(r.model).name)} ${r.effort}`, title: `${prettyModelName(modelParts(r.model).name)} · ${r.effort}` },
     on: { click: (e) => { e.preventDefault(); e.stopPropagation(); show(i); restart(); } },

@@ -199,6 +199,10 @@ export function isFailed(run) {
   return !isComplete(run) || run.output?.ok !== true;
 }
 
+// The picture that stands for a run on the home page: `cover` (page.json, from covers.json) or its thumbnail;
+// null for a run kept off the home page (`cover: false`).
+export const coverOf = (run) => (run.cover === undefined ? run.thumb : run.cover || null);
+
 // The page's filter bar: `f` = { vendors, efforts, models } (arrays, empty = any) and { verified, hideFailed } (booleans).
 export function filterRuns(runs, f) {
   const any = (list, value) => !list?.length || list.includes(value);
