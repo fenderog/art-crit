@@ -1,5 +1,30 @@
 [
   {
+    "slug": "ceate-an-svg-of-an-awkward",
+    "title": "Awkward Robot Family",
+    "kind": "media",
+    "n_runs": 60,
+    "models": [
+      "anthropic/claude-haiku-5-5",
+      "anthropic/claude-opus-5-5",
+      "anthropic/claude-sonnet-5-5",
+      "google/gemini-3.8-flash",
+      "google/gemini-4-argon",
+      "meta/muse-spark-1.3",
+      "meta/muse-wonder-1.0",
+      "meta/muse-wonder-full-1.0",
+      "openai-codex/gpt-6-astra",
+      "openai-codex/gpt-6.1-sol",
+      "openrouter/deepseek/deepseek-v4.1-flash",
+      "openrouter/thinkingmachines/inkling:free",
+      "openrouter/z-ai/glm-5.3",
+      "openrouter/z-ai/glm-5.3-flashx",
+      "xai/grok-4.7"
+    ],
+    "updated": "2026-10-16T02:58:04Z",
+    "thumb": "data/ceate-an-svg-of-an-awkward/runs/gpt-6.1-sol-xhigh-20261013-201757/media/awkward-family.png"
+  },
+  {
     "slug": "robbie-the-banker-with-reference",
     "title": "Robbie the Banker with reference",
     "kind": "blender",
@@ -25,30 +50,6 @@
     ],
     "updated": "2026-10-15T19:15:50Z",
     "thumb": "data/create-a-model-of-the-vintage/runs/claude-sonnet-5-5-cc-xhigh-20261015-120005/media/robie_back_view.png"
-  },
-  {
-    "slug": "ceate-an-svg-of-an-awkward",
-    "title": "Awkward Robot Family",
-    "kind": "media",
-    "n_runs": 59,
-    "models": [
-      "anthropic/claude-haiku-5-5",
-      "anthropic/claude-opus-5-5",
-      "anthropic/claude-sonnet-5-5",
-      "google/gemini-3.8-flash",
-      "meta/muse-spark-1.3",
-      "meta/muse-wonder-1.0",
-      "meta/muse-wonder-full-1.0",
-      "openai-codex/gpt-6-astra",
-      "openai-codex/gpt-6.1-sol",
-      "openrouter/deepseek/deepseek-v4.1-flash",
-      "openrouter/thinkingmachines/inkling:free",
-      "openrouter/z-ai/glm-5.3",
-      "openrouter/z-ai/glm-5.3-flashx",
-      "xai/grok-4.7"
-    ],
-    "updated": "2026-10-14T03:35:22Z",
-    "thumb": "data/ceate-an-svg-of-an-awkward/runs/gpt-6.1-sol-xhigh-20261013-201757/media/awkward-family.png"
   },
   {
     "slug": "16bit-eiffel-tower",
