@@ -258,6 +258,28 @@ def test_rename_refuses_bad_targets(bench_root, batch_dir):
     assert (bench_root / "docs/data/voxel-horse").is_dir()
 
 
+def test_covers_json_picks_or_excludes_a_runs_home_page_picture(bench_root, batch_dir):
+    """covers.json: a path (that exists) replaces the run's cover, false keeps the run off the home page; page.json
+    gets `cover` and pages.json's thumb follows; unknown runs and missing files are ignored."""
+    main(["import", str(batch_dir), "--root", str(bench_root)])
+    data = bench_root / "docs/data/voxel-horse"
+    runs = {r["id"]: r for r in json.loads((data / "page.json").read_text())["runs"]}
+    high, low = _high_id(bench_root), next(i for i in runs if i != _high_id(bench_root))
+    (data / "runs" / high / "front.jpg").write_bytes(b"x")
+    covers = data / "covers.json"
+
+    covers.write_text(json.dumps({"covers": {high: "front.jpg", low: "gone.jpg", "no-such-run": False}}))
+    main(["rebuild", "--root", str(bench_root)])
+    runs = {r["id"]: r for r in json.loads((data / "page.json").read_text())["runs"]}
+    assert runs[high]["cover"] == "front.jpg" and "cover" not in runs[low]
+    assert json.loads((bench_root / "docs/data/pages.json").read_text())[0]["thumb"] == f"data/voxel-horse/runs/{high}/front.jpg"
+    assert "cover" not in json.loads((data / "runs" / high / "run.json").read_text())
+
+    covers.write_text(json.dumps({"covers": {high: False}}))
+    main(["rebuild", "--root", str(bench_root)])
+    assert json.loads((bench_root / "docs/data/pages.json").read_text())[0]["thumb"] == f"data/voxel-horse/runs/{low}/{runs[low]['thumb']}"
+
+
 needs_ffmpeg = pytest.mark.skipif(not shutil.which("ffmpeg") or not shutil.which("ffprobe"), reason="needs ffmpeg")
 
 

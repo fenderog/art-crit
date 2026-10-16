@@ -41,6 +41,7 @@ docs/
     <slug>/page.json              # Page
     <slug>/references/<file>      # optional: the page's --ref files, shown as thumbnails on page.html (ADR-0026)
     <slug>/ranking.json           # optional: {"ranks": {"<run id>": 1, ...}, "updated": "<iso>"}, the owner's ranking (see Ranking)
+    <slug>/covers.json            # optional, curated by hand: {"covers": {"<run id>": "media/x.thumb.jpg" | false}} (see Covers)
     <slug>/runs/<run_id>/
       run.json                    # Run
       thumb.jpg                   # optional (godot, web): the verify screenshot at most 800 px wide (ADR-0029;
@@ -61,7 +62,7 @@ All paths inside JSON are **relative to the run directory** (for Run) or to `doc
   "models": ["openai-codex/gpt-6-sol"], "updated": "2026-09-26T07:15:57Z",
   "thumb": "data/voxel-horse/runs/gpt-6-sol-high-20260926-001158/thumb.jpg" }
 ```
-`thumb` is taken from the most recent run that has one (its run's `thumb` path), or `null`.
+`thumb` is taken from the most recent run that has a cover picture (`cover`, else `thumb`; see Covers), or `null`.
 
 ### Page (`data/<slug>/page.json`)
 ```json
@@ -107,6 +108,7 @@ page's published copies, so adding runs can't silently leave the model with no i
 ```
 - `output`, `session`, `source` and `thumb` can each be `null`.
 - `rank` exists only in `page.json.runs` (never in `run.json`): the run's rank from `ranking.json`, or `null`.
+- `cover` exists only in `page.json.runs`, and only for a run named in `covers.json` (see Covers).
 - `kind` is the page's kind (runs imported before kinds existed have none; the viewer treats that as `godot`). Importing
   into a page of another kind is an error. `batch` = the batch directory's name (runs published before run
   directories hold the old model directory's name).
@@ -553,6 +555,16 @@ The page owner ranks runs in the browser; there is no CLI command for it. Only `
   a DNS-rebinding site sends its own name in both Host and Origin) → else 403, and an `Origin` header, when present, must
   match the `Host` → else 403.
 
+## Covers
+
+The home page shows a run's `thumb`, which for a media/blender run is just its first image, and a run can show its
+subject from behind (a robot's back view, a horse's rear). `data/<slug>/covers.json`, written by hand, fixes that:
+`{"covers": {"<run id>": "<path>" | false}}`. A path (relative to the run, a file that exists) is that run's cover
+instead of its `thumb`; `false` keeps the run off the home page altogether (use it when the only picture is a bad
+one). `rebuild` copies the entry to `page.json.runs[].cover`, ignores entries for runs or files that don't exist, and
+never rewrites the file. The home page (`coverOf()` in runs.js) and `pages.json`'s `thumb` use `cover`; the page,
+compare and run views keep showing `thumb`.
+
 ## Prompt requests
 
 Ideas for new pages (ADR-0030). The lanes home page (`index.html`) has a **Request a prompt** button in the top bar
@@ -706,7 +718,8 @@ and each lanes page links to its classic counterpart ("classic view").
   paused on hover/focus, in background tabs and under reduced motion) of up to four runs from different models (then
   vendors) at the page's highest effort level, then the next level down; its prompt in a handwritten system font. Then
   "All prompts": kind filter pills with counts and image-first tiles. Each prompt's cover is one of its highest-effort
-  runs that made its output, avoiding models (then vendors) already used for an earlier cover.
+  runs that made its output, avoiding models (then vendors) already used for an earlier cover. Covers never face away
+  from the viewer: a run's picture can be swapped or dropped in `covers.json` (see Covers).
 - **Page**: a strip with the page thumbnail, title, kind, counts, the prompt (two lines) and a "View final prompt"
   modal (with reference images), plus Cheapest/Fastest/Fewest-tokens tiles; sticky vendor/effort filter pills and an
   effort sort (`?vendor=`, `?effort=`, `?sort=effort-desc`); one lane per model ("Vendor – Model"), vendors by best rank

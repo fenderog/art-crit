@@ -278,6 +278,9 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   needs a priority there and a re-run of `test_runs_table_never_scrolls_horizontally`. Measure with Playwright
   (`.table-wrap` clientWidth vs `table.scrollWidth`), never guess breakpoints. `.table-wrap { overflow-x: auto }` stays
   only as a safety net.
+- **Home covers must not show a character from behind.** `data/<slug>/covers.json` (hand-curated, see SPEC.md Covers)
+  swaps a run's cover for another image it made, or drops the run from covers (`false`). When a new run could become a
+  page's cover (top effort level), look at its picture; `coverOf()` (runs.js) is what the home page reads.
 - **Provider icons** on the home cards are OpenRouter's, vendored in `docs/assets/vendor/icons/` (`VENDOR_ICONS` in runs.js,
   keyed by `vendorOf()`, which gives `z` for `z-ai` and `x` for `x-ai`). A new vendor shows its initial until one is added.
 - **Runs table markup is load-bearing for the phone layout:** at ≤720px CSS turns rows into cards using each cell's

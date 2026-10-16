@@ -87,7 +87,7 @@ const shown = (item, compact) => (compact && item.thumb) || item.path;
 export function modelElement(item, base, poster = null, { compact = false } = {}) {
   const box = el("div", { class: "model-view" });
   const overlay = el("button", { class: "play-overlay", attrs: { type: "button", "aria-label": "View the 3D model" } },
-    [el("span", { class: "play-icon", text: "\u29BF" }), el("span", { class: "play-label", text: "View in 3D" })]);
+    [el("span", { class: "play-icon", text: "\u25B6" }), el("span", { class: "play-label", text: "View in 3D" })]);
   if (poster) overlay.style.backgroundImage = `url("${base + shown(poster, compact)}")`;
   overlay.addEventListener("click", () => {
     const stage = el("div", { class: "model-stage" });

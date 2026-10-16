@@ -16,10 +16,16 @@ def _ended_at(run):
     return (started + timedelta(milliseconds=ms)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def cover_of(run):
+    """The picture that stands for a run on the home page: its `cover` (a path chosen in covers.json), else its
+    `thumb`; None for a run kept off the home page (`cover: false`)."""
+    return run.get("thumb") if run.get("cover") is None else run["cover"] or None
+
+
 def _pick_thumb(runs):
-    """The most recent run (by started_at, then effort order) that has a thumb."""
+    """The most recent run (by started_at, then effort order) that has a cover picture."""
     for run in sorted(runs, key=effort_sort_key, reverse=True):
-        if run.get("thumb"):
+        if cover_of(run):
             return run
     return None
 
@@ -51,6 +57,19 @@ def apply_ranking(page_dir, runs):
         run["rank"] = kept.get(run["id"])
 
 
+def apply_covers(page_dir, runs):
+    """Set `cover` on the runs named in data/<slug>/covers.json: a path (relative to the run, an image it made that
+    shows the subject well, e.g. a front view instead of the back) or false (never a home-page picture, e.g. the
+    only picture shows a character from behind). Entries for runs that are gone, or paths that don't exist, are
+    ignored (the file is curated by hand, so it is never rewritten)."""
+    path = page_dir / "covers.json"
+    covers = json.loads(path.read_text()).get("covers", {}) if path.is_file() else {}
+    for run in runs:
+        cover = covers.get(run["id"])
+        if cover is False or (isinstance(cover, str) and (page_dir / "runs" / run["id"] / cover).is_file()):
+            run["cover"] = cover
+
+
 def rebuild(root):
     docs = root / "docs"
     data_dir = docs / "data"
@@ -75,6 +94,7 @@ def rebuild(root):
 
         runs.sort(key=effort_sort_key)
         apply_ranking(page_dir, runs)
+        apply_covers(page_dir, runs)
         (page_dir / "results.json").unlink(missing_ok=True)
         for run in runs:
             output = run.get("output")
@@ -108,7 +128,7 @@ def rebuild(root):
                 "n_runs": len(runs),
                 "models": sorted({r["model"] for r in runs}),
                 "updated": page["updated"],
-                "thumb": f"data/{slug}/runs/{thumb_run['id']}/{thumb_run['thumb']}" if thumb_run else None,
+                "thumb": f"data/{slug}/runs/{thumb_run['id']}/{cover_of(thumb_run)}" if thumb_run else None,
             }
         )
 
