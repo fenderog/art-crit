@@ -1,5 +1,19 @@
 [
   {
+    "slug": "3d-octopus-ramen-shop",
+    "title": "3D Octopus Ramen Shop",
+    "kind": "blender",
+    "n_runs": 14,
+    "models": [
+      "anthropic/claude-opus-5-5",
+      "anthropic/claude-sonnet-5-5",
+      "openai-codex/gpt-6-astra",
+      "openai-codex/gpt-6.1-sol"
+    ],
+    "updated": "2026-10-16T18:33:53Z",
+    "thumb": "data/3d-octopus-ramen-shop/runs/gpt-6-astra-medium-20261016-092538/media/octo-ramen.thumb.jpg"
+  },
+  {
     "slug": "ai-logo-company",
     "title": "AI Logo Company",
     "kind": "media",
@@ -18,20 +32,6 @@
     ],
     "updated": "2026-10-16T18:31:32Z",
     "thumb": "data/ai-logo-company/runs/gemini-3.8-flash-agy-high-20261016-105541/media/brand_sheet.thumb.jpg"
-  },
-  {
-    "slug": "3d-octopus-ramen-shop",
-    "title": "3D Octopus Ramen Shop",
-    "kind": "blender",
-    "n_runs": 13,
-    "models": [
-      "anthropic/claude-opus-5-5",
-      "anthropic/claude-sonnet-5-5",
-      "openai-codex/gpt-6-astra",
-      "openai-codex/gpt-6.1-sol"
-    ],
-    "updated": "2026-10-16T18:27:30Z",
-    "thumb": "data/3d-octopus-ramen-shop/runs/gpt-6-astra-medium-20261016-092538/media/octo-ramen.thumb.jpg"
   },
   {
     "slug": "octopus-ramen-shop",
