@@ -1,0 +1,42 @@
+{
+  "id": "gemini-4-argon-agy-low-20261015-212637",
+  "page": "ceate-an-svg-of-an-awkward",
+  "model": "google/gemini-4-argon",
+  "effort": "low",
+  "kind": "media",
+  "started_at": "2026-10-16T04:26:37Z",
+  "batch": "2026-10-15-212637-ceate-an-svg-of-an-awkward",
+  "harness": {
+    "name": "agy",
+    "version": "1.3.6"
+  },
+  "state": "failed",
+  "error": "harness exited -9",
+  "route": null,
+  "tools": {
+    "allowed": {
+      "builtin": null,
+      "mcp": {}
+    },
+    "used": {
+      "bash": 1
+    }
+  },
+  "metrics": {
+    "duration_ms": 2863721,
+    "cost_usd": 0.0,
+    "tool_calls": 1,
+    "turns": 0,
+    "tokens_total": 0,
+    "tokens_input": 0,
+    "tokens_output": 0,
+    "tokens_reasoning": 0,
+    "tokens_cache_read": 0
+  },
+  "thumb": null,
+  "output": null,
+  "session": {
+    "conversation": "session/conversation.json"
+  },
+  "source": null
+}

@@ -11,7 +11,7 @@ import { mountModel } from "./model.js";
 // or page. Anything else (kinds the viewer doesn't know) reads as a game.
 const KIND_UI = {
   godot: { label: "Game", tab: "Game", none: "No playable build recorded for this run.", failed: "export failed" },
-  media: { label: "Media", tab: "Output", none: "No output files recorded for this run.", failed: "output failed", gallery: true },
+  media: { label: "Vector", tab: "Output", none: "No output files recorded for this run.", failed: "output failed", gallery: true },
   web: { label: "Web", tab: "Page", none: "No packaged page recorded for this run.", failed: "packaging failed" },
   blender: { label: "3D", tab: "Output", none: "No model or renders recorded for this run.", failed: "output failed", gallery: true },
 };

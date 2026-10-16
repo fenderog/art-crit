@@ -41,10 +41,11 @@ export function runCommand({ prompt, kind, title, set }) {
 }
 
 // `actions` gets the "Request a prompt" button, `list` the requested prompts (hidden while there are none).
-export async function setupRequests(actions, list) {
+// `simple` (the v2 design preview) leaves the title, model set and command preview out of the form.
+export async function setupRequests(actions, list, { simple = false } = {}) {
   if (!(await available())) return;
   let { requests, sets } = await getJSON("api/requests");
-  const { dialog, open } = requestDialog(sets, (items) => { requests = items; draw(); });
+  const { dialog, open } = requestDialog(sets, (items) => { requests = items; draw(); }, simple);
   document.body.append(dialog);
   actions.append(el("button", { class: "btn", text: "Request a prompt", attrs: { type: "button", id: "request-open" }, on: { click: open } }));
   actions.hidden = false;
@@ -94,7 +95,7 @@ function requestCard(r, onRemove) {
 }
 
 // The form, in a modal <dialog>: prompt, kind, optional title / note / model set, and a live preview of the command.
-function requestDialog(sets, onSaved) {
+function requestDialog(sets, onSaved, simple = false) {
   const field = (label, control, hint) => el("label", { class: "field" }, [el("span", { class: "field-label" }, [label, hint ? el("span", { class: "muted", text: ` ${hint}` }) : null]), control]);
   const prompt = el("textarea", { attrs: { name: "prompt", rows: "5", required: "", maxlength: "4000", placeholder: "e.g. Create an SVG of a pelican riding a bicycle" } });
   const title = el("input", { attrs: { name: "title", type: "text", maxlength: "120", placeholder: "Pelican on a bicycle" } });
@@ -111,7 +112,7 @@ function requestDialog(sets, onSaved) {
   const values = () => ({ prompt: prompt.value.trim(), kind: form.elements.kind.value, title: title.value.trim(), note: note.value.trim(), set: set.value });
   const update = () => { preview.textContent = runCommand(values()); };
   const close = () => dialog.close();
-  form.append(
+  form.append(...[
     el("div", { class: "dialog-head" }, [
       el("h2", { text: "Request a prompt" }),
       el("button", { class: "aside-close", text: "×", attrs: { type: "button", "aria-label": "Close" }, on: { click: close } }),
@@ -119,15 +120,15 @@ function requestDialog(sets, onSaved) {
     el("p", { class: "dialog-lede", text: "A visual or spatial task for the models. It's saved on this machine with the command to run it; nothing is published until you run it." }),
     field("Prompt", prompt),
     el("fieldset", { class: "field" }, [el("legend", { class: "field-label", text: "Kind" }), kinds]),
-    el("div", { class: "field-row" }, [field("Title", title, "optional"), field("Models", set, "a set from art-crit.toml")]),
+    simple ? null : el("div", { class: "field-row" }, [field("Title", title, "optional"), field("Models", set, "a set from art-crit.toml")]),
     field("Note", note, "optional"),
-    el("div", { class: "field" }, [el("span", { class: "field-label", text: "Command" }), preview]),
+    simple ? null : el("div", { class: "field" }, [el("span", { class: "field-label", text: "Command" }), preview]),
     error,
     el("div", { class: "dialog-actions" }, [
       el("button", { class: "btn btn-ghost", text: "Cancel", attrs: { type: "button" }, on: { click: close } }),
       el("button", { class: "btn", text: "Save request", attrs: { type: "submit" } }),
     ]),
-  );
+  ].filter(Boolean));
   form.addEventListener("input", update);
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
