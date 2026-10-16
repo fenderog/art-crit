@@ -3,7 +3,7 @@
     "slug": "octopus-ramen-shop",
     "title": "Octopus ramen shop",
     "kind": "media",
-    "n_runs": 35,
+    "n_runs": 36,
     "models": [
       "anthropic/claude-haiku-5-5",
       "anthropic/claude-opus-5-5",
@@ -15,7 +15,7 @@
       "openai-codex/gpt-6.1-sol",
       "xai/grok-4.7"
     ],
-    "updated": "2026-10-16T06:21:04Z",
+    "updated": "2026-10-16T06:22:51Z",
     "thumb": "data/octopus-ramen-shop/runs/grok-4.7-gb-low-20261015-230204/media/octopus-ramen-chef.svg"
   },
   {
