@@ -1204,13 +1204,17 @@ def convert_agy_stream(events, brief, level):
                {"type": "thinking_level_change", "thinkingLevel": level},
                {"type": "message", "message": {"role": "user", "content": [{"type": "text", "text": brief}]}}]
     seen_tools = set()
+    texts = {}  # agent_response step_index -> its one text block; the ACTIVE deltas and the DONE remainder join into it
     for e in events:
         if e.get("event") != "step_update":
             continue
         s = e.get("step_update") or {}
         if s.get("step_type") == "agent_response" and s.get("text_delta"):
-            entries.append({"type": "message", "message": {"role": "assistant", "content":
-                            [{"type": "text", "text": s["text_delta"]}]}})
+            block = texts.get(s.get("step_index"))
+            if block is None:  # one assistant message per response, not per streamed delta (each would be its own turn)
+                block = texts[s.get("step_index")] = {"type": "text", "text": ""}
+                entries.append({"type": "message", "message": {"role": "assistant", "content": [block]}})
+            block["text"] += s["text_delta"]
         if s.get("step_type") != "tool" or s.get("state") != "DONE" or s.get("step_index") in seen_tools:
             continue
         seen_tools.add(s.get("step_index"))

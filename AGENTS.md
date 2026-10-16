@@ -208,7 +208,9 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
 - **Agy and Grok Build:** `agy models` lists effort-suffixed slugs; pass that slug as `--model` (not a separate
   `--effort` override). Grok's `models` lists ids but not effort menus: `GrokBuild.MODELS` mirrors the current
   catalog and must be updated as models change. Grok's `streaming-messages-json` reuses the Claude converter;
-  Agy's `step_update` ACTIVE/DONE events need deduplication for tools and ordered text deltas. Neither CLI
+  Agy's `step_update` ACTIVE/DONE events need deduplication for tools. A response's text is many ACTIVE deltas plus a
+  DONE event carrying the remainder (not a copy), so `convert_agy_stream` joins each response into one assistant message:
+  one message per delta made every delta its own transcript turn (the log showed 160 "Assistant" turns for one answer). Neither CLI
   guarantees the same configuration isolation as Claude Code's `--safe-mode` (Grok's MCP meta-tools may remain).
   Agy has no cost field and Grok's server sometimes omits cost; 0 in a run can mean unreported, not free.
 - **Muse Code (`muse exec`):** its `--json` stdout is a thin live stream (no tool calls, no usage), so `MuseCode.command`
@@ -309,7 +311,7 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   Published `docs/data/` is not a fixed test fixture; avoid tests asserting its run count or requiring
   live published games to remain unchanged.
 - **Sync Playwright can't nest:** `test_web.py` keeps a session-wide browser open, so other tests that start Playwright
-  (verify, the web end-to-end test) run it in a worker thread (`in_thread()` in `test_web_kind.py`).
+  (verify) run it in a worker thread (`in_thread()` in `test_web_kind.py`).
 - **ffmpeg here has no WebP encoder** (it can decode WebP), so oversized images are re-encoded as JPEG.
 - **`uv run` puts `.venv/bin` first on PATH**, so agents (and the brief's tool list) see the venv's python3,
   not Homebrew's. The user also has `art-crit` installed as an editable uv tool (`uv tool install --editable '.[verify]'`),

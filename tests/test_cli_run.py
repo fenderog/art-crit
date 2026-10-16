@@ -955,6 +955,17 @@ def test_agy_stream_deduplicates_steps_and_preserves_result_fallback():
     assert agy_metrics(events[:-1], "high")["ended_in_error"]
 
 
+def test_agy_stream_joins_a_response_into_one_message():
+    # A response streams as many ACTIVE deltas, and its DONE event carries the remainder: one assistant message, not one per delta.
+    deltas = [("ACTIVE", "I made **a"), ("ACTIVE", "n octopus** and"), ("DONE", " [a link](x).")]
+    events = [{"event": "step_update", "step_update": {"step_index": 5, "step_type": "agent_response", "state": state, "text_delta": text}}
+              for state, text in deltas]
+    entries = convert_agy_stream(events + [{"event": "result", "result": {"status": "SUCCESS"}}], "brief", "high")
+    texts = [b["text"] for e in entries if e.get("type") == "message" and e["message"]["role"] == "assistant"
+             for b in e["message"]["content"]]
+    assert texts == ["I made **an octopus** and [a link](x)."]
+
+
 def test_grok_missing_result_fails_instead_of_publishing_success(tmp_path):
     (tmp_path / "events.jsonl").write_text(json.dumps({"type": "assistant", "message": {"id": "m", "content": []}}) + "\n")
     m = GrokBuild().metrics(tmp_path, "low")

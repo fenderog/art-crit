@@ -865,5 +865,4 @@ lists from the `import` statements and fails when they drift.
   For a web brief the fake pi writes `index.html`, `main.js`, `style.css` and a fake npm package in `node_modules/`.
   `tests/test_web_kind.py` (skipped without esbuild) packages pages with the real esbuild (module + inline module +
   classic scripts, stylesheets, imported assets, `</script>` escaping, remote/importmap left alone, missing imports and
-  paths outside the project), verifies offline in the sandbox (a remote fetch and localStorage both fail it), and runs
-  a web batch end to end into the viewer (kind chip, Page tab, the bundled package running in the sandboxed iframe).
+  paths outside the project), and verifies offline in the sandbox (a remote fetch and localStorage both fail it).

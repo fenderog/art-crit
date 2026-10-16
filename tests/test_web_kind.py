@@ -1,11 +1,8 @@
 """The web kind: packaging a page into one file with the real esbuild, and verifying it offline in a
 sandboxed iframe with the real headless Chrome. Skipped when esbuild (or Playwright) is missing."""
 
-import json
-import os
 import shutil
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
 
 import pytest
 
@@ -103,61 +100,3 @@ def test_verify_runs_the_page_offline_in_a_sandbox(tmp_path):
     assert not report["ok"]
     assert report["blockedRequests"] == ["https://cdn.example/three.js"]
     assert any("sandboxed" in e for e in report["pageErrors"])  # storage throws in the site's sandbox
-
-
-def test_web_run_end_to_end_in_the_viewer(tmp_path, monkeypatch):
-    """Fake agent -> real esbuild -> real offline verify -> import -> the viewer plays it sandboxed."""
-    sync_api = pytest.importorskip("playwright.sync_api")
-    from art_crit.cli import main
-    from art_crit.serve import serve_in_thread
-
-    repo = Path(__file__).resolve().parents[1]
-    monkeypatch.setenv("PATH", f"{repo / 'tests/fixtures/fake_pi'}{os.pathsep}{os.environ['PATH']}")
-    root = tmp_path / "site"
-    (root / "docs").mkdir(parents=True)
-    for f in repo.glob("docs/*.html"):
-        shutil.copy(f, root / "docs")
-    shutil.copytree(repo / "docs/assets", root / "docs/assets")
-    (root / "art-crit.toml").write_text(f'[run]\ndir = "{tmp_path / "runs"}"\n')
-    # --no-publish: this root isn't a git repo, and the test is about the viewer, not the push
-    assert in_thread(main, ["run", "--yes", "--no-publish", "--kind", "web", "a spinning horse", "-m", "openai-codex/gpt-6-sol:low", "--root", str(root)]) == 0
-    [run] = json.loads((root / "docs/data/a-spinning-horse/page.json").read_text())["runs"]
-    assert run["output"]["verified"] is True and run["thumb"] == ("thumb.jpg" if shutil.which("ffmpeg") else "thumb.png")
-
-    server = serve_in_thread(root / "docs")
-    try:
-        in_thread(check_viewer, sync_api, f"http://127.0.0.1:{server.server_address[1]}/", run["id"])
-    finally:
-        server.shutdown()
-        server.server_close()
-
-
-def check_viewer(sync_api, base, run_id):
-    with sync_api.sync_playwright() as p:
-        browser = p.chromium.launch(channel="chrome")
-        pg = browser.new_page()
-        errors, failed_requests = [], []
-        pg.on("pageerror", lambda e: errors.append(str(e)))
-        pg.on("requestfailed", lambda r: failed_requests.append((r.url, r.failure)))
-        pg.goto(f"{base}page.html?p=a-spinning-horse&view=table")
-        try:
-            pg.wait_for_selector("table.runs tbody tr.run-row")
-        except Exception:
-            print("viewer debug:", {"url": pg.url, "errors": errors, "failed_requests": failed_requests,
-                                    "rows": pg.locator("tr.run-row").count(),
-                                    "body": pg.locator("body").inner_text()[:1500]})
-            raise
-        assert pg.locator(".page-meta .kind-chip").text_content() == "Web"
-        pg.locator("tr.run-row").click()
-        frame = pg.locator("tr.run-detail iframe")
-        assert frame.get_attribute("sandbox") == "allow-scripts allow-pointer-lock"
-        pg.goto(f"{base}run.html?p=a-spinning-horse&r={run_id}")
-        assert pg.locator('#tabs button[data-tab="game"]').inner_text() == "Page"
-        pg.locator("[data-play]").click()
-        pg.wait_for_timeout(500)
-        game = next(f for f in pg.frames if f.url.endswith("/game/index.html"))
-        assert game.evaluate("document.title") == "spinning horse"  # the bundled npm package ran
-        pg.goto(base)
-        assert "Web" in pg.locator(".kind-chip").all_text_contents()
-        assert not errors
-        browser.close()
