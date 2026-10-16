@@ -3,12 +3,12 @@
     "slug": "3d-octopus-ramen-shop",
     "title": "3D Octopus Ramen Shop",
     "kind": "blender",
-    "n_runs": 3,
+    "n_runs": 4,
     "models": [
       "anthropic/claude-opus-5-5"
     ],
-    "updated": "2026-10-16T16:39:54Z",
-    "thumb": "data/3d-octopus-ramen-shop/runs/claude-opus-5-5-cc-high-20261016-092538/media/octopus_chef_closeup.thumb.jpg"
+    "updated": "2026-10-16T17:18:34Z",
+    "thumb": "data/3d-octopus-ramen-shop/runs/claude-opus-5-5-cc-xhigh-20261016-092538/media/octopus_chef_behind_the_counter.thumb.jpg"
   },
   {
     "slug": "octopus-ramen-shop",
