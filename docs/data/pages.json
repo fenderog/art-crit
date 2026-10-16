@@ -3,13 +3,14 @@
     "slug": "ai-logo-company",
     "title": "AI Logo Company",
     "kind": "media",
-    "n_runs": 4,
+    "n_runs": 5,
     "models": [
       "anthropic/claude-opus-5-5",
-      "anthropic/claude-sonnet-5-5"
+      "anthropic/claude-sonnet-5-5",
+      "openai-codex/gpt-6.1-sol"
     ],
-    "updated": "2026-10-16T17:56:29Z",
-    "thumb": "data/ai-logo-company/runs/claude-sonnet-5-5-cc-high-20261016-105541/media/loam-logo.thumb.jpg"
+    "updated": "2026-10-16T17:56:44Z",
+    "thumb": "data/ai-logo-company/runs/gpt-6.1-sol-low-20261016-105541/media/nura-logo.svg"
   },
   {
     "slug": "3d-octopus-ramen-shop",
