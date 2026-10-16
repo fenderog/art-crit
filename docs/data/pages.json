@@ -3,15 +3,15 @@
     "slug": "ai-logo-company",
     "title": "AI Logo Company",
     "kind": "media",
-    "n_runs": 7,
+    "n_runs": 8,
     "models": [
       "anthropic/claude-opus-5-5",
       "anthropic/claude-sonnet-5-5",
       "openai-codex/gpt-6-astra",
       "openai-codex/gpt-6.1-sol"
     ],
-    "updated": "2026-10-16T17:57:19Z",
-    "thumb": "data/ai-logo-company/runs/gpt-6-astra-low-20261016-105541/media/forma-logo.svg"
+    "updated": "2026-10-16T17:57:30Z",
+    "thumb": "data/ai-logo-company/runs/gpt-6-astra-medium-20261016-105541/media/mora-logo.svg"
   },
   {
     "slug": "3d-octopus-ramen-shop",
