@@ -3,7 +3,7 @@
     "slug": "ai-logo-company",
     "title": "AI Logo Company",
     "kind": "media",
-    "n_runs": 35,
+    "n_runs": 36,
     "models": [
       "anthropic/claude-haiku-5-5",
       "anthropic/claude-opus-5-5",
@@ -12,10 +12,11 @@
       "meta/muse-wonder-1.0",
       "meta/muse-wonder-full-1.0",
       "openai-codex/gpt-6-astra",
-      "openai-codex/gpt-6.1-sol"
+      "openai-codex/gpt-6.1-sol",
+      "xai/grok-4.7"
     ],
-    "updated": "2026-10-16T18:12:38Z",
-    "thumb": "data/ai-logo-company/runs/muse-wonder-full-1.0-mc-max-20261016-105541/media/spora-brand-board.svg"
+    "updated": "2026-10-16T18:13:06Z",
+    "thumb": "data/ai-logo-company/runs/grok-4.7-gb-low-20261016-105541/media/calyx-lockup.thumb.jpg"
   },
   {
     "slug": "3d-octopus-ramen-shop",
