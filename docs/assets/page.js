@@ -3,7 +3,7 @@ import { fmtNum, fmtDuration, fmtCost, fmtDate, fmtDateShort } from "./fmt.js";
 import { runDir, harnessLabel, stateBadge, effortPill, effortIndex, prettyModelLabel, modelParts, prettyModelName, runUrl, byModelThenEffort, rankBy, bestSets, filterRuns, LOWER_IS_BETTER, isComplete, rankLabel, canEditRanks, saveRanks, vendorOptions, playUrl } from "./runs.js";
 import { COLUMN_HELP, rowHelp } from "./help.js";
 import { outputBadge, outputVerified, isPlayable, renderOutput, kindUi, mediaCount } from "./output.js";
-import { renderModelRows, setupPlayAll } from "./card.js";
+import { renderRunGrid, setupPlayAll } from "./card.js";
 import { createSelection, selectBox } from "./selection.js";
 import { readFilters, renderFilterBar } from "./filters.js";
 import { setupAside } from "./aside.js";
@@ -12,6 +12,7 @@ import { loadVotes, renderAuth, voteBar } from "./votes.js";
 const slug = qs("p");
 const main = document.getElementById("main");
 const VIEW_KEY = "art-crit.view"; // "grid" (default) or "table", remembered in localStorage; ?view= wins
+const GROUP_FROM = 15; // fewer runs than this are one flat grid; more are grouped by vendor
 
 function initialView() {
   const views = ["grid", "table"];
@@ -74,7 +75,7 @@ function render(page, runs, editable) {
 
   if (isMedia) main.classList.add("media-page");
 
-  // What is shown: the runs left by the filter bar, as model rows (default) or the table. Both views share the
+  // What is shown: the runs left by the filter bar, as a grid of cards (default) or the table. Both views share the
   // filters (in the URL) and the ticked runs (selection.js).
   const filters = readFilters();
   const selection = createSelection(slug, runs.map((r) => r.id));
@@ -103,7 +104,7 @@ function render(page, runs, editable) {
     grid.hidden = view !== "grid" && !empty;
     tableWrap.hidden = view !== "table" || empty;
     if (empty) showMessage(grid, "No runs match the filters.");
-    else if (view === "grid") renderModelRows(grid, slug, shown, { selection, votes });
+    else if (view === "grid") renderRunGrid(grid, slug, shown, { groupFrom: GROUP_FROM, selection, dense: true, votes });
     else drawTable();
     updatePlayAll();
   }
