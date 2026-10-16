@@ -3,13 +3,13 @@
     "slug": "octopus-ramen-shop",
     "title": "Octopus ramen shop",
     "kind": "media",
-    "n_runs": 6,
+    "n_runs": 7,
     "models": [
       "anthropic/claude-opus-5-5",
       "anthropic/claude-sonnet-5-5",
       "openai-codex/gpt-6.1-sol"
     ],
-    "updated": "2026-10-16T06:04:53Z",
+    "updated": "2026-10-16T06:06:06Z",
     "thumb": "data/octopus-ramen-shop/runs/gpt-6.1-sol-medium-20261015-230204/media/octopus-ramen.svg"
   },
   {
