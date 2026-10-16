@@ -3,13 +3,14 @@
     "slug": "octopus-ramen-shop",
     "title": "Octopus ramen shop",
     "kind": "media",
-    "n_runs": 3,
+    "n_runs": 4,
     "models": [
       "anthropic/claude-opus-5-5",
-      "anthropic/claude-sonnet-5-5"
+      "anthropic/claude-sonnet-5-5",
+      "openai-codex/gpt-6.1-sol"
     ],
-    "updated": "2026-10-16T06:03:00Z",
-    "thumb": "data/octopus-ramen-shop/runs/claude-sonnet-5-5-cc-medium-20261015-230204/media/octopus_ramen.svg"
+    "updated": "2026-10-16T06:04:13Z",
+    "thumb": "data/octopus-ramen-shop/runs/gpt-6.1-sol-low-20261015-230204/media/octo-ramen.svg"
   },
   {
     "slug": "ceate-an-svg-of-an-awkward",
