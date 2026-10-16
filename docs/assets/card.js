@@ -1,9 +1,8 @@
-// Run cards: one run's model, rank, effort, metrics and output as a card. page.html's Grid view and compare.html
-// both draw their runs through renderRunGrid(), so there is one implementation.
+// Shared run cards for page.html's model rows and compare.html's wrapping grid.
 
 import { el } from "./dom.js";
-import { fmtDuration, fmtCost, fmtNum } from "./fmt.js";
-import { runDir, harnessLabel, stateBadge, effortPill, prettyModelLabel, runUrl, LOWER_IS_BETTER, isComplete, byRankThenModel, rankChip, vendorOptions, groupByVendor, bestSets, playUrl } from "./runs.js";
+import { fmtDuration, fmtCost, fmtNum, fmtDate } from "./fmt.js";
+import { runDir, harnessLabel, stateBadge, effortPill, prettyModelLabel, runUrl, LOWER_IS_BETTER, isComplete, byRankThenModel, rankChip, vendorOptions, groupByVendor, bestSets, playUrl, byModelThenEffort } from "./runs.js";
 import { outputBadge, outputOk, renderOutput } from "./output.js";
 import { selectBox } from "./selection.js";
 import { voteBar } from "./votes.js";
@@ -33,6 +32,28 @@ export function renderRunGrid(container, slug, runs, { groupFrom, selection = nu
       grid(g.runs),
     ])
   ));
+}
+
+// One horizontally scrolling row per exact model id (routes stay distinct). Rows follow their best rank,
+// then model id; within a row effort always increases, even when a higher effort has a better rank.
+export function renderModelRows(container, slug, runs, { selection = null, votes = null } = {}) {
+  const groups = new Map();
+  for (const r of [...runs].sort(byRankThenModel)) {
+    if (!groups.has(r.model)) groups.set(r.model, []);
+    groups.get(r.model).push(r);
+  }
+  const best = bestSets(runs);
+  container.replaceChildren(...[...groups].map(([model, list]) => {
+    const opts = vendorOptions(model);
+    return el("section", { class: "model-row", ...opts, attrs: { ...opts.attrs, "aria-label": model } }, [
+      el("div", { class: "model-row-head" }, [
+        el("h2", {}, [prettyModelLabel(model)]),
+        el("span", { class: "model-row-count", text: `${list.length} run${list.length === 1 ? "" : "s"}` }),
+      ]),
+      el("div", { class: "model-results", attrs: { tabindex: "0", role: "region", "aria-label": `${model} results, scroll for more runs` } },
+        list.sort(byModelThenEffort).map((r) => runCard(slug, r, best, selection, votes, { grouped: true }))),
+    ]);
+  }));
 }
 
 // Starts every game at once by pressing each card's play overlay. Each sandboxed game has its own opaque origin,
@@ -69,7 +90,7 @@ function metricsLine(r, best) {
   return line;
 }
 
-export function runCard(slug, r, best, selection = null, votes = null) {
+export function runCard(slug, r, best, selection = null, votes = null, { grouped = false } = {}) {
   const base = runDir(slug, r.id);
   const sb = stateBadge(r) || outputBadge(r);
   // ↗ opens the run alone in a popup window, through the sandboxed play.html (never the raw entry URL)
@@ -80,13 +101,16 @@ export function runCard(slug, r, best, selection = null, votes = null) {
     on: { click: (e) => { e.preventDefault(); window.open(url, "_blank", "popup,noopener,width=1280,height=800"); } },
   }) : null;
   const heading = [
-    el("span", { class: "card-title" }, [selection ? selectBox(r, selection) : null, el("a", { class: "card-model", attrs: { href: runUrl(slug, r.id) } }, [prettyModelLabel(r.model)])]),
+    el("span", { class: "card-title" }, [selection ? selectBox(r, selection) : null, el("a", { class: "card-model", attrs: { href: runUrl(slug, r.id), title: grouped ? `${r.model} · ${r.effort} · ${fmtDate(r.started_at)}` : r.model } }, [grouped ? "Details →" : prettyModelLabel(r.model)])]),
     el("span", { class: "card-tags" }, [rankChip(r.rank), r.rank != null ? " " : null, effortPill(r.effort), sb ? " " : null, sb, pop ? " " : null, pop]),
   ];
   // The vote row shares the metrics row: a card is exactly three grid rows (heading, output, metrics), see .compare-col.
   const meta = votes ? el("div", { class: "compare-meta" }, [metricsLine(r, best), voteBar(votes, r.id)]) : metricsLine(r, best);
   const body = el("div", { class: "compare-body" });
-  if (r.error) body.append(el("p", { class: "run-error", text: r.error }));
-  body.append(...renderOutput(r, base, { compact: true, href: runUrl(slug, r.id) }));
+  const errors = grouped ? meta : body; // diagnostics never displace a fixed-size preview in model rows
+  if (r.error) errors.append(el("p", { class: "run-error", text: r.error }));
+  for (const node of renderOutput(r, base, { compact: true, href: runUrl(slug, r.id) })) {
+    (grouped && node.classList.contains("run-error") ? errors : body).append(node);
+  }
   return el("div", { class: isComplete(r) ? "compare-col" : "compare-col is-failed", ...vendorOptions(r.model) }, [el("h3", {}, heading), body, meta]);
 }
