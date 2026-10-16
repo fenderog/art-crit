@@ -61,6 +61,57 @@
         "conversation": "session/conversation.json"
       },
       "source": null,
+      "tools": {
+        "allowed": {
+          "builtin": [
+            "Bash",
+            "Read",
+            "Write",
+            "Edit",
+            "Glob",
+            "Grep"
+          ],
+          "mcp": {
+            "blender": {
+              "allowed": [
+                "execute_blender_code",
+                "execute_blender_code_for_cli",
+                "get_blendfile_summary_datablocks",
+                "get_blendfile_summary_datablocks_for_cli",
+                "get_blendfile_summary_missing_files",
+                "get_blendfile_summary_missing_files_for_cli",
+                "get_blendfile_summary_of_linked_libraries",
+                "get_blendfile_summary_of_linked_libraries_for_cli",
+                "get_blendfile_summary_path_info",
+                "get_blendfile_summary_path_info_for_cli",
+                "get_blendfile_summary_usage_guess",
+                "get_blendfile_summary_usage_guess_for_cli",
+                "get_object_detail_summary",
+                "get_objects_summary",
+                "get_python_api_docs",
+                "render_thumbnail_to_path",
+                "render_viewport_to_path",
+                "search_api_docs",
+                "search_manual_docs"
+              ],
+              "hidden": [
+                "get_screenshot_of_area_as_image",
+                "get_screenshot_of_window_as_image",
+                "get_screenshot_of_window_as_json",
+                "jump_to_tab_by_name",
+                "jump_to_tab_by_space_type",
+                "jump_to_view3d_object_by_name",
+                "jump_to_view3d_object_data_by_name"
+              ]
+            }
+          }
+        },
+        "used": {
+          "mcp__blender__execute_blender_code": 7,
+          "read": 5,
+          "bash": 1
+        }
+      },
       "rank": null
     },
     {
@@ -131,6 +182,57 @@
         "conversation": "session/conversation.json"
       },
       "source": null,
+      "tools": {
+        "allowed": {
+          "builtin": [
+            "Bash",
+            "Read",
+            "Write",
+            "Edit",
+            "Glob",
+            "Grep"
+          ],
+          "mcp": {
+            "blender": {
+              "allowed": [
+                "execute_blender_code",
+                "execute_blender_code_for_cli",
+                "get_blendfile_summary_datablocks",
+                "get_blendfile_summary_datablocks_for_cli",
+                "get_blendfile_summary_missing_files",
+                "get_blendfile_summary_missing_files_for_cli",
+                "get_blendfile_summary_of_linked_libraries",
+                "get_blendfile_summary_of_linked_libraries_for_cli",
+                "get_blendfile_summary_path_info",
+                "get_blendfile_summary_path_info_for_cli",
+                "get_blendfile_summary_usage_guess",
+                "get_blendfile_summary_usage_guess_for_cli",
+                "get_object_detail_summary",
+                "get_objects_summary",
+                "get_python_api_docs",
+                "render_thumbnail_to_path",
+                "render_viewport_to_path",
+                "search_api_docs",
+                "search_manual_docs"
+              ],
+              "hidden": [
+                "get_screenshot_of_area_as_image",
+                "get_screenshot_of_window_as_image",
+                "get_screenshot_of_window_as_json",
+                "jump_to_tab_by_name",
+                "jump_to_tab_by_space_type",
+                "jump_to_view3d_object_by_name",
+                "jump_to_view3d_object_data_by_name"
+              ]
+            }
+          }
+        },
+        "used": {
+          "mcp__blender__execute_blender_code": 8,
+          "read": 7,
+          "bash": 1
+        }
+      },
       "rank": null
     },
     {
@@ -206,6 +308,58 @@
           "scripts/build_robie.py",
           "scripts/scene_setup.py"
         ]
+      },
+      "tools": {
+        "allowed": {
+          "builtin": [
+            "Bash",
+            "Read",
+            "Write",
+            "Edit",
+            "Glob",
+            "Grep"
+          ],
+          "mcp": {
+            "blender": {
+              "allowed": [
+                "execute_blender_code",
+                "execute_blender_code_for_cli",
+                "get_blendfile_summary_datablocks",
+                "get_blendfile_summary_datablocks_for_cli",
+                "get_blendfile_summary_missing_files",
+                "get_blendfile_summary_missing_files_for_cli",
+                "get_blendfile_summary_of_linked_libraries",
+                "get_blendfile_summary_of_linked_libraries_for_cli",
+                "get_blendfile_summary_path_info",
+                "get_blendfile_summary_path_info_for_cli",
+                "get_blendfile_summary_usage_guess",
+                "get_blendfile_summary_usage_guess_for_cli",
+                "get_object_detail_summary",
+                "get_objects_summary",
+                "get_python_api_docs",
+                "render_thumbnail_to_path",
+                "render_viewport_to_path",
+                "search_api_docs",
+                "search_manual_docs"
+              ],
+              "hidden": [
+                "get_screenshot_of_area_as_image",
+                "get_screenshot_of_window_as_image",
+                "get_screenshot_of_window_as_json",
+                "jump_to_tab_by_name",
+                "jump_to_tab_by_space_type",
+                "jump_to_view3d_object_by_name",
+                "jump_to_view3d_object_data_by_name"
+              ]
+            }
+          }
+        },
+        "used": {
+          "mcp__blender__execute_blender_code": 11,
+          "bash": 9,
+          "read": 6,
+          "write": 2
+        }
       },
       "rank": null
     },
@@ -292,6 +446,59 @@
           "scripts/preview.py",
           "scripts/studio.py"
         ]
+      },
+      "tools": {
+        "allowed": {
+          "builtin": [
+            "Bash",
+            "Read",
+            "Write",
+            "Edit",
+            "Glob",
+            "Grep"
+          ],
+          "mcp": {
+            "blender": {
+              "allowed": [
+                "execute_blender_code",
+                "execute_blender_code_for_cli",
+                "get_blendfile_summary_datablocks",
+                "get_blendfile_summary_datablocks_for_cli",
+                "get_blendfile_summary_missing_files",
+                "get_blendfile_summary_missing_files_for_cli",
+                "get_blendfile_summary_of_linked_libraries",
+                "get_blendfile_summary_of_linked_libraries_for_cli",
+                "get_blendfile_summary_path_info",
+                "get_blendfile_summary_path_info_for_cli",
+                "get_blendfile_summary_usage_guess",
+                "get_blendfile_summary_usage_guess_for_cli",
+                "get_object_detail_summary",
+                "get_objects_summary",
+                "get_python_api_docs",
+                "render_thumbnail_to_path",
+                "render_viewport_to_path",
+                "search_api_docs",
+                "search_manual_docs"
+              ],
+              "hidden": [
+                "get_screenshot_of_area_as_image",
+                "get_screenshot_of_window_as_image",
+                "get_screenshot_of_window_as_json",
+                "jump_to_tab_by_name",
+                "jump_to_tab_by_space_type",
+                "jump_to_view3d_object_by_name",
+                "jump_to_view3d_object_data_by_name"
+              ]
+            }
+          }
+        },
+        "used": {
+          "bash": 39,
+          "read": 39,
+          "mcp__blender__execute_blender_code": 16,
+          "write": 4,
+          "mcp__blender__execute_blender_code_for_cli": 1
+        }
       },
       "rank": null
     },
@@ -384,6 +591,61 @@
           "scripts/robie_scene.py"
         ]
       },
+      "tools": {
+        "allowed": {
+          "builtin": [
+            "Bash",
+            "Read",
+            "Write",
+            "Edit",
+            "Glob",
+            "Grep"
+          ],
+          "mcp": {
+            "blender": {
+              "allowed": [
+                "execute_blender_code",
+                "execute_blender_code_for_cli",
+                "get_blendfile_summary_datablocks",
+                "get_blendfile_summary_datablocks_for_cli",
+                "get_blendfile_summary_missing_files",
+                "get_blendfile_summary_missing_files_for_cli",
+                "get_blendfile_summary_of_linked_libraries",
+                "get_blendfile_summary_of_linked_libraries_for_cli",
+                "get_blendfile_summary_path_info",
+                "get_blendfile_summary_path_info_for_cli",
+                "get_blendfile_summary_usage_guess",
+                "get_blendfile_summary_usage_guess_for_cli",
+                "get_object_detail_summary",
+                "get_objects_summary",
+                "get_python_api_docs",
+                "render_thumbnail_to_path",
+                "render_viewport_to_path",
+                "search_api_docs",
+                "search_manual_docs"
+              ],
+              "hidden": [
+                "get_screenshot_of_area_as_image",
+                "get_screenshot_of_window_as_image",
+                "get_screenshot_of_window_as_json",
+                "jump_to_tab_by_name",
+                "jump_to_tab_by_space_type",
+                "jump_to_view3d_object_by_name",
+                "jump_to_view3d_object_data_by_name"
+              ]
+            }
+          }
+        },
+        "used": {
+          "read": 42,
+          "bash": 34,
+          "mcp__blender__execute_blender_code": 33,
+          "write": 3,
+          "mcp__blender__search_api_docs": 2,
+          "mcp__blender__get_objects_summary": 1,
+          "mcp__blender__get_python_api_docs": 1
+        }
+      },
       "rank": null
     },
     {
@@ -424,6 +686,49 @@
         "stderr": "session/stderr.txt"
       },
       "source": null,
+      "tools": {
+        "allowed": {
+          "builtin": null,
+          "mcp": {
+            "blender": {
+              "allowed": [
+                "execute_blender_code",
+                "execute_blender_code_for_cli",
+                "get_blendfile_summary_datablocks",
+                "get_blendfile_summary_datablocks_for_cli",
+                "get_blendfile_summary_missing_files",
+                "get_blendfile_summary_missing_files_for_cli",
+                "get_blendfile_summary_of_linked_libraries",
+                "get_blendfile_summary_of_linked_libraries_for_cli",
+                "get_blendfile_summary_path_info",
+                "get_blendfile_summary_path_info_for_cli",
+                "get_blendfile_summary_usage_guess",
+                "get_blendfile_summary_usage_guess_for_cli",
+                "get_object_detail_summary",
+                "get_objects_summary",
+                "get_python_api_docs",
+                "render_thumbnail_to_path",
+                "render_viewport_to_path",
+                "search_api_docs",
+                "search_manual_docs"
+              ],
+              "hidden": [
+                "get_screenshot_of_area_as_image",
+                "get_screenshot_of_window_as_image",
+                "get_screenshot_of_window_as_json",
+                "jump_to_tab_by_name",
+                "jump_to_tab_by_space_type",
+                "jump_to_view3d_object_by_name",
+                "jump_to_view3d_object_data_by_name"
+              ]
+            }
+          }
+        },
+        "used": {
+          "bash": 2,
+          "mcp__blender__execute_blender_code": 1
+        }
+      },
       "rank": null
     },
     {
@@ -481,6 +786,49 @@
         "stderr": "session/stderr.txt"
       },
       "source": null,
+      "tools": {
+        "allowed": {
+          "builtin": null,
+          "mcp": {
+            "blender": {
+              "allowed": [
+                "execute_blender_code",
+                "execute_blender_code_for_cli",
+                "get_blendfile_summary_datablocks",
+                "get_blendfile_summary_datablocks_for_cli",
+                "get_blendfile_summary_missing_files",
+                "get_blendfile_summary_missing_files_for_cli",
+                "get_blendfile_summary_of_linked_libraries",
+                "get_blendfile_summary_of_linked_libraries_for_cli",
+                "get_blendfile_summary_path_info",
+                "get_blendfile_summary_path_info_for_cli",
+                "get_blendfile_summary_usage_guess",
+                "get_blendfile_summary_usage_guess_for_cli",
+                "get_object_detail_summary",
+                "get_objects_summary",
+                "get_python_api_docs",
+                "render_thumbnail_to_path",
+                "render_viewport_to_path",
+                "search_api_docs",
+                "search_manual_docs"
+              ],
+              "hidden": [
+                "get_screenshot_of_area_as_image",
+                "get_screenshot_of_window_as_image",
+                "get_screenshot_of_window_as_json",
+                "jump_to_tab_by_name",
+                "jump_to_tab_by_space_type",
+                "jump_to_view3d_object_by_name",
+                "jump_to_view3d_object_data_by_name"
+              ]
+            }
+          }
+        },
+        "used": {
+          "mcp__blender__execute_blender_code": 2,
+          "bash": 1
+        }
+      },
       "rank": null
     },
     {
@@ -553,6 +901,50 @@
         "stderr": "session/stderr.txt"
       },
       "source": null,
+      "tools": {
+        "allowed": {
+          "builtin": null,
+          "mcp": {
+            "blender": {
+              "allowed": [
+                "execute_blender_code",
+                "execute_blender_code_for_cli",
+                "get_blendfile_summary_datablocks",
+                "get_blendfile_summary_datablocks_for_cli",
+                "get_blendfile_summary_missing_files",
+                "get_blendfile_summary_missing_files_for_cli",
+                "get_blendfile_summary_of_linked_libraries",
+                "get_blendfile_summary_of_linked_libraries_for_cli",
+                "get_blendfile_summary_path_info",
+                "get_blendfile_summary_path_info_for_cli",
+                "get_blendfile_summary_usage_guess",
+                "get_blendfile_summary_usage_guess_for_cli",
+                "get_object_detail_summary",
+                "get_objects_summary",
+                "get_python_api_docs",
+                "render_thumbnail_to_path",
+                "render_viewport_to_path",
+                "search_api_docs",
+                "search_manual_docs"
+              ],
+              "hidden": [
+                "get_screenshot_of_area_as_image",
+                "get_screenshot_of_window_as_image",
+                "get_screenshot_of_window_as_json",
+                "jump_to_tab_by_name",
+                "jump_to_tab_by_space_type",
+                "jump_to_view3d_object_by_name",
+                "jump_to_view3d_object_data_by_name"
+              ]
+            }
+          }
+        },
+        "used": {
+          "mcp__blender__execute_blender_code": 7,
+          "read": 4,
+          "bash": 2
+        }
+      },
       "rank": null
     },
     {
@@ -625,6 +1017,54 @@
         "stderr": "session/stderr.txt"
       },
       "source": null,
+      "tools": {
+        "allowed": {
+          "builtin": null,
+          "mcp": {
+            "blender": {
+              "allowed": [
+                "execute_blender_code",
+                "execute_blender_code_for_cli",
+                "get_blendfile_summary_datablocks",
+                "get_blendfile_summary_datablocks_for_cli",
+                "get_blendfile_summary_missing_files",
+                "get_blendfile_summary_missing_files_for_cli",
+                "get_blendfile_summary_of_linked_libraries",
+                "get_blendfile_summary_of_linked_libraries_for_cli",
+                "get_blendfile_summary_path_info",
+                "get_blendfile_summary_path_info_for_cli",
+                "get_blendfile_summary_usage_guess",
+                "get_blendfile_summary_usage_guess_for_cli",
+                "get_object_detail_summary",
+                "get_objects_summary",
+                "get_python_api_docs",
+                "render_thumbnail_to_path",
+                "render_viewport_to_path",
+                "search_api_docs",
+                "search_manual_docs"
+              ],
+              "hidden": [
+                "get_screenshot_of_area_as_image",
+                "get_screenshot_of_window_as_image",
+                "get_screenshot_of_window_as_json",
+                "jump_to_tab_by_name",
+                "jump_to_tab_by_space_type",
+                "jump_to_view3d_object_by_name",
+                "jump_to_view3d_object_data_by_name"
+              ]
+            }
+          }
+        },
+        "used": {
+          "mcp__blender__execute_blender_code": 13,
+          "read": 10,
+          "bash": 4,
+          "write_todos": 3,
+          "edit": 1,
+          "mcp__blender__render_thumbnail_to_path": 1,
+          "write": 1
+        }
+      },
       "rank": null
     },
     {
@@ -702,6 +1142,56 @@
           "work/build.py"
         ]
       },
+      "tools": {
+        "allowed": {
+          "builtin": null,
+          "mcp": {
+            "blender": {
+              "allowed": [
+                "execute_blender_code",
+                "execute_blender_code_for_cli",
+                "get_blendfile_summary_datablocks",
+                "get_blendfile_summary_datablocks_for_cli",
+                "get_blendfile_summary_missing_files",
+                "get_blendfile_summary_missing_files_for_cli",
+                "get_blendfile_summary_of_linked_libraries",
+                "get_blendfile_summary_of_linked_libraries_for_cli",
+                "get_blendfile_summary_path_info",
+                "get_blendfile_summary_path_info_for_cli",
+                "get_blendfile_summary_usage_guess",
+                "get_blendfile_summary_usage_guess_for_cli",
+                "get_object_detail_summary",
+                "get_objects_summary",
+                "get_python_api_docs",
+                "render_thumbnail_to_path",
+                "render_viewport_to_path",
+                "search_api_docs",
+                "search_manual_docs"
+              ],
+              "hidden": [
+                "get_screenshot_of_area_as_image",
+                "get_screenshot_of_window_as_image",
+                "get_screenshot_of_window_as_json",
+                "jump_to_tab_by_name",
+                "jump_to_tab_by_space_type",
+                "jump_to_view3d_object_by_name",
+                "jump_to_view3d_object_data_by_name"
+              ]
+            }
+          }
+        },
+        "used": {
+          "edit": 12,
+          "mcp__blender__execute_blender_code": 10,
+          "read": 9,
+          "bash": 4,
+          "write_todos": 3,
+          "mcp__blender__get_blendfile_summary_datablocks": 1,
+          "mcp__blender__get_objects_summary": 1,
+          "mcp__blender__render_viewport_to_path": 1,
+          "write": 1
+        }
+      },
       "rank": null
     },
     {
@@ -774,6 +1264,50 @@
         "stderr": "session/stderr.txt"
       },
       "source": null,
+      "tools": {
+        "allowed": {
+          "builtin": null,
+          "mcp": {
+            "blender": {
+              "allowed": [
+                "execute_blender_code",
+                "execute_blender_code_for_cli",
+                "get_blendfile_summary_datablocks",
+                "get_blendfile_summary_datablocks_for_cli",
+                "get_blendfile_summary_missing_files",
+                "get_blendfile_summary_missing_files_for_cli",
+                "get_blendfile_summary_of_linked_libraries",
+                "get_blendfile_summary_of_linked_libraries_for_cli",
+                "get_blendfile_summary_path_info",
+                "get_blendfile_summary_path_info_for_cli",
+                "get_blendfile_summary_usage_guess",
+                "get_blendfile_summary_usage_guess_for_cli",
+                "get_object_detail_summary",
+                "get_objects_summary",
+                "get_python_api_docs",
+                "render_thumbnail_to_path",
+                "render_viewport_to_path",
+                "search_api_docs",
+                "search_manual_docs"
+              ],
+              "hidden": [
+                "get_screenshot_of_area_as_image",
+                "get_screenshot_of_window_as_image",
+                "get_screenshot_of_window_as_json",
+                "jump_to_tab_by_name",
+                "jump_to_tab_by_space_type",
+                "jump_to_view3d_object_by_name",
+                "jump_to_view3d_object_data_by_name"
+              ]
+            }
+          }
+        },
+        "used": {
+          "read": 11,
+          "mcp__blender__execute_blender_code": 10,
+          "mcp__blender__get_blendfile_summary_datablocks": 1
+        }
+      },
       "rank": null
     },
     {
@@ -846,6 +1380,53 @@
         "stderr": "session/stderr.txt"
       },
       "source": null,
+      "tools": {
+        "allowed": {
+          "builtin": null,
+          "mcp": {
+            "blender": {
+              "allowed": [
+                "execute_blender_code",
+                "execute_blender_code_for_cli",
+                "get_blendfile_summary_datablocks",
+                "get_blendfile_summary_datablocks_for_cli",
+                "get_blendfile_summary_missing_files",
+                "get_blendfile_summary_missing_files_for_cli",
+                "get_blendfile_summary_of_linked_libraries",
+                "get_blendfile_summary_of_linked_libraries_for_cli",
+                "get_blendfile_summary_path_info",
+                "get_blendfile_summary_path_info_for_cli",
+                "get_blendfile_summary_usage_guess",
+                "get_blendfile_summary_usage_guess_for_cli",
+                "get_object_detail_summary",
+                "get_objects_summary",
+                "get_python_api_docs",
+                "render_thumbnail_to_path",
+                "render_viewport_to_path",
+                "search_api_docs",
+                "search_manual_docs"
+              ],
+              "hidden": [
+                "get_screenshot_of_area_as_image",
+                "get_screenshot_of_window_as_image",
+                "get_screenshot_of_window_as_json",
+                "jump_to_tab_by_name",
+                "jump_to_tab_by_space_type",
+                "jump_to_view3d_object_by_name",
+                "jump_to_view3d_object_data_by_name"
+              ]
+            }
+          }
+        },
+        "used": {
+          "read": 15,
+          "mcp__blender__execute_blender_code": 13,
+          "bash": 5,
+          "mcp__blender__get_blendfile_summary_datablocks": 1,
+          "mcp__blender__get_objects_summary": 1,
+          "mcp__blender__render_thumbnail_to_path": 1
+        }
+      },
       "rank": null
     },
     {
@@ -918,6 +1499,53 @@
         "stderr": "session/stderr.txt"
       },
       "source": null,
+      "tools": {
+        "allowed": {
+          "builtin": null,
+          "mcp": {
+            "blender": {
+              "allowed": [
+                "execute_blender_code",
+                "execute_blender_code_for_cli",
+                "get_blendfile_summary_datablocks",
+                "get_blendfile_summary_datablocks_for_cli",
+                "get_blendfile_summary_missing_files",
+                "get_blendfile_summary_missing_files_for_cli",
+                "get_blendfile_summary_of_linked_libraries",
+                "get_blendfile_summary_of_linked_libraries_for_cli",
+                "get_blendfile_summary_path_info",
+                "get_blendfile_summary_path_info_for_cli",
+                "get_blendfile_summary_usage_guess",
+                "get_blendfile_summary_usage_guess_for_cli",
+                "get_object_detail_summary",
+                "get_objects_summary",
+                "get_python_api_docs",
+                "render_thumbnail_to_path",
+                "render_viewport_to_path",
+                "search_api_docs",
+                "search_manual_docs"
+              ],
+              "hidden": [
+                "get_screenshot_of_area_as_image",
+                "get_screenshot_of_window_as_image",
+                "get_screenshot_of_window_as_json",
+                "jump_to_tab_by_name",
+                "jump_to_tab_by_space_type",
+                "jump_to_view3d_object_by_name",
+                "jump_to_view3d_object_data_by_name"
+              ]
+            }
+          }
+        },
+        "used": {
+          "mcp__blender__execute_blender_code": 18,
+          "read": 14,
+          "bash": 2,
+          "mcp__blender__get_blendfile_summary_datablocks": 1,
+          "mcp__blender__get_objects_summary": 1,
+          "mcp__blender__render_viewport_to_path": 1
+        }
+      },
       "rank": null
     },
     {
@@ -991,6 +1619,50 @@
         "stderr": "session/stderr.txt"
       },
       "source": null,
+      "tools": {
+        "allowed": {
+          "builtin": null,
+          "mcp": {
+            "blender": {
+              "allowed": [
+                "execute_blender_code",
+                "execute_blender_code_for_cli",
+                "get_blendfile_summary_datablocks",
+                "get_blendfile_summary_datablocks_for_cli",
+                "get_blendfile_summary_missing_files",
+                "get_blendfile_summary_missing_files_for_cli",
+                "get_blendfile_summary_of_linked_libraries",
+                "get_blendfile_summary_of_linked_libraries_for_cli",
+                "get_blendfile_summary_path_info",
+                "get_blendfile_summary_path_info_for_cli",
+                "get_blendfile_summary_usage_guess",
+                "get_blendfile_summary_usage_guess_for_cli",
+                "get_object_detail_summary",
+                "get_objects_summary",
+                "get_python_api_docs",
+                "render_thumbnail_to_path",
+                "render_viewport_to_path",
+                "search_api_docs",
+                "search_manual_docs"
+              ],
+              "hidden": [
+                "get_screenshot_of_area_as_image",
+                "get_screenshot_of_window_as_image",
+                "get_screenshot_of_window_as_json",
+                "jump_to_tab_by_name",
+                "jump_to_tab_by_space_type",
+                "jump_to_view3d_object_by_name",
+                "jump_to_view3d_object_data_by_name"
+              ]
+            }
+          }
+        },
+        "used": {
+          "read": 6,
+          "mcp__blender__execute_blender_code": 5,
+          "bash": 2
+        }
+      },
       "rank": null
     },
     {
@@ -1057,6 +1729,51 @@
         "stderr": "session/stderr.txt"
       },
       "source": null,
+      "tools": {
+        "allowed": {
+          "builtin": null,
+          "mcp": {
+            "blender": {
+              "allowed": [
+                "execute_blender_code",
+                "execute_blender_code_for_cli",
+                "get_blendfile_summary_datablocks",
+                "get_blendfile_summary_datablocks_for_cli",
+                "get_blendfile_summary_missing_files",
+                "get_blendfile_summary_missing_files_for_cli",
+                "get_blendfile_summary_of_linked_libraries",
+                "get_blendfile_summary_of_linked_libraries_for_cli",
+                "get_blendfile_summary_path_info",
+                "get_blendfile_summary_path_info_for_cli",
+                "get_blendfile_summary_usage_guess",
+                "get_blendfile_summary_usage_guess_for_cli",
+                "get_object_detail_summary",
+                "get_objects_summary",
+                "get_python_api_docs",
+                "render_thumbnail_to_path",
+                "render_viewport_to_path",
+                "search_api_docs",
+                "search_manual_docs"
+              ],
+              "hidden": [
+                "get_screenshot_of_area_as_image",
+                "get_screenshot_of_window_as_image",
+                "get_screenshot_of_window_as_json",
+                "jump_to_tab_by_name",
+                "jump_to_tab_by_space_type",
+                "jump_to_view3d_object_by_name",
+                "jump_to_view3d_object_data_by_name"
+              ]
+            }
+          }
+        },
+        "used": {
+          "mcp__blender__execute_blender_code": 11,
+          "read": 8,
+          "bash": 1,
+          "mcp__blender__get_blendfile_summary_datablocks": 1
+        }
+      },
       "rank": null
     },
     {
@@ -1135,6 +1852,55 @@
           "build_robie.py"
         ]
       },
+      "tools": {
+        "allowed": {
+          "builtin": null,
+          "mcp": {
+            "blender": {
+              "allowed": [
+                "execute_blender_code",
+                "execute_blender_code_for_cli",
+                "get_blendfile_summary_datablocks",
+                "get_blendfile_summary_datablocks_for_cli",
+                "get_blendfile_summary_missing_files",
+                "get_blendfile_summary_missing_files_for_cli",
+                "get_blendfile_summary_of_linked_libraries",
+                "get_blendfile_summary_of_linked_libraries_for_cli",
+                "get_blendfile_summary_path_info",
+                "get_blendfile_summary_path_info_for_cli",
+                "get_blendfile_summary_usage_guess",
+                "get_blendfile_summary_usage_guess_for_cli",
+                "get_object_detail_summary",
+                "get_objects_summary",
+                "get_python_api_docs",
+                "render_thumbnail_to_path",
+                "render_viewport_to_path",
+                "search_api_docs",
+                "search_manual_docs"
+              ],
+              "hidden": [
+                "get_screenshot_of_area_as_image",
+                "get_screenshot_of_window_as_image",
+                "get_screenshot_of_window_as_json",
+                "jump_to_tab_by_name",
+                "jump_to_tab_by_space_type",
+                "jump_to_view3d_object_by_name",
+                "jump_to_view3d_object_data_by_name"
+              ]
+            }
+          }
+        },
+        "used": {
+          "read": 22,
+          "mcp__blender__execute_blender_code": 15,
+          "edit": 14,
+          "bash": 10,
+          "write_todos": 4,
+          "mcp__blender__get_blendfile_summary_datablocks": 1,
+          "mcp__blender__render_viewport_to_path": 1,
+          "write": 1
+        }
+      },
       "rank": null
     },
     {
@@ -1208,6 +1974,52 @@
         "stderr": "session/stderr.txt"
       },
       "source": null,
+      "tools": {
+        "allowed": {
+          "builtin": null,
+          "mcp": {
+            "blender": {
+              "allowed": [
+                "execute_blender_code",
+                "execute_blender_code_for_cli",
+                "get_blendfile_summary_datablocks",
+                "get_blendfile_summary_datablocks_for_cli",
+                "get_blendfile_summary_missing_files",
+                "get_blendfile_summary_missing_files_for_cli",
+                "get_blendfile_summary_of_linked_libraries",
+                "get_blendfile_summary_of_linked_libraries_for_cli",
+                "get_blendfile_summary_path_info",
+                "get_blendfile_summary_path_info_for_cli",
+                "get_blendfile_summary_usage_guess",
+                "get_blendfile_summary_usage_guess_for_cli",
+                "get_object_detail_summary",
+                "get_objects_summary",
+                "get_python_api_docs",
+                "render_thumbnail_to_path",
+                "render_viewport_to_path",
+                "search_api_docs",
+                "search_manual_docs"
+              ],
+              "hidden": [
+                "get_screenshot_of_area_as_image",
+                "get_screenshot_of_window_as_image",
+                "get_screenshot_of_window_as_json",
+                "jump_to_tab_by_name",
+                "jump_to_tab_by_space_type",
+                "jump_to_view3d_object_by_name",
+                "jump_to_view3d_object_data_by_name"
+              ]
+            }
+          }
+        },
+        "used": {
+          "mcp__blender__execute_blender_code": 9,
+          "read": 9,
+          "mcp__blender__render_viewport_to_path": 4,
+          "write_todos": 4,
+          "bash": 2
+        }
+      },
       "rank": null
     },
     {
@@ -1288,6 +2100,52 @@
         "stderr": "session/stderr.txt"
       },
       "source": null,
+      "tools": {
+        "allowed": {
+          "builtin": null,
+          "mcp": {
+            "blender": {
+              "allowed": [
+                "execute_blender_code",
+                "execute_blender_code_for_cli",
+                "get_blendfile_summary_datablocks",
+                "get_blendfile_summary_datablocks_for_cli",
+                "get_blendfile_summary_missing_files",
+                "get_blendfile_summary_missing_files_for_cli",
+                "get_blendfile_summary_of_linked_libraries",
+                "get_blendfile_summary_of_linked_libraries_for_cli",
+                "get_blendfile_summary_path_info",
+                "get_blendfile_summary_path_info_for_cli",
+                "get_blendfile_summary_usage_guess",
+                "get_blendfile_summary_usage_guess_for_cli",
+                "get_object_detail_summary",
+                "get_objects_summary",
+                "get_python_api_docs",
+                "render_thumbnail_to_path",
+                "render_viewport_to_path",
+                "search_api_docs",
+                "search_manual_docs"
+              ],
+              "hidden": [
+                "get_screenshot_of_area_as_image",
+                "get_screenshot_of_window_as_image",
+                "get_screenshot_of_window_as_json",
+                "jump_to_tab_by_name",
+                "jump_to_tab_by_space_type",
+                "jump_to_view3d_object_by_name",
+                "jump_to_view3d_object_data_by_name"
+              ]
+            }
+          }
+        },
+        "used": {
+          "read": 16,
+          "mcp__blender__execute_blender_code": 13,
+          "write_todos": 4,
+          "bash": 3,
+          "mcp__blender__get_blendfile_summary_path_info": 1
+        }
+      },
       "rank": null
     }
   ],

@@ -1371,7 +1371,7 @@ def _codex_tool(item):
         call = {"type": "toolCall", "id": item_id, "name": "file_change", "arguments": {"changes": item.get("changes") or []}}
         return call, f"{status}: " + ", ".join(f"{c.get('kind')} {c.get('path')}" for c in item.get("changes") or []), status != "completed"
     if kind == "mcp_tool_call":
-        call = {"type": "toolCall", "id": item_id, "name": item.get("tool") or "mcp_tool",
+        call = {"type": "toolCall", "id": item_id, "name": f"mcp__{item['server']}__{item['tool']}" if item.get("server") and item.get("tool") else item.get("tool") or "mcp_tool",
                 "arguments": item.get("arguments") if isinstance(item.get("arguments"), dict) else {"arguments": item.get("arguments")}}
         err = (item.get("error") or {}).get("message")
         result = item.get("result") or {}
