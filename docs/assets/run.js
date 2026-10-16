@@ -72,6 +72,8 @@ function render(run, base, siblings) {
     el("span", {}, [el("span", { class: "k", text: "started" }), el("span", { text: fmtDate(run.started_at) })]),
   ]);
   strip.append(tiles, meta);
+  const tools = toolsSection(run);
+  if (tools) strip.append(tools);
   if (votes) strip.append(voteBar(votes, run.id));
   if (run.error) document.getElementById("tabs").before(el("p", { class: "run-error", text: run.error }));
 
@@ -84,6 +86,34 @@ function render(run, base, siblings) {
   renderTranscriptTab(run, base);
   renderSource(run, base);
   renderMetrics(run, base);
+}
+
+// Sidebar "Tools": built-ins and each MCP server, every allowed tool a chip (bold count = calls made), hidden ones
+// struck through, and any called tool that wasn't in the allowed list (e.g. a harness default) added as used.
+function toolsSection(run) {
+  const t = run.tools;
+  if (!t) return null; // runs published before art-crit recorded tools
+  const used = t.used || {};
+  const mcpOf = (name) => name.match(/^mcp__(.+?)__(.+)$/);
+  const builtinUsed = Object.keys(used).filter((n) => !mcpOf(n));
+  const chip = (name, calls) =>
+    el("span", { class: calls ? "tool-chip is-used" : "tool-chip", text: name }, [calls ? el("b", { text: String(calls) }) : null]);
+  const group = (label, chips) => el("div", { class: "tool-group" }, [el("div", { class: "tool-group-name", text: label }), el("div", { class: "tool-chips" }, chips)]);
+  const groups = [];
+  const builtin = t.allowed?.builtin;
+  const builtinNames = builtin ? [...builtin, ...builtinUsed.filter((n) => !builtin.includes(n))] : builtinUsed;
+  groups.push(group(builtin ? "Built-in" : "Built-in (harness defaults, as called)", builtinNames.length ? builtinNames.map((n) => chip(n, used[n])) : [el("span", { class: "muted", text: "none called" })]));
+  const servers = t.allowed?.mcp || {};
+  const serverNames = new Set([...Object.keys(servers), ...Object.keys(used).map((n) => mcpOf(n)?.[1]).filter(Boolean)]);
+  for (const server of serverNames) {
+    const spec = servers[server] || { allowed: [], hidden: [] };
+    const calledTools = Object.keys(used).map(mcpOf).filter((m) => m && m[1] === server).map((m) => m[2]);
+    const names = [...new Set([...spec.allowed, ...calledTools])];
+    const chips = names.map((n) => chip(n, used[`mcp__${server}__${n}`]));
+    const hidden = (spec.hidden || []).map((n) => el("span", { class: "tool-chip is-hidden", text: n, attrs: { title: "Not offered to the model" } }));
+    groups.push(group(`MCP · ${server}${spec.allowed.length ? "" : " (tools not listed)"}`, [...chips, ...hidden]));
+  }
+  return el("div", { class: "run-tools" }, [el("h3", { text: "Tools" }), ...groups]);
 }
 
 function tabCount(tab, text) {

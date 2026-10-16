@@ -29,7 +29,7 @@ from pathlib import Path
 
 from . import clean
 from .config import RunRequest
-from .harness import HARNESSES, add_tool_durations, split_harness
+from .harness import HARNESSES, add_tool_durations, count_tools_used, split_harness
 from .importer import cmd_import
 from .kinds import KINDS
 from .picker import pick_models
@@ -374,9 +374,11 @@ def run_agent(harness, run, rd, batch, version, timeout_s, progress, live, live_
     progress.update(key, state="running")
 
     exit_code, outcome = None, None
+    allowed = harness.tools()
     try:
         with (kind.agent_session(rd.work, rd.harness) if kind else contextlib.nullcontext()) as mcp, \
                 open(stdout_path, "wb") as out, open(stderr_path, "wb") as err:
+            allowed = harness.tools(mcp)
             cmd = harness.command(run["model_arg"], run["level"], brief, rd.harness, **({"mcp": mcp} if mcp else {}))
             proc = subprocess.Popen(cmd, cwd=rd.work, stdin=subprocess.DEVNULL, stdout=out, stderr=err, start_new_session=True, env=harness.env(run["model_arg"], rd.harness))
             with live_lock:
@@ -385,9 +387,9 @@ def run_agent(harness, run, rd, batch, version, timeout_s, progress, live, live_
                     _kill_group(proc)
             exit_code, outcome = wait_agent(proc, timeout_s, rd.harness / STOP_FILE)
     except OSError as e:
-        return collect(rd, batch, run, harness, version, started, datetime.now(timezone.utc), "failed", f"cannot run harness: {e}", None)
+        return collect(rd, batch, run, harness, version, started, datetime.now(timezone.utc), "failed", f"cannot run harness: {e}", None, allowed)
     except CritError as e:  # the kind's session didn't start (e.g. Blender's MCP server)
-        return collect(rd, batch, run, harness, version, started, datetime.now(timezone.utc), "failed", str(e), None)
+        return collect(rd, batch, run, harness, version, started, datetime.now(timezone.utc), "failed", str(e), None, allowed)
     finally:
         with live_lock:
             live.pop(key, None)
@@ -412,14 +414,15 @@ def run_agent(harness, run, rd, batch, version, timeout_s, progress, live, live_
     else:
         state, error = "complete", None
 
-    record = collect(rd, batch, run, harness, version, started, ended, state, error, metrics)
+    record = collect(rd, batch, run, harness, version, started, ended, state, error, metrics, allowed)
     progress.update(key, state=state, turns=record["metrics"]["turns"], tokens=record["metrics"]["tokens_total"], cost=record["metrics"]["cost_usd"])
     return record
 
 
-def collect(rd, batch, run, harness, version, started, ended, state, error, metrics):
+def collect(rd, batch, run, harness, version, started, ended, state, error, metrics, allowed=None):
     """Write harness/conversation.json (the session in pi's format, which the viewer renders, with
     each tool's duration) and run.json (the run's record, `output` still null). Returns the record."""
+    entries = None
     if harness.session_file(rd.harness):
         entries = add_tool_durations(harness.session_entries(rd.harness, batch["brief"], run["level"]))
         (rd.harness / "conversation.json").write_text(json.dumps(entries, indent=2) + "\n")
@@ -440,6 +443,7 @@ def collect(rd, batch, run, harness, version, started, ended, state, error, metr
         "state": state,
         "error": error,
         "route": None,
+        "tools": {"allowed": allowed or harness.tools(), "used": count_tools_used(entries)},
         **metrics.get("extra", {}),  # whatever the harness adds to the run (pi: the OpenRouter route)
         "metrics": {
             "duration_ms": int((ended - started).total_seconds() * 1000),

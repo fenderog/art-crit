@@ -995,3 +995,14 @@ body.play { margin: 0; height: 100vh; display: flex; flex-direction: column; bac
 .monitor-transcript { max-height: 60rem; overflow: auto; padding-right: 0.25rem; }
 .monitor-live { margin-left: 0.4rem; padding: 0.05rem 0.4rem; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: var(--bad); background: var(--bad-soft); border-radius: 99px; }
 .monitor-stop { color: var(--bad); border: 1px solid var(--bad); background: var(--bad-soft); }
+
+/* Tools section of the run sidebar: what the agent was allowed, and what it called */
+.run-tools { display: flex; flex-direction: column; gap: 10px; font-size: 13px; padding-top: 14px; border-top: 1px solid var(--line); }
+.run-tools h3 { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+.run-tools .tool-group { display: flex; flex-direction: column; gap: 4px; }
+.run-tools .tool-group-name { color: var(--ink-2); }
+.run-tools .tool-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.run-tools .tool-chip { font-family: var(--mono, ui-monospace, monospace); font-size: 12px; padding: 1px 6px; border: 1px solid var(--line); border-radius: 4px; color: var(--ink-3); }
+.run-tools .tool-chip.is-used { color: var(--ink); border-color: var(--ink-3); }
+.run-tools .tool-chip.is-hidden { text-decoration: line-through; opacity: .6; }
+.run-tools .tool-chip b { font-weight: 600; margin-left: 4px; }

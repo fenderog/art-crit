@@ -1528,3 +1528,24 @@ def test_monitor_link_appears_on_the_local_home_page(monitor_site, page):
     link.click()
     page.wait_for_selector(".monitor-run")
     assert_no_errors(page)
+
+
+def test_run_sidebar_lists_allowed_and_used_tools(site, page):
+    tools = {"allowed": {"builtin": ["bash", "read"], "mcp": {"blender": {"allowed": ["render", "exec"], "hidden": ["screenshot"]}}},
+             "used": {"bash": 3, "mcp__blender__render": 2}}
+
+    def with_tools(route):
+        response = route.fetch()
+        body = response.json()
+        for r in body["runs"]:
+            r["tools"] = tools
+        route.fulfill(json=body)
+
+    page.route("**/data/demo/page.json*", with_tools)
+    page.goto(f"{site}run.html?p=demo&r={LOW_ID}")
+    box = page.locator(".run-tools")
+    box.wait_for()
+    assert box.locator(".tool-chip.is-used").all_inner_texts() == ["bash3", "render2"]
+    assert box.locator(".tool-chip.is-hidden").all_inner_texts() == ["screenshot"]
+    assert "MCP · blender" in box.inner_text() and "read" in box.inner_text()
+    assert_no_errors(page)

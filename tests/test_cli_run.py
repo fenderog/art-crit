@@ -259,6 +259,7 @@ def test_a_run_is_one_directory_with_work_harness_and_output(run_root, tmp_path)
     record = json.loads((run_dir / "run.json").read_text())
     assert record["state"] == "complete" and record["output"] == {"kind": "godot", "ok": True, "error": None, "verified": None}
     assert "exit" not in json.dumps(record) and record["batch"] == batch.name
+    assert record["tools"]["allowed"] == {"builtin": None, "mcp": {}} and isinstance(record["tools"]["used"], dict)
     batch_json = json.loads((batch / "batch.json").read_text())
     assert [(r["id"], r["state"]) for r in batch_json["runs"]] == [(run_dir.name, "complete")]
 

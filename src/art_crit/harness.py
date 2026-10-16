@@ -210,6 +210,14 @@ class Harness:
         return model
 
     supports_mcp = False  # whether `command` can give the agent MCP servers (kinds like blender need it)
+    BUILTIN_TOOLS = None  # the built-in tools `command` allows by name; None = the harness's own default set
+
+    def tools(self, mcp=None):
+        """What the agent is allowed, as run.json's `tools.allowed`: `builtin` (names, or None when art-crit doesn't
+        restrict the harness's defaults) and `mcp` = {server: {allowed: [...], hidden: [...]}} for this run only."""
+        return {"builtin": list(self.BUILTIN_TOOLS) if self.BUILTIN_TOOLS else None,
+                "mcp": {name: {"allowed": list(spec.get("tools", ())), "hidden": list(spec.get("hidden", ()))}
+                        for name, spec in (mcp or {}).items()}}
 
     def command(self, model, level, brief, session_dir, mcp=None):
         """The agent's argv. `mcp` = {name: {command, args, env, hidden, tools}}: stdio MCP servers for this run
@@ -477,6 +485,7 @@ class ClaudeCode(Harness):
     # Only the core file and shell tools, like pi: no web, scheduling, messaging or skills, and no
     # sub-agents (each model x effort is one direct run).
     TOOLS = "Bash,Read,Write,Edit,Glob,Grep"
+    BUILTIN_TOOLS = TOOLS.split(",")
     NO_SUBAGENTS = "Agent,Task"
 
     def __init__(self, binary="claude"):
@@ -558,6 +567,18 @@ def add_tool_durations(entries):
             if "durationMs" not in msg:
                 _set_duration(msg, called.get(msg.get("toolCallId")), entry.get("timestamp"))
     return entries
+
+
+def count_tools_used(entries):
+    """{tool name: calls} over a pi-format session (MCP tools are `mcp__<server>__<tool>`), most-called first."""
+    counts = {}
+    for entry in entries or []:
+        msg = entry.get("message") or {}
+        if msg.get("role") == "assistant":
+            for block in msg.get("content") or []:
+                if isinstance(block, dict) and block.get("type") == "toolCall":
+                    counts[block.get("name")] = counts.get(block.get("name"), 0) + 1
+    return dict(sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])))
 
 
 def _set_duration(result, start_iso, end_iso):
@@ -875,10 +896,12 @@ class GrokBuild(Harness):
     def display_model(self, model):
         return f"xai/{model}"
 
+    BUILTIN_TOOLS = ("run_terminal_cmd", "read_file", "write_file", "search_replace", "grep", "list_dir")
+
     def command(self, model, level, brief, session_dir, mcp=None):
         cmd = [self.binary, "-p", brief, "--model", model, "--reasoning-effort", level,
                "--output-format", "streaming-messages-json", "--always-approve", "--verbatim",
-               "--tools", "run_terminal_cmd,read_file,write_file,search_replace,grep,list_dir",
+               "--tools", ",".join(self.BUILTIN_TOOLS),
                "--disallowed-tools", "Agent", "--disable-web-search", "--no-subagents"]
         if not mcp:
             return cmd

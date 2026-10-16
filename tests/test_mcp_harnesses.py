@@ -160,3 +160,14 @@ def test_agy_eager_mcp_tool_gets_the_shared_name():
     calls = [c for e in convert_agy_stream(events, "brief", "low") for c in (e.get("message") or {}).get("content", [])
              if isinstance(c, dict) and c.get("type") == "toolCall"]
     assert [(c["name"], c["arguments"]) for c in calls] == [("mcp__blender__render_viewport_to_path", {"filepath": "/w/a.png"})]
+
+
+def test_tools_list_what_a_run_is_allowed():
+    from art_crit.harness import ClaudeCode, GrokBuild, Pi, count_tools_used
+
+    mcp = {"blender": {"tools": ["a", "b"], "hidden": ["c"]}}
+    assert Pi().tools() == {"builtin": None, "mcp": {}}
+    assert ClaudeCode().tools()["builtin"] == ["Bash", "Read", "Write", "Edit", "Glob", "Grep"]
+    assert GrokBuild().tools(mcp)["mcp"] == {"blender": {"allowed": ["a", "b"], "hidden": ["c"]}}
+    call = lambda n: {"message": {"role": "assistant", "content": [{"type": "toolCall", "name": n}]}}
+    assert count_tools_used([call("bash"), call("mcp__blender__a"), call("bash")]) == {"bash": 2, "mcp__blender__a": 1}

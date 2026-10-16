@@ -240,6 +240,9 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   recorded anywhere could be reused. The runner polls for it once a second, so a timeout can overshoot by ≤1s.
 - **`replaceChildren()`/`append()` print `null` as text**; `el()` skips null children, so pass optional nodes
   through `el()` or `.filter(Boolean)`.
+- **Tools recorded per run:** `Harness.tools(mcp)` (+ `BUILTIN_TOOLS` where the command names them) feeds `run.json.tools.allowed`;
+  keep it in step with `command()` when a harness's `--tools`/MCP flags change. `null` builtin = unrestricted harness defaults
+  (pi, agy, muse, codex). The sidebar's Tools section is `toolsSection()` in run.js.
 - **Metrics from a pi session:** `tokens.total = input + output` (not `totalTokens`, which includes cache
   reads). Cost is the sum of `usage.cost.total` over assistant messages.
 - **Run failure summary:** `runner.print_failure_summary` reads local run records after progress and publishing

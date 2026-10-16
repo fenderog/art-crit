@@ -90,6 +90,7 @@ page's published copies, so adding runs can't silently leave the model with no i
   "state": "complete",
   "error": null,
   "route": null,
+  "tools": { "allowed": { "builtin": null, "mcp": {} }, "used": { "bash": 9, "write": 6, "read": 1 } },
   "metrics": {
     "duration_ms": 196192, "cost_usd": 0.146, "tool_calls": 16, "turns": 17,
     "tokens_total": 32732, "tokens_input": 25280, "tokens_output": 7452,
@@ -130,6 +131,11 @@ page's published copies, so adding runs can't silently leave the model with no i
   anything else outside `[a-z0-9.-]` becomes `-`. It is also the run directory's name; two runs of a batch with one id
   are refused before anything starts.
 - `harness` = the agent program and its version; `metrics` as in "Metrics". `metrics.cost_estimated: true` is present for Muse Code API-equivalent estimates (not subscription charges); `metrics.cost_estimate_proxy: "meta/muse-wonder-1.0"` also appears when Wonder Standard's API rate is used as a proxy for an unpriced Wonder variant.
+- `tools` = `{"allowed": {"builtin": [...] | null, "mcp": {<server>: {"allowed": [...], "hidden": [...]}}}, "used": {<tool>: calls}}`:
+  `allowed.builtin` is the list art-crit passes the harness (`null` = the harness's own defaults, not restricted by name),
+  `mcp` the run's MCP servers (kind-supplied, per run) with the tools offered and the ones hidden; `used` counts the calls in the
+  transcript by name (MCP tools as `mcp__<server>__<tool>`), most-called first. Runs published before this field have no `tools`.
+  The run page's sidebar shows it as a "Tools" section (allowed tools as chips, bold count = calls, hidden ones struck through).
 - `route` = what the harness reports about routing, for a pi `openrouter/` run, else `null`:
   `{"requested": {"only": [...], "allow_fallbacks": false}, "served": [...], "cost_usd": 0.00085, "pi_cost_usd": 0.00038}`.
   `requested` is `null` for an unpinned run (OpenRouter chose the upstream); the rest is recorded either way.
