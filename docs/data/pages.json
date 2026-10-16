@@ -3,7 +3,7 @@
     "slug": "3d-octopus-ramen-shop",
     "title": "3D Octopus Ramen Shop",
     "kind": "blender",
-    "n_runs": 28,
+    "n_runs": 29,
     "models": [
       "anthropic/claude-haiku-5-5",
       "anthropic/claude-opus-5-5",
@@ -13,8 +13,8 @@
       "openai-codex/gpt-6-astra",
       "openai-codex/gpt-6.1-sol"
     ],
-    "updated": "2026-10-16T19:57:20Z",
-    "thumb": "data/3d-octopus-ramen-shop/runs/muse-wonder-1.0-mc-low-20261016-092538/media/render_front.thumb.jpg"
+    "updated": "2026-10-16T20:01:48Z",
+    "thumb": "data/3d-octopus-ramen-shop/runs/muse-wonder-1.0-mc-medium-20261016-092538/media/closeup.thumb.jpg"
   },
   {
     "slug": "ai-logo-company",
