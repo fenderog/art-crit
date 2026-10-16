@@ -105,12 +105,13 @@ export function runCard(slug, r, best, selection = null, votes = null, { grouped
     el("span", { class: "card-tags" }, [rankChip(r.rank), r.rank != null ? " " : null, effortPill(r.effort), sb ? " " : null, sb, pop ? " " : null, pop]),
   ];
   // The vote row shares the metrics row: a card is exactly three grid rows (heading, output, metrics), see .compare-col.
-  const meta = votes ? el("div", { class: "compare-meta" }, [metricsLine(r, best), voteBar(votes, r.id)]) : metricsLine(r, best);
+  const meta = votes || grouped ? el("div", { class: "compare-meta" }, [metricsLine(r, best), votes ? voteBar(votes, r.id) : null]) : metricsLine(r, best);
   const body = el("div", { class: "compare-body" });
-  const errors = grouped ? meta : body; // diagnostics never displace a fixed-size preview in model rows
+  const errors = grouped ? el("div", { class: "run-diagnostics" }) : body; // diagnostics never displace a fixed-size preview
   if (r.error) errors.append(el("p", { class: "run-error", text: r.error }));
   for (const node of renderOutput(r, base, { compact: true, href: runUrl(slug, r.id) })) {
     (grouped && node.classList.contains("run-error") ? errors : body).append(node);
   }
+  if (grouped && errors.childElementCount) meta.insertBefore(errors, meta.querySelector(".votes")); // votes stay at the bottom
   return el("div", { class: isComplete(r) ? "compare-col" : "compare-col is-failed", ...vendorOptions(r.model) }, [el("h3", {}, heading), body, meta]);
 }

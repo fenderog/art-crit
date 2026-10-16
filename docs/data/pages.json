@@ -3,7 +3,7 @@
     "slug": "robbie-the-banker-with-reference",
     "title": "Robbie the Banker with reference",
     "kind": "blender",
-    "n_runs": 21,
+    "n_runs": 22,
     "models": [
       "anthropic/claude-haiku-5-5",
       "anthropic/claude-opus-5-5",
@@ -12,8 +12,8 @@
       "openai/gpt-6-sol",
       "openai/gpt-6.1-sol"
     ],
-    "updated": "2026-10-16T02:24:03Z",
-    "thumb": "data/robbie-the-banker-with-reference/runs/claude-haiku-5-5-cc-medium-20261015-192128/media/robbie_the_banker_render.png"
+    "updated": "2026-10-16T02:26:20Z",
+    "thumb": "data/robbie-the-banker-with-reference/runs/claude-haiku-5-5-cc-high-20261015-192128/media/robie_front.png"
   },
   {
     "slug": "create-a-model-of-the-vintage",
