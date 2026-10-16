@@ -3,7 +3,7 @@
     "slug": "ai-logo-company",
     "title": "AI Logo Company",
     "kind": "media",
-    "n_runs": 11,
+    "n_runs": 12,
     "models": [
       "anthropic/claude-haiku-5-5",
       "anthropic/claude-opus-5-5",
@@ -11,7 +11,7 @@
       "openai-codex/gpt-6-astra",
       "openai-codex/gpt-6.1-sol"
     ],
-    "updated": "2026-10-16T17:58:13Z",
+    "updated": "2026-10-16T17:58:31Z",
     "thumb": "data/ai-logo-company/runs/claude-haiku-5-5-cc-medium-20261016-105541/media/mycel-logo.svg"
   },
   {
