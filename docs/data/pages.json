@@ -3,12 +3,12 @@
     "slug": "octopus-ramen-shop",
     "title": "Octopus ramen shop",
     "kind": "media",
-    "n_runs": 1,
+    "n_runs": 2,
     "models": [
       "anthropic/claude-sonnet-5-5"
     ],
-    "updated": "2026-10-16T06:02:37Z",
-    "thumb": "data/octopus-ramen-shop/runs/claude-sonnet-5-5-cc-low-20261015-230204/media/octopus_ramen.svg"
+    "updated": "2026-10-16T06:02:40Z",
+    "thumb": "data/octopus-ramen-shop/runs/claude-sonnet-5-5-cc-medium-20261015-230204/media/octopus_ramen.svg"
   },
   {
     "slug": "ceate-an-svg-of-an-awkward",
