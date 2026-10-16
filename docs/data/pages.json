@@ -3,7 +3,7 @@
     "slug": "3d-octopus-ramen-shop",
     "title": "3D Octopus Ramen Shop",
     "kind": "blender",
-    "n_runs": 35,
+    "n_runs": 36,
     "models": [
       "anthropic/claude-haiku-5-5",
       "anthropic/claude-opus-5-5",
@@ -14,12 +14,12 @@
       "openai-codex/gpt-6-astra",
       "openai-codex/gpt-6.1-sol"
     ],
-    "updated": "2026-10-16T20:30:51Z",
-    "thumb": "data/3d-octopus-ramen-shop/runs/muse-wonder-full-1.0-mc-medium-20261016-092538/media/front_closeup.thumb.jpg"
+    "updated": "2026-10-16T20:44:51Z",
+    "thumb": "data/3d-octopus-ramen-shop/runs/muse-wonder-full-1.0-mc-high-20261016-092538/media/render_chef_closeup.thumb.jpg"
   },
   {
     "slug": "ai-logo-company",
-    "title": "AI Logo Company",
+    "title": "AI Company Logo",
     "kind": "media",
     "n_runs": 45,
     "models": [
@@ -107,7 +107,7 @@
       "anthropic/claude-sonnet-5-5"
     ],
     "updated": "2026-10-15T19:15:50Z",
-    "thumb": "data/create-a-model-of-the-vintage/runs/claude-sonnet-5-5-cc-xhigh-20261015-120005/media/robie_front_three_quarter.thumb.jpg"
+    "thumb": "data/create-a-model-of-the-vintage/runs/claude-sonnet-5-5-cc-xhigh-20261015-120005/media/robie_back_view.thumb.jpg"
   },
   {
     "slug": "16bit-eiffel-tower",
@@ -178,7 +178,7 @@
       "openrouter/mistralai/mistral-large-4-0"
     ],
     "updated": "2026-10-07T22:10:07Z",
-    "thumb": "data/voxel-horse/runs/gpt-6.1-sol-xhigh-20260929-164650/thumb.jpg"
+    "thumb": "data/voxel-horse/runs/claude-haiku-5-5-cc-max-20261007-144942/thumb.jpg"
   },
   {
     "slug": "create-a-rubik-s-cube-in-3js",

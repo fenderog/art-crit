@@ -197,8 +197,7 @@
           "helpers.py"
         ]
       },
-      "rank": null,
-      "cover": "media/robie_front_left.thumb.jpg"
+      "rank": null
     },
     {
       "id": "claude-sonnet-5-5-cc-xhigh-20261015-120005",
@@ -286,8 +285,7 @@
           "studio.py"
         ]
       },
-      "rank": null,
-      "cover": "media/robie_front_three_quarter.thumb.jpg"
+      "rank": null
     }
   ]
 }
