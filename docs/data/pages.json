@@ -3,12 +3,12 @@
     "slug": "ai-logo-company",
     "title": "AI Logo Company",
     "kind": "media",
-    "n_runs": 1,
+    "n_runs": 2,
     "models": [
       "anthropic/claude-sonnet-5-5"
     ],
-    "updated": "2026-10-16T17:55:53Z",
-    "thumb": "data/ai-logo-company/runs/claude-sonnet-5-5-cc-low-20261016-105541/media/logo.svg"
+    "updated": "2026-10-16T17:56:00Z",
+    "thumb": "data/ai-logo-company/runs/claude-sonnet-5-5-cc-medium-20261016-105541/media/logo.svg"
   },
   {
     "slug": "3d-octopus-ramen-shop",
