@@ -1,5 +1,16 @@
 [
   {
+    "slug": "3d-octopus-ramen-shop",
+    "title": "3D Octopus Ramen Shop",
+    "kind": "blender",
+    "n_runs": 1,
+    "models": [
+      "anthropic/claude-opus-5-5"
+    ],
+    "updated": "2026-10-16T16:26:57Z",
+    "thumb": "data/3d-octopus-ramen-shop/runs/claude-opus-5-5-cc-low-20261016-092538/media/octopus_chef.thumb.jpg"
+  },
+  {
     "slug": "octopus-ramen-shop",
     "title": "Octopus ramen shop",
     "kind": "media",
