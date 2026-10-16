@@ -32,7 +32,7 @@
     "tokens_reasoning": 128111,
     "tokens_cache_read": 4339648
   },
-  "thumb": "media/awkward-robot-family-portrait-animated.svg",
+  "thumb": "media/awkward-robot-family-portrait.thumb.jpg",
   "output": {
     "kind": "media",
     "items": [
@@ -48,7 +48,8 @@
         "width": 1800,
         "height": 1800,
         "bytes": 177199,
-        "path": "media/awkward-robot-family-portrait.jpg"
+        "path": "media/awkward-robot-family-portrait.jpg",
+        "thumb": "media/awkward-robot-family-portrait.thumb.jpg"
       },
       {
         "type": "image",

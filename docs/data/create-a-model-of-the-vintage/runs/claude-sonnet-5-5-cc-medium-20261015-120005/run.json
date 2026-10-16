@@ -24,7 +24,7 @@
     "tokens_reasoning": 463,
     "tokens_cache_read": 88895
   },
-  "thumb": "media/robie.png",
+  "thumb": "media/robie.thumb.jpg",
   "output": {
     "kind": "blender",
     "items": [
@@ -33,7 +33,8 @@
         "width": 900,
         "height": 900,
         "bytes": 748693,
-        "path": "media/robie.png"
+        "path": "media/robie.png",
+        "thumb": "media/robie.thumb.jpg"
       },
       {
         "type": "model",

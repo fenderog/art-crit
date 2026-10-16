@@ -77,7 +77,7 @@
     "tokens_reasoning": 5461,
     "tokens_cache_read": 480643
   },
-  "thumb": "media/robbie_the_banker_render.png",
+  "thumb": "media/robbie_the_banker_render.thumb.jpg",
   "output": {
     "kind": "blender",
     "items": [
@@ -94,7 +94,8 @@
         "width": 800,
         "height": 800,
         "bytes": 424799,
-        "path": "media/robbie_the_banker_render.png"
+        "path": "media/robbie_the_banker_render.png",
+        "thumb": "media/robbie_the_banker_render.thumb.jpg"
       }
     ],
     "ok": true,

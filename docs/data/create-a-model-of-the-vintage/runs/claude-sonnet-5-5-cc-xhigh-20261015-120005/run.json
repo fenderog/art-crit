@@ -24,7 +24,7 @@
     "tokens_reasoning": 57526,
     "tokens_cache_read": 3336191
   },
-  "thumb": "media/robie_back_view.png",
+  "thumb": "media/robie_back_view.thumb.jpg",
   "output": {
     "kind": "blender",
     "items": [
@@ -33,28 +33,32 @@
         "width": 1280,
         "height": 1024,
         "bytes": 1297752,
-        "path": "media/robie_back_view.png"
+        "path": "media/robie_back_view.png",
+        "thumb": "media/robie_back_view.thumb.jpg"
       },
       {
         "type": "image",
         "width": 1280,
         "height": 1024,
         "bytes": 1432128,
-        "path": "media/robie_closeup.png"
+        "path": "media/robie_closeup.png",
+        "thumb": "media/robie_closeup.thumb.jpg"
       },
       {
         "type": "image",
         "width": 1280,
         "height": 1024,
         "bytes": 1217779,
-        "path": "media/robie_coin_slot_view.png"
+        "path": "media/robie_coin_slot_view.png",
+        "thumb": "media/robie_coin_slot_view.thumb.jpg"
       },
       {
         "type": "image",
         "width": 1280,
         "height": 1024,
         "bytes": 1340195,
-        "path": "media/robie_front_three_quarter.png"
+        "path": "media/robie_front_three_quarter.png",
+        "thumb": "media/robie_front_three_quarter.thumb.jpg"
       },
       {
         "type": "model",

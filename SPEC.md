@@ -43,9 +43,10 @@ docs/
     <slug>/ranking.json           # optional: {"ranks": {"<run id>": 1, ...}, "updated": "<iso>"}, the owner's ranking (see Ranking)
     <slug>/runs/<run_id>/
       run.json                    # Run
-      thumb.png                   # optional (godot)
+      thumb.jpg                   # optional (godot, web): the verify screenshot at most 800 px wide (ADR-0029;
+                                  # thumb.png, the screenshot itself, when ffmpeg couldn't make it)
       game/index.html, index.pck, index.png, index.icon.png, index.apple-touch-icon.png   # godot
-      media/<file>, media/<name>.poster.jpg                                              # media, blender (+ media/<name>.glb)
+      media/<file>, media/<name>.poster.jpg, media/<name>.thumb.jpg                       # media, blender (+ media/<name>.glb)
       game/index.html             # web: the packaged page, one file (cleaned and secret-scanned like source)
       session/conversation.json   # cleaned (see Cleaning)
       session/stderr.txt          # optional, cleaned
@@ -58,7 +59,7 @@ All paths inside JSON are **relative to the run directory** (for Run) or to `doc
 ```json
 { "slug": "voxel-horse", "title": "Voxel horse", "kind": "godot", "n_runs": 3,
   "models": ["openai-codex/gpt-6-sol"], "updated": "2026-09-26T07:15:57Z",
-  "thumb": "data/voxel-horse/runs/gpt-6-sol-high-20260926-001158/thumb.png" }
+  "thumb": "data/voxel-horse/runs/gpt-6-sol-high-20260926-001158/thumb.jpg" }
 ```
 `thumb` is taken from the most recent run that has one (its run's `thumb` path), or `null`.
 
@@ -96,7 +97,7 @@ page's published copies, so adding runs can't silently leave the model with no i
     "tokens_total": 32732, "tokens_input": 25280, "tokens_output": 7452,
     "tokens_reasoning": 3073, "tokens_cache_read": 105984
   },
-  "thumb": "thumb.png",
+  "thumb": "thumb.jpg",
   "output": { "kind": "godot", "entry": "game/index.html", "engine": "41560f8755ed",
              "godot": "4.7.2.stable.official.ed1daf0bf", "threads": false,
              "ok": true, "verified": true, "error": null },
@@ -119,10 +120,14 @@ page's published copies, so adding runs can't silently leave the model with no i
 - `output` carries its own `kind` and the kind's fields (see Kinds): `godot` = `entry`, `engine`, `godot`, `threads`;
   `web` = `entry`, `bytes`, `esbuild`; `media` = `items`, each `{type: "image"|"video", path: "media/<file>", width,
   height, bytes}` plus, for a video, `duration_s, poster: "media/<name>.poster.jpg", transcoded` and `trimmed: true`
-  when it was cut to 10 s (width/height can be `null` for an SVG without a size); `blender` = `items` like media, plus
+  when it was cut to 10 s (width/height can be `null` for an SVG without a size), and `thumb: "media/<stem>.thumb.jpg"`
+  for a raster image or a video (a JPEG at most 800 px wide made at import from the image or the poster, ADR-0029; an
+  SVG has none); `blender` = `items` like media, plus
   `{type: "model", path: "media/<name>.glb", bytes, meshes, triangles, animations}` for a model. Paths are relative to the run
-  directory. `thumb` = `thumb.png` (the verify step's first screenshot) for godot and web, the first image's path or
-  the first video's poster for media (the first render for blender). Model-written text (SVGs, the packaged page) is cleaned and secret-scanned like
+  directory. `thumb` = `thumb.jpg` (the verify step's first screenshot, at most 800 px wide; `thumb.png`, the screenshot
+  itself, when ffmpeg couldn't make it) for godot and web; for media and blender the first item's `thumb`, or the first
+  image's path or video's poster when no item has one. `art-crit rebuild` backfills missing thumbnails of published
+  runs from their files and rewrites those `run.json`. Model-written text (SVGs, the packaged page) is cleaned and secret-scanned like
   source. The run's `source` never includes `node_modules/`; for media it holds only text files of at most 512 KB,
   and `output/` only for the files there that aren't media (a generator script kept in `./output/`).
 - `id` = `<model name after the last "/", lowercased>-<effort>-<YYYYMMDD-HHMMSS of the batch>`, with `-cc` after the
@@ -180,7 +185,7 @@ The page's prompt is the batch directory's `prompt.md`. Effort-run folders (`fe-
      `fileSizes` key `index.wasm` → `{rel}.wasm`.
 5. Refuse an export with `threads: true` (from export-manifest.json, or `const GODOT_THREADS_ENABLED = true` in the html)
    with a clear error, unless `--allow-threads` is given. With the flag, store `"threads": true`.
-6. `verification/frame-1.png` → `runs/<id>/thumb.png`.
+6. `verification/frame-1.png` → `runs/<id>/thumb.jpg` (`media.write_thumb`, at most 800 px wide; copied as `thumb.png` when ffmpeg can't).
 
 ## Cleaning (always runs on text files before they are written to docs/)
 
@@ -550,7 +555,7 @@ The page owner ranks runs in the browser; there is no CLI command for it. Only `
 
 ## Prompt requests
 
-Ideas for new pages (ADR-0029). The lanes home page (`index.html`) has a **Request a prompt** button in the top bar
+Ideas for new pages (ADR-0030). The lanes home page (`index.html`) has a **Request a prompt** button in the top bar
 (`docs/assets/lanes/request.js`) that opens a modal form: prompt (10–4000 chars), kind (one of `KIND_UI`'s, shown by
 label), note (optional, ≤ 1000). Submitting posts `{prompt, kind, note}` to `POST api/request` (see Community votes):
 
@@ -615,7 +620,7 @@ newest first, with each run's state, metrics, prompt, files and transcript, and 
 ## Community votes
 
 Visitors signed in with GitHub can give each result a heart and hand out one gold, one silver and one bronze medal per
-page (ADR-0022). Votes and prompt requests (ADR-0029) are the only things the published site writes; the owner's ranking
+page (ADR-0022). Votes and prompt requests (ADR-0030) are the only things the published site writes; the owner's ranking
 above stays local. The API is
 `cloudflare/votes.mjs`, served by the Worker at `/art-crit/api/*`, storing in D1 (`cloudflare/schema.sql`).
 
@@ -680,14 +685,17 @@ normalized videos (≤2 MiB) to support Safari. Every response under `data/` (mo
 carries `Content-Security-Policy: sandbox allow-scripts allow-pointer-lock`, the viewer's iframe sandbox as a header: a
 direct visit to a raw output URL gets an opaque origin too, so it can't use the site's cookies or call the votes API
 (ADR-0004). `docs/404.html` makes Pages answer missing paths with 404 instead of `index.html` + 200 (it is plain, with no
-assets, because it is served at any depth). No other path is routed; static requests forward no visitor credentials. `/art-crit/api/*` is the
+assets, because it is served at any depth). `docs/_headers` is Pages' cache policy (ADR-0029): run directories
+(`/data/:slug/runs/*`) `max-age=86400, stale-while-revalidate=604800`, `assets/vendor/*` and `engines/*` a year and
+`immutable`; everything else keeps Pages' `max-age=0, must-revalidate` (the viewer's own scripts have no cache-busting,
+ADR-0012). The Worker passes these headers through. No other path is routed; static requests forward no visitor credentials. `/art-crit/api/*` is the
 votes API (see Community votes). The apex has a
 proxied DNS record to make Worker routes active, but no site at `/`. GitHub Pages can stay online
 at its old URL during migration; the Pages subdomain isn't the supported URL for playing games.
 
 ## Viewer (docs/)
 
-### Lanes design (index.html, page.html, compare.html; ADR-0029)
+### Lanes design (index.html, page.html, compare.html; ADR-0030)
 
 The three main views are the lanes design: `docs/assets/lanes/{index,page,compare,common,lane,request}.js` and
 `lanes.css` (layered on `style.css`). They reuse the shared modules below, so rendering, sandboxing and votes behave as
@@ -747,8 +755,15 @@ immediate sandboxed frame, the media gallery, or the "no output" message, with t
 one `KIND_UI` table (chip label, tab label, no-output text and failure badge per kind); page, run, compare and play all call
 them. Any output with an `entry` is shown in the sandbox, so a new kind needs no viewer code.
 
-- **index.html**: cards per page (thumb, a Game/Vector chip, title, one icon per model vendor (OpenRouter's provider icons, vendored under `assets/vendor/icons/`; its models on hover), n_runs, updated date) → page.html. Under `art-crit serve`, also the prompt requests (see Prompt requests) and a "Runs (local)" link to monitor.html (see Run monitor).
-- **page.html**: title, a details sidebar with a meta line (kind, n runs, n models), the Prompt (prompt.md) and a collapsed Final prompt,
+Wherever a run is one of many (home cards, the runs table and grid, compare cards, the click-to-play overlay) the viewer
+shows thumbnails: `run.thumb`, and on a media card each item's `thumb` (`mediaElement(..., {compact: true})`); the run
+page's gallery shows the files themselves (ADR-0029). Each HTML page's head lists `<link rel="modulepreload">` for every
+module its script imports, directly or indirectly (plus the transcript modules run.html and monitor.html import on
+demand; never the three.js bundle), so the module graph loads in one round trip; `tests/test_cli_site.py` derives the
+lists from the `import` statements and fails when they drift.
+
+- **classic/index.html** (the previous home, ADR-0030): cards per page (thumb, a Game/Vector chip, title, one icon per model vendor (OpenRouter's provider icons, vendored under `assets/vendor/icons/`; its models on hover), n_runs, updated date) → page.html. Under `art-crit serve`, also the prompt requests (see Prompt requests) and a "Runs (local)" link to monitor.html (see Run monitor).
+- **classic/page.html**: title, a details sidebar with a meta line (kind, n runs, n models), the Prompt (prompt.md) and a collapsed Final prompt,
   then **highlights**: the cheapest, fastest and fewest-tokens run among those that made their output (each links to it; a cost of 0 means unreported and never ranks) plus verified count, failed
   count and total spend. Then a runs table (thumb, rank, model, effort, harness,
   verified ✓/✗ (`output.verified`), run at (the run's `started_at`, local time, year on hover; in the phone cards a line under the metrics), duration, tokens total/reasoning, cost, tool calls). Harness shows "pi 0.87.1" (name only
@@ -794,7 +809,7 @@ them. Any output with an `entry` is shown in the sandbox, so a new kind needs no
   - *Source*: a file list, and clicking a file shows it in a `<pre>`. The first code file opens right away.
   - *Metrics*: all metrics as a table of raw values (with a readable form beside durations, costs and big counts,
     including Harness, State, Error and the output's ok / verified / error), plus links to download the raw session files.
-- **compare.html**: one card per run (all runs of the page by default), laid out as a grid of ~380px columns that wraps
+- **classic/compare.html**: one card per run (all runs of the page by default), laid out as a grid of ~380px columns that wraps
   into rows (3 across at desktop width, 1 on phones, never sideways scrolling), ordered by model then effort. Each card has
   the model, its effort pill (plus the failed/timeout badge), one line with harness, duration, tokens and cost (the best
   among the shown runs starred), and its game with click-to-play (each column boots independently, never automatically),

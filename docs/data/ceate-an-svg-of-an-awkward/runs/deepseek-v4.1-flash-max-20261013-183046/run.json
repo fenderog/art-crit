@@ -31,7 +31,7 @@
     "tokens_reasoning": 25715,
     "tokens_cache_read": 1214336
   },
-  "thumb": "media/family-portrait.poster.jpg",
+  "thumb": "media/family-portrait.thumb.jpg",
   "output": {
     "kind": "media",
     "items": [
@@ -43,7 +43,8 @@
         "bytes": 1140044,
         "transcoded": false,
         "path": "media/family-portrait.mp4",
-        "poster": "media/family-portrait.poster.jpg"
+        "poster": "media/family-portrait.poster.jpg",
+        "thumb": "media/family-portrait.thumb.jpg"
       },
       {
         "type": "image",

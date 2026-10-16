@@ -24,7 +24,7 @@
     "tokens_reasoning": 243,
     "tokens_cache_read": 7808
   },
-  "thumb": "media/paris-at-dusk.png",
+  "thumb": "media/paris-at-dusk.thumb.jpg",
   "output": {
     "kind": "media",
     "items": [
@@ -33,7 +33,8 @@
         "width": 256,
         "height": 224,
         "bytes": 3465,
-        "path": "media/paris-at-dusk.png"
+        "path": "media/paris-at-dusk.png",
+        "thumb": "media/paris-at-dusk.thumb.jpg"
       }
     ],
     "ok": true,

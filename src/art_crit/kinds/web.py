@@ -9,8 +9,9 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
-from ..browser import copy_thumb, verify_page
+from ..browser import verify_page
 from . import Kind, Staged
+from .media import screenshot_thumb
 
 SCRIPT_RE = re.compile(r"<script\b([^>]*)>(.*?)</script\s*>", re.I | re.S)
 LINK_RE = re.compile(r"<link\b([^>]*)>", re.I)
@@ -163,4 +164,4 @@ class Web(Kind):
         ctx.write_text(out_dir / ENTRY, run_dir / "game" / ENTRY)
         manifest = read_manifest(out_dir)
         fields = {"entry": f"game/{ENTRY}", "bytes": manifest.get("bytes"), "esbuild": manifest.get("esbuild")}
-        return Staged(fields, copy_thumb(out_dir, run_dir))
+        return Staged(fields, screenshot_thumb(out_dir, run_dir))

@@ -10,9 +10,10 @@ import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
-from ..browser import copy_thumb, verify_page
+from ..browser import verify_page
 from ..util import CritError
 from . import Kind, Staged
+from .media import screenshot_thumb
 
 PRESET_TEMPLATE = """[preset.0]
 
@@ -191,4 +192,4 @@ class Godot(Kind):
         game, sha12, engine_files = stage_game(
             out_dir, run_dir / "game", ctx.docs_root, ctx.slug, ctx.run_id, ctx.allow_threads, ctx.known_engines
         )
-        return Staged({k: v for k, v in game.items() if k != "kind"}, copy_thumb(out_dir, run_dir), (sha12, engine_files))
+        return Staged({k: v for k, v in game.items() if k != "kind"}, screenshot_thumb(out_dir, run_dir), (sha12, engine_files))

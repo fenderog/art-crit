@@ -1,5 +1,5 @@
 // /art-crit/api/*: GitHub sign-in plus hearts and gold/silver/bronze medals, stored in D1 (adr/0022), and prompt
-// requests, which become GitHub issues opened by the site's bot token (adr/0029). The only part of the site that writes. Reads are public; writes need a session cookie *and* a same-origin
+// requests, which become GitHub issues opened by the site's bot token (adr/0030). The only part of the site that writes. Reads are public; writes need a session cookie *and* a same-origin
 // request, so a page on another origin (or a sandboxed game frame, whose Origin is "null") can't vote.
 
 const SITE = "/art-crit/";
@@ -186,7 +186,7 @@ async function vote(request, env, pages, user, kind) {
   return json(await readVotes(env, slug, runs, user));
 }
 
-// ---- prompt requests (adr/0029)
+// ---- prompt requests (adr/0030)
 // POST api/request {prompt, kind, note?}: a signed-in visitor's prompt idea becomes an issue on the repo, labeled
 // "prompt request". The issue is opened with GITHUB_ISSUES_TOKEN (a fine-grained token with Issues: write on this one
 // repo), never the visitor's own GitHub token, which the site doesn't keep. Each user gets REQUESTS_PER_DAY a day and

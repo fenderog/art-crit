@@ -1,4 +1,4 @@
-// "Request a prompt" (ADR-0029): a visitor's prompt idea becomes an issue on the GitHub repo. On the published site
+// "Request a prompt" (ADR-0030): a visitor's prompt idea becomes an issue on the GitHub repo. On the published site
 // the Worker opens it (POST api/request, signed in with GitHub); where there is no such API (art-crit serve, a plain
 // static host, a Worker not yet configured) the form opens GitHub's own "new issue" page with everything filled in,
 // for the visitor to submit there. Nothing is stored on this machine any more (the classic pages keep the local list).

@@ -75,7 +75,7 @@
     "tokens_reasoning": 1125,
     "tokens_cache_read": 158321
   },
-  "thumb": "media/robbie_front.png",
+  "thumb": "media/robbie_front.thumb.jpg",
   "output": {
     "kind": "blender",
     "items": [
@@ -84,7 +84,8 @@
         "width": 1000,
         "height": 1000,
         "bytes": 859609,
-        "path": "media/robbie_front.png"
+        "path": "media/robbie_front.png",
+        "thumb": "media/robbie_front.thumb.jpg"
       },
       {
         "type": "model",

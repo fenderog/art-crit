@@ -24,7 +24,7 @@
     "tokens_reasoning": 5392,
     "tokens_cache_read": 271360
   },
-  "thumb": "media/robot_family.png",
+  "thumb": "media/robot_family.thumb.jpg",
   "output": {
     "kind": "media",
     "items": [
@@ -33,7 +33,8 @@
         "width": 1440,
         "height": 1640,
         "bytes": 1502059,
-        "path": "media/robot_family.png"
+        "path": "media/robot_family.png",
+        "thumb": "media/robot_family.thumb.jpg"
       },
       {
         "type": "image",

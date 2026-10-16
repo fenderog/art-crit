@@ -1,4 +1,4 @@
-// Shared bits of the lanes pages (ADR-0029): the sign-in pill, the final-prompt dialog and the offline vote row.
+// Shared bits of the lanes pages (ADR-0030): the sign-in pill, the final-prompt dialog and the offline vote row.
 
 import { el } from "../dom.js";
 

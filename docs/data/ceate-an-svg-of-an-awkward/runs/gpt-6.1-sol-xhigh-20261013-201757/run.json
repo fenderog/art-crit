@@ -24,7 +24,7 @@
     "tokens_reasoning": 9616,
     "tokens_cache_read": 296960
   },
-  "thumb": "media/awkward-family.png",
+  "thumb": "media/awkward-family.thumb.jpg",
   "output": {
     "kind": "media",
     "items": [
@@ -33,7 +33,8 @@
         "width": 1500,
         "height": 1320,
         "bytes": 1455512,
-        "path": "media/awkward-family.png"
+        "path": "media/awkward-family.png",
+        "thumb": "media/awkward-family.thumb.jpg"
       },
       {
         "type": "image",

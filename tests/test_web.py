@@ -1559,7 +1559,7 @@ def test_run_sidebar_lists_allowed_and_used_tools(site, page):
     assert_no_errors(page)
 
 
-# ---------------------------------------------------------------- the lanes design (index/page/compare, ADR-0029)
+# ---------------------------------------------------------------- the lanes design (index/page/compare, ADR-0030)
 def test_lanes_home_lists_prompts_with_covers_and_kind_filters(site, page):
     page.goto(site + "index.html")
     tiles = page.locator(".v2-tile")

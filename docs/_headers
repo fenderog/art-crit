@@ -1,0 +1,11 @@
+# Cloudflare Pages cache policy (ADR-0029). Pages sends `max-age=0, must-revalidate` for everything else, and the
+# subpath Worker passes these headers through. Run directories are published once (a re-import of the same id is
+# rare, and its images may stay cached up to a day); JSON is still revalidated by the viewer (`cache: "no-cache"`).
+# The viewer's own assets/*.js and style.css stay revalidated: without cache-busting (ADR-0012) a long max-age
+# could pair a new HTML page with an old script.
+/assets/vendor/*
+  Cache-Control: public, max-age=31536000, immutable
+/engines/*
+  Cache-Control: public, max-age=31536000, immutable
+/data/:slug/runs/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800

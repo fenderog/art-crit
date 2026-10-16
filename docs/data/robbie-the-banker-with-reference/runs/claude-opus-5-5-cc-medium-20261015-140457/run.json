@@ -24,7 +24,7 @@
     "tokens_reasoning": 3599,
     "tokens_cache_read": 403529
   },
-  "thumb": "media/robie_back.png",
+  "thumb": "media/robie_back.thumb.jpg",
   "output": {
     "kind": "blender",
     "items": [
@@ -33,7 +33,8 @@
         "width": 1024,
         "height": 1024,
         "bytes": 1094014,
-        "path": "media/robie_back.png"
+        "path": "media/robie_back.png",
+        "thumb": "media/robie_back.thumb.jpg"
       },
       {
         "type": "model",
@@ -48,14 +49,16 @@
         "width": 1024,
         "height": 1024,
         "bytes": 1152562,
-        "path": "media/robie_front.png"
+        "path": "media/robie_front.png",
+        "thumb": "media/robie_front.thumb.jpg"
       },
       {
         "type": "image",
         "width": 1024,
         "height": 1024,
         "bytes": 1115125,
-        "path": "media/robie_side.png"
+        "path": "media/robie_side.png",
+        "thumb": "media/robie_side.thumb.jpg"
       }
     ],
     "ok": true,

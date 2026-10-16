@@ -4,11 +4,22 @@
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self'; connect-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<!-- The classic design, kept for a while after the lanes redesign (ADR-0029). URLs resolve from docs/, like before. -->
+<!-- The classic design, kept for a while after the lanes redesign (ADR-0030). URLs resolve from docs/, like before. -->
 <base href="../">
 <title>Page &ndash; art-crit</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="assets/style.css">
+<link rel="modulepreload" href="assets/dom.js">
+<link rel="modulepreload" href="assets/fmt.js">
+<link rel="modulepreload" href="assets/runs.js">
+<link rel="modulepreload" href="assets/help.js">
+<link rel="modulepreload" href="assets/output.js">
+<link rel="modulepreload" href="assets/model.js">
+<link rel="modulepreload" href="assets/card.js">
+<link rel="modulepreload" href="assets/selection.js">
+<link rel="modulepreload" href="assets/votes.js">
+<link rel="modulepreload" href="assets/filters.js">
+<link rel="modulepreload" href="assets/aside.js">
 </head>
 <body>
 <header class="site-header">

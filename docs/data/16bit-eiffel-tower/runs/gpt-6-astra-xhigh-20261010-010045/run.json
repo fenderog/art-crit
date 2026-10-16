@@ -24,7 +24,7 @@
     "tokens_reasoning": 6820,
     "tokens_cache_read": 101120
   },
-  "thumb": "media/eiffel_at_the_golden_hour.png",
+  "thumb": "media/eiffel_at_the_golden_hour.thumb.jpg",
   "output": {
     "kind": "media",
     "items": [
@@ -33,7 +33,8 @@
         "width": 256,
         "height": 224,
         "bytes": 5706,
-        "path": "media/eiffel_at_the_golden_hour.png"
+        "path": "media/eiffel_at_the_golden_hour.png",
+        "thumb": "media/eiffel_at_the_golden_hour.thumb.jpg"
       }
     ],
     "ok": true,

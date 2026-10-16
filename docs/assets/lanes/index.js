@@ -62,7 +62,7 @@ function tile(p) {
   ]);
 }
 
-// "Request a prompt" at the right end of the top bar: it becomes a GitHub issue (request.js, ADR-0029).
+// "Request a prompt" at the right end of the top bar: it becomes a GitHub issue (request.js, ADR-0030).
 setupRequestButton(document.querySelector(".site-header"));
 
 if (pages.length) {

@@ -24,7 +24,7 @@
     "tokens_reasoning": 226,
     "tokens_cache_read": 7552
   },
-  "thumb": "media/eiffel-twilight.png",
+  "thumb": "media/eiffel-twilight.thumb.jpg",
   "output": {
     "kind": "media",
     "items": [
@@ -33,7 +33,8 @@
         "width": 256,
         "height": 224,
         "bytes": 3404,
-        "path": "media/eiffel-twilight.png"
+        "path": "media/eiffel-twilight.png",
+        "thumb": "media/eiffel-twilight.thumb.jpg"
       }
     ],
     "ok": true,

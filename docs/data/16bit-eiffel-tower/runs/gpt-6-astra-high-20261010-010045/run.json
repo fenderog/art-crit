@@ -24,7 +24,7 @@
     "tokens_reasoning": 1336,
     "tokens_cache_read": 19456
   },
-  "thumb": "media/paris_at_the_golden_hour.png",
+  "thumb": "media/paris_at_the_golden_hour.thumb.jpg",
   "output": {
     "kind": "media",
     "items": [
@@ -33,7 +33,8 @@
         "width": 256,
         "height": 224,
         "bytes": 4223,
-        "path": "media/paris_at_the_golden_hour.png"
+        "path": "media/paris_at_the_golden_hour.png",
+        "thumb": "media/paris_at_the_golden_hour.thumb.jpg"
       }
     ],
     "ok": true,

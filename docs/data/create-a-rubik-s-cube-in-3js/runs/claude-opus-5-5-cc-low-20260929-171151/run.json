@@ -24,7 +24,7 @@
     "tokens_reasoning": 58,
     "tokens_cache_read": 18094
   },
-  "thumb": "thumb.png",
+  "thumb": "thumb.jpg",
   "output": {
     "kind": "web",
     "entry": "game/index.html",

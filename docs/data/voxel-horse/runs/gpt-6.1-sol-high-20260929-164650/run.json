@@ -24,7 +24,7 @@
     "tokens_reasoning": 4991,
     "tokens_cache_read": 620672
   },
-  "thumb": "thumb.png",
+  "thumb": "thumb.jpg",
   "output": {
     "kind": "godot",
     "entry": "game/index.html",

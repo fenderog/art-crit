@@ -1,6 +1,6 @@
 # 0024. Prompt requests are local: `art-crit serve` keeps them outside `docs/`
 
-- Status: Partly superseded by [0029](0029-lanes-design-and-prompt-requests-as-issues.md) (the local list remains on `classic/index.html`)
+- Status: Partly superseded by [0030](0030-lanes-design-and-prompt-requests-as-issues.md) (the local list remains on `classic/index.html`)
 - Date: 2026-10-13
 
 ## Context

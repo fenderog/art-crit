@@ -288,7 +288,7 @@ test("voting is off until it is configured, and unknown routes are 404", async (
   assert.equal((await call(env(), "/rank", { method: "PUT", body: {} })).status, 404);
 });
 
-// ---- prompt requests (adr/0029)
+// ---- prompt requests (adr/0030)
 const withBot = () => ({ ...env(), GITHUB_ISSUES_TOKEN: "bot-token" });
 const request = (e, cookie, body, opts = {}) => call(e, "/request", { method: "POST", cookie, body, ...opts });
 const PROMPT = "Draw a pelican riding a bicycle, as an SVG";

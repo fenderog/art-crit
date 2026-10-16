@@ -139,7 +139,7 @@
         "tokens_reasoning": 10045,
         "tokens_cache_read": 248071
       },
-      "thumb": "media/robot_family_portrait.png",
+      "thumb": "media/robot_family_portrait.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -148,7 +148,8 @@
             "width": 1200,
             "height": 900,
             "bytes": 856810,
-            "path": "media/robot_family_portrait.png"
+            "path": "media/robot_family_portrait.png",
+            "thumb": "media/robot_family_portrait.thumb.jpg"
           },
           {
             "type": "image",
@@ -253,7 +254,7 @@
         "tokens_reasoning": 18664,
         "tokens_cache_read": 328856
       },
-      "thumb": "media/robot-family-portrait.jpg",
+      "thumb": "media/robot-family-portrait.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -262,7 +263,8 @@
             "width": 1600,
             "height": 1200,
             "bytes": 274873,
-            "path": "media/robot-family-portrait.jpg"
+            "path": "media/robot-family-portrait.jpg",
+            "thumb": "media/robot-family-portrait.thumb.jpg"
           },
           {
             "type": "image",
@@ -367,7 +369,7 @@
         "tokens_reasoning": 60708,
         "tokens_cache_read": 1975727
       },
-      "thumb": "media/robot_family_portrait.jpg",
+      "thumb": "media/robot_family_portrait.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -376,7 +378,8 @@
             "width": 1600,
             "height": 1200,
             "bytes": 354800,
-            "path": "media/robot_family_portrait.jpg"
+            "path": "media/robot_family_portrait.jpg",
+            "thumb": "media/robot_family_portrait.thumb.jpg"
           },
           {
             "type": "image",
@@ -428,7 +431,7 @@
         "tokens_reasoning": 69340,
         "tokens_cache_read": 1814430
       },
-      "thumb": "media/awkward_robot_family_portrait.jpg",
+      "thumb": "media/awkward_robot_family_portrait.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -437,7 +440,8 @@
             "width": 1600,
             "height": 1200,
             "bytes": 554322,
-            "path": "media/awkward_robot_family_portrait.jpg"
+            "path": "media/awkward_robot_family_portrait.jpg",
+            "thumb": "media/awkward_robot_family_portrait.thumb.jpg"
           },
           {
             "type": "image",
@@ -597,7 +601,7 @@
         "tokens_reasoning": 2260,
         "tokens_cache_read": 178048
       },
-      "thumb": "media/family_portrait.png",
+      "thumb": "media/family_portrait.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -606,7 +610,8 @@
             "width": 1440,
             "height": 1280,
             "bytes": 1016990,
-            "path": "media/family_portrait.png"
+            "path": "media/family_portrait.png",
+            "thumb": "media/family_portrait.thumb.jpg"
           },
           {
             "type": "image",
@@ -767,7 +772,7 @@
         "tokens_reasoning": 2445,
         "tokens_cache_read": 190976
       },
-      "thumb": "media/family_portrait.png",
+      "thumb": "media/family_portrait.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -776,7 +781,8 @@
             "width": 1440,
             "height": 1360,
             "bytes": 1247784,
-            "path": "media/family_portrait.png"
+            "path": "media/family_portrait.png",
+            "thumb": "media/family_portrait.thumb.jpg"
           },
           {
             "type": "image",
@@ -1576,7 +1582,7 @@
         "tokens_reasoning": 4040,
         "tokens_cache_read": 617292
       },
-      "thumb": "media/awkward-robot-family.png",
+      "thumb": "media/awkward-robot-family.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1585,7 +1591,8 @@
             "width": 1200,
             "height": 900,
             "bytes": 812392,
-            "path": "media/awkward-robot-family.png"
+            "path": "media/awkward-robot-family.png",
+            "thumb": "media/awkward-robot-family.thumb.jpg"
           },
           {
             "type": "image",
@@ -2134,7 +2141,7 @@
         "tokens_reasoning": null,
         "tokens_cache_read": 5612416
       },
-      "thumb": "media/awkward-robot-family.png",
+      "thumb": "media/awkward-robot-family.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -2143,7 +2150,8 @@
             "width": 1600,
             "height": 1000,
             "bytes": 992795,
-            "path": "media/awkward-robot-family.png"
+            "path": "media/awkward-robot-family.png",
+            "thumb": "media/awkward-robot-family.thumb.jpg"
           },
           {
             "type": "image",
@@ -2353,7 +2361,7 @@
         "tokens_reasoning": 32821,
         "tokens_cache_read": 3189035
       },
-      "thumb": "media/awkward_robot_family_portrait.poster.jpg",
+      "thumb": "media/awkward_robot_family_portrait.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -2365,7 +2373,8 @@
             "bytes": 894090,
             "transcoded": false,
             "path": "media/awkward_robot_family_portrait.mp4",
-            "poster": "media/awkward_robot_family_portrait.poster.jpg"
+            "poster": "media/awkward_robot_family_portrait.poster.jpg",
+            "thumb": "media/awkward_robot_family_portrait.thumb.jpg"
           },
           {
             "type": "image",
@@ -2423,7 +2432,7 @@
         "tokens_reasoning": 5392,
         "tokens_cache_read": 271360
       },
-      "thumb": "media/robot_family.png",
+      "thumb": "media/robot_family.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -2432,7 +2441,8 @@
             "width": 1440,
             "height": 1640,
             "bytes": 1502059,
-            "path": "media/robot_family.png"
+            "path": "media/robot_family.png",
+            "thumb": "media/robot_family.thumb.jpg"
           },
           {
             "type": "image",
@@ -2485,7 +2495,7 @@
         "tokens_reasoning": 6617,
         "tokens_cache_read": 192640
       },
-      "thumb": "media/awkward-family.png",
+      "thumb": "media/awkward-family.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -2494,7 +2504,8 @@
             "width": 1500,
             "height": 1250,
             "bytes": 1202945,
-            "path": "media/awkward-family.png"
+            "path": "media/awkward-family.png",
+            "thumb": "media/awkward-family.thumb.jpg"
           },
           {
             "type": "image",
@@ -2615,7 +2626,7 @@
         "tokens_reasoning": 1282,
         "tokens_cache_read": 43456
       },
-      "thumb": "media/robot-family-portrait.png",
+      "thumb": "media/robot-family-portrait.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -2624,7 +2635,8 @@
             "width": 1600,
             "height": 1600,
             "bytes": 891303,
-            "path": "media/robot-family-portrait.png"
+            "path": "media/robot-family-portrait.png",
+            "thumb": "media/robot-family-portrait.thumb.jpg"
           },
           {
             "type": "image",
@@ -2739,7 +2751,7 @@
         "tokens_reasoning": 51436,
         "tokens_cache_read": 1406976
       },
-      "thumb": "media/awkward-robot-family-portrait.poster.jpg",
+      "thumb": "media/awkward-robot-family-portrait.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -2751,7 +2763,8 @@
             "bytes": 75254,
             "transcoded": false,
             "path": "media/awkward-robot-family-portrait.mp4",
-            "poster": "media/awkward-robot-family-portrait.poster.jpg"
+            "poster": "media/awkward-robot-family-portrait.poster.jpg",
+            "thumb": "media/awkward-robot-family-portrait.thumb.jpg"
           },
           {
             "type": "image",
@@ -3061,7 +3074,7 @@
         "tokens_reasoning": 3480,
         "tokens_cache_read": 530688
       },
-      "thumb": "media/robot_family.png",
+      "thumb": "media/robot_family.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -3070,7 +3083,8 @@
             "width": 900,
             "height": 650,
             "bytes": 199646,
-            "path": "media/robot_family.png"
+            "path": "media/robot_family.png",
+            "thumb": "media/robot_family.thumb.jpg"
           },
           {
             "type": "image",
@@ -3129,7 +3143,7 @@
         "tokens_reasoning": 13908,
         "tokens_cache_read": 287104
       },
-      "thumb": "media/family-portrait.png",
+      "thumb": "media/family-portrait.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -3138,7 +3152,8 @@
             "width": 1200,
             "height": 800,
             "bytes": 844866,
-            "path": "media/family-portrait.png"
+            "path": "media/family-portrait.png",
+            "thumb": "media/family-portrait.thumb.jpg"
           },
           {
             "type": "image",
@@ -3197,7 +3212,7 @@
         "tokens_reasoning": 21662,
         "tokens_cache_read": 1110528
       },
-      "thumb": "media/awkward_robot_family.png",
+      "thumb": "media/awkward_robot_family.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -3206,7 +3221,8 @@
             "width": 1400,
             "height": 1400,
             "bytes": 1509735,
-            "path": "media/awkward_robot_family.png"
+            "path": "media/awkward_robot_family.png",
+            "thumb": "media/awkward_robot_family.thumb.jpg"
           },
           {
             "type": "image",
@@ -3265,7 +3281,7 @@
         "tokens_reasoning": 25715,
         "tokens_cache_read": 1214336
       },
-      "thumb": "media/family-portrait.poster.jpg",
+      "thumb": "media/family-portrait.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -3277,7 +3293,8 @@
             "bytes": 1140044,
             "transcoded": false,
             "path": "media/family-portrait.mp4",
-            "poster": "media/family-portrait.poster.jpg"
+            "poster": "media/family-portrait.poster.jpg",
+            "thumb": "media/family-portrait.thumb.jpg"
           },
           {
             "type": "image",
@@ -3346,7 +3363,7 @@
         "tokens_reasoning": 128111,
         "tokens_cache_read": 4339648
       },
-      "thumb": "media/awkward-robot-family-portrait-animated.svg",
+      "thumb": "media/awkward-robot-family-portrait.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -3362,7 +3379,8 @@
             "width": 1800,
             "height": 1800,
             "bytes": 177199,
-            "path": "media/awkward-robot-family-portrait.jpg"
+            "path": "media/awkward-robot-family-portrait.jpg",
+            "thumb": "media/awkward-robot-family-portrait.thumb.jpg"
           },
           {
             "type": "image",
@@ -3425,7 +3443,7 @@
         "tokens_reasoning": 9616,
         "tokens_cache_read": 296960
       },
-      "thumb": "media/awkward-family.png",
+      "thumb": "media/awkward-family.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -3434,7 +3452,8 @@
             "width": 1500,
             "height": 1320,
             "bytes": 1455512,
-            "path": "media/awkward-family.png"
+            "path": "media/awkward-family.png",
+            "thumb": "media/awkward-family.thumb.jpg"
           },
           {
             "type": "image",

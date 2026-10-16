@@ -31,7 +31,7 @@
     "tokens_reasoning": 1282,
     "tokens_cache_read": 43456
   },
-  "thumb": "media/robot-family-portrait.png",
+  "thumb": "media/robot-family-portrait.thumb.jpg",
   "output": {
     "kind": "media",
     "items": [
@@ -40,7 +40,8 @@
         "width": 1600,
         "height": 1600,
         "bytes": 891303,
-        "path": "media/robot-family-portrait.png"
+        "path": "media/robot-family-portrait.png",
+        "thumb": "media/robot-family-portrait.thumb.jpg"
       },
       {
         "type": "image",

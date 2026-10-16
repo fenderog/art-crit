@@ -129,7 +129,7 @@
         "tokens_reasoning": 447,
         "tokens_cache_read": 58929
       },
-      "thumb": "media/pelican-skateboard.png",
+      "thumb": "media/pelican-skateboard.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -138,7 +138,8 @@
             "width": 1600,
             "height": 1200,
             "bytes": 231421,
-            "path": "media/pelican-skateboard.png"
+            "path": "media/pelican-skateboard.png",
+            "thumb": "media/pelican-skateboard.thumb.jpg"
           },
           {
             "type": "image",
@@ -237,7 +238,7 @@
         "tokens_reasoning": 2951,
         "tokens_cache_read": 96509
       },
-      "thumb": "media/pelican-skateboard.png",
+      "thumb": "media/pelican-skateboard.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -246,7 +247,8 @@
             "width": 1600,
             "height": 1200,
             "bytes": 271789,
-            "path": "media/pelican-skateboard.png"
+            "path": "media/pelican-skateboard.png",
+            "thumb": "media/pelican-skateboard.thumb.jpg"
           },
           {
             "type": "image",
@@ -340,7 +342,7 @@
         "tokens_reasoning": 20136,
         "tokens_cache_read": 603806
       },
-      "thumb": "media/pelican-skateboard.png",
+      "thumb": "media/pelican-skateboard.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -349,7 +351,8 @@
             "width": 2400,
             "height": 1800,
             "bytes": 1465340,
-            "path": "media/pelican-skateboard.png"
+            "path": "media/pelican-skateboard.png",
+            "thumb": "media/pelican-skateboard.thumb.jpg"
           },
           {
             "type": "image",
@@ -400,7 +403,7 @@
         "tokens_reasoning": 11341,
         "tokens_cache_read": 500127
       },
-      "thumb": "media/pelican_skateboard.png",
+      "thumb": "media/pelican_skateboard.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -409,7 +412,8 @@
             "width": 1600,
             "height": 1200,
             "bytes": 287675,
-            "path": "media/pelican_skateboard.png"
+            "path": "media/pelican_skateboard.png",
+            "thumb": "media/pelican_skateboard.thumb.jpg"
           },
           {
             "type": "image",
@@ -754,7 +758,7 @@
         "tokens_reasoning": 6095,
         "tokens_cache_read": 152064
       },
-      "thumb": "media/coast-and-roll.png",
+      "thumb": "media/coast-and-roll.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -763,7 +767,8 @@
             "width": 1800,
             "height": 1440,
             "bytes": 257207,
-            "path": "media/coast-and-roll.png"
+            "path": "media/coast-and-roll.png",
+            "thumb": "media/coast-and-roll.thumb.jpg"
           },
           {
             "type": "image",
@@ -815,7 +820,7 @@
         "tokens_reasoning": 8411,
         "tokens_cache_read": 272000
       },
-      "thumb": "media/pelican-cruiser.png",
+      "thumb": "media/pelican-cruiser.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -824,7 +829,8 @@
             "width": 2100,
             "height": 1800,
             "bytes": 529746,
-            "path": "media/pelican-cruiser.png"
+            "path": "media/pelican-cruiser.png",
+            "thumb": "media/pelican-cruiser.thumb.jpg"
           },
           {
             "type": "image",
@@ -1068,7 +1074,7 @@
         "tokens_reasoning": 436,
         "tokens_cache_read": 24373
       },
-      "thumb": "media/pelican-preview.png",
+      "thumb": "media/pelican-preview.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1077,7 +1083,8 @@
             "width": 800,
             "height": 600,
             "bytes": 52880,
-            "path": "media/pelican-preview.png"
+            "path": "media/pelican-preview.png",
+            "thumb": "media/pelican-preview.thumb.jpg"
           },
           {
             "type": "video",
@@ -1087,7 +1094,8 @@
             "bytes": 68640,
             "transcoded": false,
             "path": "media/pelican-ride.mp4",
-            "poster": "media/pelican-ride.poster.jpg"
+            "poster": "media/pelican-ride.poster.jpg",
+            "thumb": "media/pelican-ride.thumb.jpg"
           },
           {
             "type": "image",
@@ -1134,7 +1142,7 @@
         "tokens_reasoning": 1246,
         "tokens_cache_read": 25397
       },
-      "thumb": "media/pelican-ride.poster.jpg",
+      "thumb": "media/pelican-ride.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1146,14 +1154,16 @@
             "bytes": 426599,
             "transcoded": false,
             "path": "media/pelican-ride.mp4",
-            "poster": "media/pelican-ride.poster.jpg"
+            "poster": "media/pelican-ride.poster.jpg",
+            "thumb": "media/pelican-ride.thumb.jpg"
           },
           {
             "type": "image",
             "width": 960,
             "height": 720,
             "bytes": 15249,
-            "path": "media/pelican-skateboard.png"
+            "path": "media/pelican-skateboard.png",
+            "thumb": "media/pelican-skateboard.thumb.jpg"
           },
           {
             "type": "image",
@@ -1205,7 +1215,7 @@
         "tokens_reasoning": 3975,
         "tokens_cache_read": 199982
       },
-      "thumb": "media/pelican-skateboard.poster.jpg",
+      "thumb": "media/pelican-skateboard.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1217,7 +1227,8 @@
             "bytes": 596913,
             "transcoded": false,
             "path": "media/pelican-skateboard.mp4",
-            "poster": "media/pelican-skateboard.poster.jpg"
+            "poster": "media/pelican-skateboard.poster.jpg",
+            "thumb": "media/pelican-skateboard.thumb.jpg"
           },
           {
             "type": "image",
@@ -1276,7 +1287,7 @@
         "tokens_reasoning": 4948,
         "tokens_cache_read": 421031
       },
-      "thumb": "media/pelican-skateboard.poster.jpg",
+      "thumb": "media/pelican-skateboard.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1288,7 +1299,8 @@
             "bytes": 264389,
             "transcoded": false,
             "path": "media/pelican-skateboard.mp4",
-            "poster": "media/pelican-skateboard.poster.jpg"
+            "poster": "media/pelican-skateboard.poster.jpg",
+            "thumb": "media/pelican-skateboard.thumb.jpg"
           },
           {
             "type": "image",
@@ -1348,7 +1360,7 @@
         "tokens_reasoning": 11638,
         "tokens_cache_read": 1017677
       },
-      "thumb": "media/pelican-skateboard.poster.jpg",
+      "thumb": "media/pelican-skateboard.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1360,7 +1372,8 @@
             "bytes": 259252,
             "transcoded": false,
             "path": "media/pelican-skateboard.mp4",
-            "poster": "media/pelican-skateboard.poster.jpg"
+            "poster": "media/pelican-skateboard.poster.jpg",
+            "thumb": "media/pelican-skateboard.thumb.jpg"
           },
           {
             "type": "image",
@@ -1554,7 +1567,7 @@
         "tokens_reasoning": 124,
         "tokens_cache_read": 16640
       },
-      "thumb": "media/pelican_skateboard.png",
+      "thumb": "media/pelican_skateboard.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1563,7 +1576,8 @@
             "width": 1280,
             "height": 1280,
             "bytes": 105389,
-            "path": "media/pelican_skateboard.png"
+            "path": "media/pelican_skateboard.png",
+            "thumb": "media/pelican_skateboard.thumb.jpg"
           },
           {
             "type": "image",
@@ -1617,7 +1631,7 @@
         "tokens_reasoning": 7929,
         "tokens_cache_read": 121152
       },
-      "thumb": "media/pelican-skateboard.poster.jpg",
+      "thumb": "media/pelican-skateboard.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1629,7 +1643,8 @@
             "bytes": 104405,
             "transcoded": false,
             "path": "media/pelican-skateboard.mp4",
-            "poster": "media/pelican-skateboard.poster.jpg"
+            "poster": "media/pelican-skateboard.poster.jpg",
+            "thumb": "media/pelican-skateboard.thumb.jpg"
           },
           {
             "type": "image",
@@ -1756,7 +1771,7 @@
         "tokens_reasoning": 12034,
         "tokens_cache_read": 281856
       },
-      "thumb": "media/pelican_skateboard.png",
+      "thumb": "media/pelican_skateboard.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1765,7 +1780,8 @@
             "width": 1600,
             "height": 1066,
             "bytes": 263494,
-            "path": "media/pelican_skateboard.png"
+            "path": "media/pelican_skateboard.png",
+            "thumb": "media/pelican_skateboard.thumb.jpg"
           },
           {
             "type": "image",
@@ -1825,7 +1841,7 @@
         "tokens_reasoning": 49454,
         "tokens_cache_read": 726784
       },
-      "thumb": "media/pelican-skateboard-animated.svg",
+      "thumb": "media/pelican-skateboard.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1841,7 +1857,8 @@
             "width": 1200,
             "height": 936,
             "bytes": 129190,
-            "path": "media/pelican-skateboard.png"
+            "path": "media/pelican-skateboard.png",
+            "thumb": "media/pelican-skateboard.thumb.jpg"
           },
           {
             "type": "image",
@@ -1900,7 +1917,7 @@
         "tokens_reasoning": 61484,
         "tokens_cache_read": 2772736
       },
-      "thumb": "media/pelican_skateboard.gif",
+      "thumb": "media/pelican_skateboard.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1909,7 +1926,8 @@
             "width": 512,
             "height": 512,
             "bytes": 1280287,
-            "path": "media/pelican_skateboard.gif"
+            "path": "media/pelican_skateboard.gif",
+            "thumb": "media/pelican_skateboard.thumb.jpg"
           },
           {
             "type": "video",
@@ -1987,7 +2005,7 @@
         "tokens_reasoning": 37111,
         "tokens_cache_read": 1217728
       },
-      "thumb": "media/pelican_ride.poster.jpg",
+      "thumb": "media/pelican_ride.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -1999,14 +2017,16 @@
             "bytes": 58000,
             "transcoded": false,
             "path": "media/pelican_ride.mp4",
-            "poster": "media/pelican_ride.poster.jpg"
+            "poster": "media/pelican_ride.poster.jpg",
+            "thumb": "media/pelican_ride.thumb.jpg"
           },
           {
             "type": "image",
             "width": 800,
             "height": 600,
             "bytes": 22868,
-            "path": "media/pelican_skateboard.png"
+            "path": "media/pelican_skateboard.png",
+            "thumb": "media/pelican_skateboard.thumb.jpg"
           },
           {
             "type": "image",
@@ -2065,7 +2085,7 @@
         "tokens_reasoning": 2477,
         "tokens_cache_read": 73408
       },
-      "thumb": "media/pelican-skateboard.png",
+      "thumb": "media/pelican-skateboard.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -2074,7 +2094,8 @@
             "width": 1600,
             "height": 1000,
             "bytes": 611451,
-            "path": "media/pelican-skateboard.png"
+            "path": "media/pelican-skateboard.png",
+            "thumb": "media/pelican-skateboard.thumb.jpg"
           },
           {
             "type": "image",
@@ -2133,7 +2154,7 @@
         "tokens_reasoning": 1616,
         "tokens_cache_read": 55552
       },
-      "thumb": "media/pelican-skateboard.png",
+      "thumb": "media/pelican-skateboard.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -2142,7 +2163,8 @@
             "width": 1200,
             "height": 1200,
             "bytes": 261660,
-            "path": "media/pelican-skateboard.png"
+            "path": "media/pelican-skateboard.png",
+            "thumb": "media/pelican-skateboard.thumb.jpg"
           },
           {
             "type": "image",
@@ -2202,7 +2224,7 @@
         "tokens_reasoning": 20234,
         "tokens_cache_read": 778304
       },
-      "thumb": "media/pelican_skateboard.png",
+      "thumb": "media/pelican_skateboard.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -2211,7 +2233,8 @@
             "width": 1501,
             "height": 1096,
             "bytes": 239750,
-            "path": "media/pelican_skateboard.png"
+            "path": "media/pelican_skateboard.png",
+            "thumb": "media/pelican_skateboard.thumb.jpg"
           },
           {
             "type": "image",
@@ -2335,7 +2358,7 @@
         "tokens_reasoning": 4881,
         "tokens_cache_read": 82688
       },
-      "thumb": "media/pelican-skateboard.png",
+      "thumb": "media/pelican-skateboard.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -2344,7 +2367,8 @@
             "width": 1800,
             "height": 1240,
             "bytes": 925450,
-            "path": "media/pelican-skateboard.png"
+            "path": "media/pelican-skateboard.png",
+            "thumb": "media/pelican-skateboard.thumb.jpg"
           },
           {
             "type": "image",
@@ -2399,7 +2423,7 @@
         "tokens_reasoning": 20526,
         "tokens_cache_read": 1726336
       },
-      "thumb": "media/pelican-skateboard.gif",
+      "thumb": "media/pelican-skateboard.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -2408,7 +2432,8 @@
             "width": 560,
             "height": 315,
             "bytes": 1635746,
-            "path": "media/pelican-skateboard.gif"
+            "path": "media/pelican-skateboard.gif",
+            "thumb": "media/pelican-skateboard.thumb.jpg"
           },
           {
             "type": "video",
@@ -2484,7 +2509,7 @@
         "tokens_reasoning": 4448,
         "tokens_cache_read": 21504
       },
-      "thumb": "media/pelican_skateboard.poster.jpg",
+      "thumb": "media/pelican_skateboard.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -2496,7 +2521,8 @@
             "bytes": 196963,
             "transcoded": false,
             "path": "media/pelican_skateboard.mp4",
-            "poster": "media/pelican_skateboard.poster.jpg"
+            "poster": "media/pelican_skateboard.poster.jpg",
+            "thumb": "media/pelican_skateboard.thumb.jpg"
           },
           {
             "type": "image",
@@ -2563,7 +2589,7 @@
         "tokens_reasoning": 15823,
         "tokens_cache_read": 70912
       },
-      "thumb": "media/pelican_skateboard.poster.jpg",
+      "thumb": "media/pelican_skateboard.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -2575,7 +2601,8 @@
             "bytes": 123398,
             "transcoded": false,
             "path": "media/pelican_skateboard.mp4",
-            "poster": "media/pelican_skateboard.poster.jpg"
+            "poster": "media/pelican_skateboard.poster.jpg",
+            "thumb": "media/pelican_skateboard.thumb.jpg"
           },
           {
             "type": "image",
@@ -2798,7 +2825,7 @@
         "tokens_reasoning": 2172,
         "tokens_cache_read": 158004
       },
-      "thumb": "media/pelican-skateboard.png",
+      "thumb": "media/pelican-skateboard.thumb.jpg",
       "output": {
         "kind": "media",
         "items": [
@@ -2807,7 +2834,8 @@
             "width": 1200,
             "height": 900,
             "bytes": 190346,
-            "path": "media/pelican-skateboard.png"
+            "path": "media/pelican-skateboard.png",
+            "thumb": "media/pelican-skateboard.thumb.jpg"
           },
           {
             "type": "image",

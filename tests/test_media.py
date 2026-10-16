@@ -109,3 +109,44 @@ def test_name_collisions_are_reported_not_overwritten(out):
     m = finalize(out)
     assert [i["file"] for i in m["items"]] == ["x.mp4"]
     assert m["errors"] == ["x.webm: skipped, another output is already named x.mp4"]
+
+
+def test_thumbnail_is_a_small_jpeg_with_transparency_over_white(tmp_path):
+    src = tmp_path / "t.png"
+    ffmpeg("-f", "lavfi", "-i", "color=c=red@0.0:s=1200x900,format=rgba", "-frames:v", "1", src)
+    assert media.write_thumb(src, tmp_path / "out" / "t.thumb.jpg")  # makes the parent dir
+    out = tmp_path / "out" / "t.thumb.jpg"
+    assert out.read_bytes()[:2] == b"\xff\xd8"
+    info = media.probe(out)
+    assert (info["width"], info["height"]) == (800, 600)  # at most THUMB_WIDTH wide, aspect kept
+    pixels = subprocess.run(["ffmpeg", "-v", "error", "-i", str(out), "-vf", "crop=2:2:0:0", "-f", "rawvideo", "-pix_fmt", "rgb24", "pipe:1"],
+                            capture_output=True, check=True).stdout
+    assert set(pixels) == {255}  # transparent pixels are white, not black
+    assert not media.write_thumb(tmp_path / "missing.png", tmp_path / "x.jpg")
+    (tmp_path / "bad.png").write_bytes(b"not a png")
+    assert not media.write_thumb(tmp_path / "bad.png", tmp_path / "x.jpg")
+
+
+def test_add_thumbs_gives_items_thumbnails_and_picks_the_runs(tmp_path):
+    run_dir = tmp_path / "run"
+    (run_dir / "media").mkdir(parents=True)
+    ffmpeg("-f", "lavfi", "-i", "testsrc=size=64x48", "-frames:v", "1", run_dir / "media/a.png")
+    ffmpeg("-f", "lavfi", "-i", "testsrc=size=64x48", "-frames:v", "1", run_dir / "media/a.jpg")  # same stem: no name left
+    ffmpeg("-f", "lavfi", "-i", "testsrc=size=64x48", "-frames:v", "1", run_dir / "media/clip.poster.jpg")
+    (run_dir / "media/d.svg").write_text("<svg xmlns='http://www.w3.org/2000/svg'/>")
+    items = [
+        {"type": "image", "path": "media/d.svg"},
+        {"type": "video", "path": "media/clip.mp4", "poster": "media/clip.poster.jpg"},
+        {"type": "image", "path": "media/a.png"},
+        {"type": "image", "path": "media/a.jpg"},
+        {"type": "model", "path": "media/m.glb"},
+    ]
+    assert media.add_thumbs(run_dir, items) == "media/clip.thumb.jpg"  # the first item's thumb: the SVG has none
+    assert [i.get("thumb") for i in items] == [None, "media/clip.thumb.jpg", "media/a.thumb.jpg", None, None]
+    assert (run_dir / "media/a.thumb.jpg").is_file() and (run_dir / "media/clip.thumb.jpg").is_file()
+    # idempotent: a second pass makes nothing new and keeps the thumbs
+    before = sorted(p.name for p in (run_dir / "media").iterdir())
+    assert media.add_thumbs(run_dir, items) == "media/clip.thumb.jpg"
+    assert sorted(p.name for p in (run_dir / "media").iterdir()) == before
+    # no thumbnail at all (SVG only): the first image as is
+    assert media.add_thumbs(run_dir, [{"type": "image", "path": "media/d.svg"}]) == "media/d.svg"

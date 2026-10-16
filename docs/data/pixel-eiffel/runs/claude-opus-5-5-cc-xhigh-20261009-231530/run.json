@@ -24,7 +24,7 @@
     "tokens_reasoning": 64004,
     "tokens_cache_read": 934435
   },
-  "thumb": "media/eiffel_tower_16bit.jpg",
+  "thumb": "media/eiffel_tower_16bit.thumb.jpg",
   "output": {
     "kind": "media",
     "items": [
@@ -33,7 +33,8 @@
         "width": 2560,
         "height": 1920,
         "bytes": 118693,
-        "path": "media/eiffel_tower_16bit.jpg"
+        "path": "media/eiffel_tower_16bit.jpg",
+        "thumb": "media/eiffel_tower_16bit.thumb.jpg"
       }
     ],
     "ok": true,

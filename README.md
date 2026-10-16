@@ -225,7 +225,7 @@ site can't write rankings — only your local `art-crit serve` can.
 
 The home page's top bar has a **Request a prompt** button: write the task, pick its kind and add an optional note.
 On fenderog.com, after signing in with GitHub, the request becomes an issue on this repo labeled `prompt request`
-([ADR-0029](adr/0029-lanes-design-and-prompt-requests-as-issues.md); setup under *Prompt requests* below). Anywhere
+([ADR-0030](adr/0030-lanes-design-and-prompt-requests-as-issues.md); setup under *Prompt requests* below). Anywhere
 else (or before that setup) the button opens GitHub's own new-issue form with everything filled in.
 
 The classic home page (`classic/index.html`, under `art-crit serve`) still keeps the older local list: requests saved

@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS medals (
   UNIQUE (page, user_id, run)
 );
 
--- Prompt requests sent from the site (adr/0029): only who and when (and the issue they became), to cap them per user
+-- Prompt requests sent from the site (adr/0030): only who and when (and the issue they became), to cap them per user
 -- and per day. The prompt itself lives in the GitHub issue, not here.
 CREATE TABLE IF NOT EXISTS prompt_requests (
   user_id INTEGER NOT NULL,
