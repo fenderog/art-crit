@@ -1,4 +1,4 @@
-"""art-crit: argparse wiring for import/list/rm/rename/rebuild/serve/publish/run/models."""
+"""art-crit: argparse wiring for import/list/rm/rename/retry/rebuild/serve/publish/run/models."""
 
 import argparse
 import subprocess
@@ -9,6 +9,7 @@ from .config import Config, RunRequest
 from .harness import HARNESSES
 from .importer import cmd_import
 from .kinds import KINDS
+from .retry import cmd_retry
 from .runner import cmd_models, cmd_run, resolve_ref
 from .serve import serve_forever
 from .site import cmd_list, cmd_rename, cmd_rm, rebuild
@@ -42,6 +43,15 @@ def build_parser():
     rn.add_argument("slug")
     rn.add_argument("new_slug")
     rn.add_argument("-t", "--title", help="also set the page title (default: follows the slug if it was derived from it)")
+
+    rt = sub.add_parser("retry", parents=[common], help="run a page's failed runs again, replacing each one that now works")
+    rt.add_argument("slug")
+    rt.add_argument("run_ids", nargs="*", metavar="run_id", help="only these failed runs (default: every failed run on the page)")
+    rt.add_argument("-j", type=int, dest="parallel", help="max agents at once")
+    rt.add_argument("-T", "--timeout", help='per agent, e.g. "30m" (default [run].timeout or 30m)')
+    rt.add_argument("-y", "--yes", action="store_true", help="don't ask for confirmation")
+    rt.add_argument("-n", "--dry-run", action="store_true", help="print the plan and exit")
+    rt.add_argument("--no-publish", dest="publish", action="store_false", help="import at the end only; push later with `art-crit publish`")
 
     sub.add_parser("rebuild", parents=[common], help="regenerate page.json + pages.json")
 
@@ -117,6 +127,9 @@ def main(argv=None):
             return cmd_rm(root, args.slug, args.run_id, failed=args.failed, yes=args.yes)
         if args.command == "rename":
             return cmd_rename(root, args.slug, args.new_slug, args.title)
+        if args.command == "retry":
+            return cmd_retry(config, args.slug, args.run_ids, yes=args.yes, dry_run=args.dry_run,
+                             parallel=args.parallel, timeout=args.timeout, publish=args.publish)
         if args.command == "rebuild":
             rebuild(root)
             return 0

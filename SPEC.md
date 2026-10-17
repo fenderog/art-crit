@@ -41,7 +41,7 @@ docs/
     <slug>/page.json              # Page
     <slug>/references/<file>      # optional: the page's --ref files, shown as thumbnails on page.html (ADR-0026)
     <slug>/ranking.json           # optional: {"ranks": {"<run id>": 1, ...}, "updated": "<iso>"}, the owner's ranking (see Ranking)
-    <slug>/covers.json            # optional, curated by hand: {"covers": {"<run id>": "media/x.thumb.jpg" | false}} (see Covers)
+    <slug>/covers.json            # optional, the owner's cover overrides: thumbs, page, covers (see Covers)
     <slug>/runs/<run_id>/
       run.json                    # Run
       thumb.jpg                   # optional (godot, web): the verify screenshot at most 800 px wide (ADR-0029;
@@ -108,7 +108,7 @@ page's published copies, so adding runs can't silently leave the model with no i
 ```
 - `output`, `session`, `source` and `thumb` can each be `null`.
 - `rank` exists only in `page.json.runs` (never in `run.json`): the run's rank from `ranking.json`, or `null`.
-- `cover` exists only in `page.json.runs`, and only for a run named in `covers.json` (see Covers).
+- `cover` exists only in `page.json.runs`, and only for a run named in `covers.json`'s `covers` (see Covers); `page.json.cover` ({run, image}) is the owner's pick of the page's home-page picture. A run's `thumb` there can be overridden by `covers.json` too, and then the run has `thumb_override: true`.
 - `kind` is the page's kind (runs imported before kinds existed have none; the viewer treats that as `godot`). Importing
   into a page of another kind is an error. `batch` = the batch directory's name (runs published before run
   directories hold the old model directory's name).
@@ -221,6 +221,7 @@ art-crit import <run-dir | batch-dir> [-p/--page/--slug SLUG] [-t/--title TEXT] 
 art-crit list                      # pages and their runs
 art-crit rm <slug> [<run_id>] [-f/--failed] [-y/--yes]   # remove a run (or a whole page); --failed removes every failed run instead, then rebuild
 art-crit rename <slug> <new> [-t/--title TEXT]   # move a page to a new slug (rewrites each run.json `page`), then rebuild
+art-crit retry <slug> [<run_id>...] [-y/--yes] [-n/--dry-run] [-j N] [-T/--timeout D] [--no-publish]   # run failed runs again (see Retry)
 art-crit rebuild                   # regenerate page.json + pages.json from runs/*/run.json; delete engines no run references
 art-crit serve [-p/--port 8000]    # serve docs/ locally: Access-Control-Allow-Origin: *, .wasm as application/wasm, NO COOP/COEP headers
                                 #   plus the local-only ranking, prompt-request and run-monitor APIs (see Ranking,
@@ -541,12 +542,27 @@ finished agent is never rerun. Then the output step for a `complete` run whose `
 export is retried), and import. Failed and timed-out runs stay as they are. A batch written by an art-crit that grouped runs by
 model (no `id` in its runs) can't be resumed.
 
+### Retry
+`art-crit retry <slug> [run_id...]` runs a page's failed runs again (failed in any of the three senses of `run_failed`; with
+no ids, every failed run on the page; naming a run that didn't fail is an error). Per failed run it builds the same
+`harness:model:level` spec (`retry_spec`: the model id the harness lists under the run's recorded display name, plus the
+`@upstream` pin of a pinned OpenRouter run) and starts one ordinary `art-crit run --page <slug>` batch, so the page's prompt,
+kind and references are reused and each new run is imported and pushed as it finishes. Afterwards a failed run is removed
+when a new run with the same harness, model and effort is good (then one rebuild and one commit,
+`art-crit retry: <slug> (replaced N failed runs)`, unless `--no-publish`); a failed run whose retry also failed stays, is listed
+as `still failed` and the exit code is 1. "Good" means a newer run of the same harness, model and effort that isn't failed, so
+that is also checked before starting: a failed run that already has one (a manual re-run, or a retry that was interrupted) is
+replaced without running again, and failed runs of one harness/model/effort (several timeouts) share one new run and are all
+replaced by it. Ctrl-C still replaces whatever its finished runs fixed. Without run ids, a run whose model the harness no
+longer offers is skipped with a warning (it stays, exit 1); with ids it is an error. Declining the confirmation changes
+nothing. `--dry-run` prints the batch plan and changes nothing. A retry costs money like any run.
+
 ## Ranking
 
 The page owner ranks runs in the browser; there is no CLI command for it. Only `art-crit serve` can save a ranking
 (GitHub Pages is static), so the published site shows rankings read-only.
 
-- `art-crit serve` answers `GET api/local` → `{"rank": true, "requests": true, "runs": true}` and `PUT api/rank?p=<slug>` with body
+- `art-crit serve` answers `GET api/local` → `{"rank": true, "cover": true, "requests": true, "runs": true}` and `PUT api/rank?p=<slug>` with body
   `{"ranks": {"<run id>": <int>|null, ...}}`. It validates the slug (`[a-z0-9][a-z0-9-]*`, page must exist), that every
   id is a run of the page, and that each rank is a whole number from 1 to the number of runs (ties allowed; `null`
   = unranked), writes `data/<slug>/ranking.json`, then rebuilds. Errors are `400 {"error": ...}`.
@@ -557,13 +573,33 @@ The page owner ranks runs in the browser; there is no CLI command for it. Only `
 
 ## Covers
 
-The home page shows a run's `thumb`, which for a media/blender run is just its first image, and a run can show its
-subject from behind (a robot's back view, a horse's rear). `data/<slug>/covers.json`, written by hand, fixes that:
-`{"covers": {"<run id>": "<path>" | false}}`. A path (relative to the run, a file that exists) is that run's cover
-instead of its `thumb`; `false` keeps the run off the home page altogether (use it when the only picture is a bad
-one). `rebuild` copies the entry to `page.json.runs[].cover`, ignores entries for runs or files that don't exist, and
-never rewrites the file. The home page (`coverOf()` in runs.js) and `pages.json`'s `thumb` use `cover`; the page,
-compare and run views keep showing `thumb`.
+The home page and the run cards show defaults: a page's cover is one of its highest-effort runs, and a media/blender run's
+`thumb` is just its first image, which can show the subject from behind. `data/<slug>/covers.json` holds the owner's
+**overrides only** (with none set, the defaults apply):
+
+```json
+{ "thumbs": { "<run id>": "media/front.thumb.jpg" },
+  "page":   { "run": "<run id>", "image": "media/front.thumb.jpg" },
+  "covers": { "<run id>": "media/front.thumb.jpg" | false } }
+```
+
+- `thumbs`: a run's main thumbnail (its card, table row and `thumb`). `rebuild` applies it to `page.json.runs[].thumb`
+  and marks that run `thumb_override: true` (the run page shows a pressed toggle only for a real override, not for the
+  default `thumb`); `run.json` is untouched.
+- `page`: the page's home-page picture (a run, and one of its images; `image` defaults to the run's thumbnail, which is
+  all a game or page has). `rebuild` copies it to `page.json.cover` and `pages.json`'s `thumb`; the home page's tile and
+  the slideshow's first slide use it instead of choosing. A failed run can't be the page's cover (the pick is ignored).
+- `covers`: hand-edited, home-page only: a path swaps the picture the default choice would use for that run, `false`
+  keeps the run out of the default choice (e.g. its only picture shows a character from behind).
+- Paths are relative to the run and must exist; entries for runs or files that are gone are ignored. A covers.json that
+  isn't a JSON object is reported by `rebuild` (a warning) and ignored; `api/cover` refuses to write over it. A `thumbs` or
+  `covers` that isn't an object counts as empty.
+
+`art-crit serve` writes `thumbs` and `page` for you: `PUT api/cover?p=<slug>` with `{"thumb": {"run", "path"|null}}`
+and/or `{"page": {"run", "image"?}|null}` (null clears); same loopback / same-origin / JSON checks as `api/rank`, `run`
+must be a run of the page, `path` and `image` must be an image file inside that run's directory, and the file's other keys are kept. The run page then shows
+"Use as run thumbnail" and "Use as page cover" toggles on each image (a game or page: "Use as page cover" only), only when
+`api/local` says `cover: true`. Publishing is the usual `art-crit publish`.
 
 ## Prompt requests
 

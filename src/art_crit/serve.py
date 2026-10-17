@@ -2,9 +2,12 @@
 
 Plus a local-only API (the published site never has it, so the viewer only shows ranking and
 prompt-request controls when served by `art-crit serve`):
-  GET api/local                 -> {"rank": true, "requests": true, "runs": true}
+  GET api/local                 -> {"rank": true, "cover": true, "requests": true, "runs": true}
   PUT api/rank?p=<slug>         body {"ranks": {"<run id>": 1, ...}}  (null/missing = unranked)
     -> writes docs/data/<slug>/ranking.json and rebuilds, so page.json carries each run's rank.
+  PUT api/cover?p=<slug>        body {"thumb": {"run", "path"|null}} and/or {"page": {"run", "image"?}|null}
+    -> your pick of a run's main thumbnail and/or the page's home-page picture, in data/<slug>/covers.json (overrides
+    only: with none set the viewer's default picks apply), then rebuilds.
   GET api/requests              -> {"requests": [...], "sets": [names from art-crit.toml [sets]]}
   PUT api/requests              body {"add": {"prompt", "kind", "title"?, "note"?, "set"?}} or {"remove": "<id>"}
     -> requests.json next to docs/ (outside it, so prompt requests are never published).
@@ -68,6 +71,75 @@ def save_ranking(docs_root, slug, ranks):
     ranking = {"ranks": dict(sorted(clean.items(), key=lambda kv: kv[1])),
                "updated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
     (docs_root / "data" / slug / "ranking.json").write_text(json.dumps(ranking, indent=2) + "\n")
+    site.rebuild(docs_root.parent)
+    return None
+
+
+COVER_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"}
+
+
+def _cover_image(runs_dir, run_id, path):
+    """Whether `path` is an image file inside the run's own directory (never ../, never a symlink out of it)."""
+    if not isinstance(path, str) or Path(path).suffix.lower() not in COVER_EXTENSIONS:
+        return False
+    run_dir = (runs_dir / run_id).resolve()
+    target = (run_dir / path).resolve()
+    return target.is_file() and target.is_relative_to(run_dir)
+
+
+def save_covers(docs_root, slug, body):
+    """Set or clear the owner's cover overrides in data/<slug>/covers.json, keeping its other entries, then rebuild.
+    `thumb` = {"run", "path"} (path null clears) is a run's main thumbnail; `page` = {"run", "image"?} (null clears)
+    is the page's home-page picture. Returns an error string or None."""
+    if not SLUG_RE.match(slug or ""):
+        return "bad page slug"
+    page_dir = docs_root / "data" / slug
+    runs_dir = page_dir / "runs"
+    if not runs_dir.is_dir():
+        return f"no such page: {slug}"
+    if not isinstance(body, dict) or not ({"thumb", "page"} & body.keys()):
+        return "expected thumb and/or page"
+    try:
+        covers = site.load_covers(page_dir)
+    except CritError as e:
+        return f"{e}; fix or delete it first"
+    run_ids = {d.name for d in runs_dir.iterdir() if (d / "run.json").is_file()}
+
+    def check(value, field):
+        """(run id, image path or None) from a {"run", field} object, or an error string."""
+        run_id = value.get("run") if isinstance(value, dict) else None
+        if not isinstance(run_id, str) or run_id not in run_ids:
+            return "no such run"
+        image = value.get(field)
+        if image is not None and not _cover_image(runs_dir, run_id, image):
+            return f"not an image of that run: {image}"
+        return run_id, image
+
+    if "thumb" in body:
+        got = check(body["thumb"], "path")
+        if isinstance(got, str):
+            return f"thumb: {got}"
+        run_id, image = got
+        thumbs = dict(site.cover_section(covers, "thumbs"))
+        if image is None:
+            thumbs.pop(run_id, None)
+        else:
+            thumbs[run_id] = image
+        covers["thumbs"] = thumbs
+    if "page" in body:
+        if body["page"] is None:
+            covers.pop("page", None)
+        else:
+            got = check(body["page"], "image")
+            if isinstance(got, str):
+                return f"page: {got}"
+            covers["page"] = {"run": got[0], **({"image": got[1]} if got[1] else {})}
+    covers = {k: v for k, v in covers.items() if v}
+    path = page_dir / "covers.json"
+    if covers:
+        path.write_text(json.dumps(covers, indent=2) + "\n")
+    else:
+        path.unlink(missing_ok=True)
     site.rebuild(docs_root.parent)
     return None
 
@@ -389,7 +461,7 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         path = urlsplit(self.path).path
         if path.endswith("/api/local"):
-            return self._json(200, {"rank": True, "requests": True, "runs": True})
+            return self._json(200, {"rank": True, "cover": True, "requests": True, "runs": True})
         if path.endswith("/api/requests"):
             return self._json(200, {"requests": load_requests(self.directory), "sets": model_sets(self.directory)})
         if path.endswith("/api/runs"):
@@ -403,7 +475,7 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
 
     def do_PUT(self):
         url = urlsplit(self.path)
-        if not (url.path.endswith("/api/rank") or url.path.endswith("/api/requests")):
+        if not (url.path.endswith(("/api/rank", "/api/cover", "/api/requests"))):
             return self._json(404, {"error": "not found"})
         body = self._write_body()
         if body is None:
@@ -412,7 +484,10 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
             error, items = change_requests(self.directory, body)
             return self._json(400, {"error": error}) if error else self._json(200, {"requests": items})
         slug = parse_qs(url.query).get("p", [None])[0]
-        error = save_ranking(Path(self.directory), slug, body.get("ranks") if isinstance(body, dict) else None)
+        if url.path.endswith("/api/cover"):
+            error = save_covers(Path(self.directory), slug, body)
+        else:
+            error = save_ranking(Path(self.directory), slug, body.get("ranks") if isinstance(body, dict) else None)
         if error:
             return self._json(400, {"error": error})
         return self._json(200, {"ok": True})

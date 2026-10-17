@@ -101,10 +101,13 @@ async function pickThumbs(pages) {
     p.data = datas[i];
     const runs = (datas[i]?.runs || []).filter((r) => !isFailed(r) && coverOf(r));
     // The owner's own pick for this page (covers.json, set through `art-crit serve`) replaces the default choice below.
-    const chosen = datas[i]?.cover && runs.find((r) => r.id === datas[i].cover.run);
+    // It may be a run kept off the home page by default: the owner asked for it.
+    const chosen = datas[i]?.cover && (datas[i].runs || []).find((r) => r.id === datas[i].cover.run && !isFailed(r));
     if (chosen) {
       p.pickedThumb = runDir(p.slug, chosen.id) + datas[i].cover.image;
       p.pickedFrom = chosen;
+      usedModel.set(chosen.model, (usedModel.get(chosen.model) ?? 0) + 1);
+      usedVendor.set(vendorOf(chosen.model), (usedVendor.get(vendorOf(chosen.model)) ?? 0) + 1);
       return;
     }
     if (!runs.length) return;
@@ -147,7 +150,7 @@ function slideshow(p) {
     box.append(thumbOf(p), kindChip(p));
     return box;
   }
-  const imgs = slides.map((r, i) => el("img", { class: i ? "slide" : "slide is-on", attrs: { src: runDir(p.slug, r.id) + coverOf(r), alt: "", loading: i ? "lazy" : null } }));
+  const imgs = slides.map((r, i) => el("img", { class: i ? "slide" : "slide is-on", attrs: { src: i === 0 && r === p.pickedFrom ? p.pickedThumb : runDir(p.slug, r.id) + coverOf(r), alt: "", loading: i ? "lazy" : null } }));
   const dots = slides.map((r, i) => el("button", {
     class: "v2-dot", attrs: { type: "button", "aria-label": `Show ${prettyModelName(modelParts(r.model).name)} ${r.effort}`, title: `${prettyModelName(modelParts(r.model).name)} · ${r.effort}` },
     on: { click: (e) => { e.preventDefault(); e.stopPropagation(); show(i); restart(); } },

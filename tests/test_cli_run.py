@@ -508,6 +508,195 @@ def test_resume_retries_a_failed_output_step_without_rerunning_the_agent(run_roo
     assert run["output"]["ok"] is True and run["state"] == "complete"
 
 
+# --- retry ------------------------------------------------------------------------------------
+
+
+def page_runs(root, slug):
+    return json.loads((root / "docs/data" / slug / "page.json").read_text())["runs"]
+
+
+def test_retry_replaces_a_failed_run_with_a_good_one(run_root, monkeypatch):
+    spec = "openai-codex/gpt-6-sol"
+    monkeypatch.setenv("FAKE_PI_EXIT_CODE", "1")
+    assert main(["run", "--yes", "retry me", "-m", f"{spec}:low", "-m", f"{spec}:medium", "--root", str(run_root)]) == 0
+    monkeypatch.delenv("FAKE_PI_EXIT_CODE")
+    assert main(["run", "--yes", "--page", "retry-me", "-m", f"{spec}:high", "--root", str(run_root)]) == 0
+    before = {r["effort"]: r["id"] for r in page_runs(run_root, "retry-me")}
+    assert [r["state"] for r in page_runs(run_root, "retry-me")].count("failed") == 2
+
+    assert main(["retry", "--yes", "retry-me", "--root", str(run_root)]) == 0
+    runs = page_runs(run_root, "retry-me")
+    assert sorted(r["effort"] for r in runs) == ["high", "low", "medium"]
+    assert all(r["state"] == "complete" and r["output"]["ok"] for r in runs)
+    assert next(r["id"] for r in runs if r["effort"] == "high") == before["high"]  # the good run wasn't touched
+    assert not {before["low"], before["medium"]} & {r["id"] for r in runs}
+    assert not (run_root / "docs/data/retry-me/runs" / before["low"]).exists()
+    log = subprocess.run(["git", "log", "-1", "--format=%s"], cwd=run_root, capture_output=True, text=True).stdout
+    assert "art-crit retry: retry-me (replaced 2 failed runs)" in log
+
+
+def test_retry_keeps_a_run_that_fails_again_and_exits_nonzero(run_root, monkeypatch, capsys):
+    monkeypatch.setenv("FAKE_PI_EXIT_CODE", "1")
+    assert main(["run", "--yes", "stays broken", "-m", "openai-codex/gpt-6-sol:low", "--root", str(run_root)]) == 0
+    [old] = page_runs(run_root, "stays-broken")
+    assert main(["retry", "--yes", "stays-broken", "--root", str(run_root)]) == 1
+    runs = page_runs(run_root, "stays-broken")
+    assert len(runs) == 2 and old["id"] in {r["id"] for r in runs}
+    assert f"still failed: {old['id']}" in capsys.readouterr().err
+
+
+def test_retry_only_takes_failed_runs_and_known_pages(run_root, monkeypatch, capsys):
+    assert main(["run", "--yes", "all good", "-m", "openai-codex/gpt-6-sol:low", "--root", str(run_root)]) == 0
+    [run] = page_runs(run_root, "all-good")
+    assert main(["retry", "all-good", "--root", str(run_root)]) == 0
+    assert "no failed runs on all-good" in capsys.readouterr().out
+    assert main(["retry", "all-good", run["id"], "--root", str(run_root)]) == 1
+    assert "didn't fail" in capsys.readouterr().err
+    assert main(["retry", "all-good", "nope", "--root", str(run_root)]) == 1
+    assert "no such run" in capsys.readouterr().err
+    assert main(["retry", "no-such-page", "--root", str(run_root)]) == 1
+    assert "no such page" in capsys.readouterr().err
+    assert len(page_runs(run_root, "all-good")) == 1
+
+
+def test_retry_dry_run_only_prints_the_plan(run_root, monkeypatch, capsys):
+    monkeypatch.setenv("FAKE_PI_EXIT_CODE", "1")
+    assert main(["run", "--yes", "just look", "-m", "openai-codex/gpt-6-sol:low", "--root", str(run_root)]) == 0
+    capsys.readouterr()
+    assert main(["retry", "--dry-run", "just-look", "--root", str(run_root)]) == 0
+    out = capsys.readouterr().out
+    assert "retrying 1 failed run on just-look" in out and "openai-codex/gpt-6-sol:low" in out
+    assert len(page_runs(run_root, "just-look")) == 1
+
+
+def test_retry_spec_names_the_model_the_harness_lists_under_the_recorded_display_name():
+    from art_crit.retry import retry_spec
+    from art_crit.runner import Harnesses
+
+    harnesses = Harnesses()
+    run = {"id": "x", "harness": {"name": "claude-code"}, "model": "anthropic/claude-opus-5-5", "effort": "high"}
+    assert retry_spec(harnesses, run) == "claude-code:claude-opus-5-5:high"
+    with pytest.raises(CritError, match="no longer offers"):
+        retry_spec(harnesses, {**run, "model": "anthropic/claude-gone-1"})
+
+
+def batch_count(tmp_path):
+    return len(list((tmp_path / "art-crit-runs").glob("*-*")))
+
+
+def test_retry_does_not_rerun_a_failed_run_that_already_has_a_good_newer_one(run_root, monkeypatch, tmp_path):
+    spec = "openai-codex/gpt-6-sol:low"
+    monkeypatch.setenv("FAKE_PI_EXIT_CODE", "1")
+    assert main(["run", "--yes", "fixed already", "-m", spec, "--root", str(run_root)]) == 0
+    monkeypatch.delenv("FAKE_PI_EXIT_CODE")
+    assert main(["run", "--yes", "--page", "fixed-already", "-m", spec, "--root", str(run_root)]) == 0
+    batches = batch_count(tmp_path)
+
+    assert main(["retry", "--yes", "fixed-already", "--root", str(run_root)]) == 0
+    [run] = page_runs(run_root, "fixed-already")
+    assert run["state"] == "complete" and batch_count(tmp_path) == batches  # replaced, no agent started
+
+
+def test_retry_after_ctrl_c_still_replaces_what_finished(run_root, monkeypatch):
+    import art_crit.retry as retry
+
+    spec = "openai-codex/gpt-6-sol:low"
+    monkeypatch.setenv("FAKE_PI_EXIT_CODE", "1")
+    assert main(["run", "--yes", "interrupted", "-m", spec, "--root", str(run_root)]) == 0
+    monkeypatch.delenv("FAKE_PI_EXIT_CODE")
+    real = retry.cmd_run
+
+    def run_then_ctrl_c(*args, **kwargs):
+        real(*args, **kwargs)
+        raise SystemExit(130)
+
+    monkeypatch.setattr(retry, "cmd_run", run_then_ctrl_c)
+    with pytest.raises(SystemExit):
+        main(["retry", "--yes", "interrupted", "--root", str(run_root)])
+    [run] = page_runs(run_root, "interrupted")
+    assert run["state"] == "complete"
+
+
+def test_retry_declined_changes_nothing(run_root, monkeypatch, capsys):
+    monkeypatch.setenv("FAKE_PI_EXIT_CODE", "1")
+    assert main(["run", "--yes", "say no", "-m", "openai-codex/gpt-6-sol:low", "--root", str(run_root)]) == 0
+    capsys.readouterr()
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+    monkeypatch.setattr("builtins.input", lambda prompt="": "n")
+    assert main(["retry", "say-no", "--root", str(run_root)]) == 1
+    captured = capsys.readouterr()
+    assert "aborted" in captured.out and "still failed" not in captured.err
+    assert len(page_runs(run_root, "say-no")) == 1
+
+
+def test_retry_skips_a_model_the_harness_no_longer_offers(run_root, monkeypatch, capsys):
+    spec = "openai-codex/gpt-6-sol"
+    monkeypatch.setenv("FAKE_PI_EXIT_CODE", "1")
+    assert main(["run", "--yes", "retired", "-m", f"{spec}:low", "-m", f"{spec}:medium", "--root", str(run_root)]) == 0
+    monkeypatch.delenv("FAKE_PI_EXIT_CODE")
+    low = next(r for r in page_runs(run_root, "retired") if r["effort"] == "low")
+    run_json = run_root / "docs/data/retired/runs" / low["id"] / "run.json"
+    run_json.write_text(json.dumps({**json.loads(run_json.read_text()), "model": "openai-codex/retired-model"}))
+    assert main(["rebuild", "--root", str(run_root)]) == 0
+    capsys.readouterr()
+
+    assert main(["retry", "--yes", "retired", low["id"], "--root", str(run_root)]) == 1  # named: an error
+    assert "no longer offers openai-codex/retired-model" in capsys.readouterr().err
+    assert main(["retry", "--yes", "retired", "--root", str(run_root)]) == 1  # not named: the others still run
+    err = capsys.readouterr().err
+    assert "skipping" in err and f"still failed: {low['id']}" in err
+    assert sorted((r["effort"], r["state"]) for r in page_runs(run_root, "retired")) == [("low", "failed"), ("medium", "complete")]
+
+
+def test_retry_runs_identical_failed_runs_once_and_replaces_them_all(run_root, monkeypatch, tmp_path):
+    spec = "openai-codex/gpt-6-sol:low"
+    monkeypatch.setenv("FAKE_PI_EXIT_CODE", "1")
+    assert main(["run", "--yes", "twice broken", "-m", spec, "--root", str(run_root)]) == 0
+    assert main(["run", "--yes", "--page", "twice-broken", "-m", spec, "--root", str(run_root)]) == 0
+    monkeypatch.delenv("FAKE_PI_EXIT_CODE")
+    assert len(page_runs(run_root, "twice-broken")) == 2
+    batches = batch_count(tmp_path)
+
+    assert main(["retry", "--yes", "twice-broken", "--root", str(run_root)]) == 0
+    [run] = page_runs(run_root, "twice-broken")
+    assert run["state"] == "complete" and batch_count(tmp_path) == batches + 1
+
+
+def test_retry_no_publish_replaces_locally_without_a_commit(run_root, monkeypatch):
+    monkeypatch.setenv("FAKE_PI_EXIT_CODE", "1")
+    assert main(["run", "--yes", "keep local", "-m", "openai-codex/gpt-6-sol:low", "--root", str(run_root)]) == 0
+    monkeypatch.delenv("FAKE_PI_EXIT_CODE")
+    head = lambda: subprocess.run(["git", "rev-parse", "HEAD"], cwd=run_root, capture_output=True, text=True).stdout
+    before = head()
+    assert main(["retry", "--yes", "--no-publish", "keep-local", "--root", str(run_root)]) == 0
+    [run] = page_runs(run_root, "keep-local")
+    assert run["state"] == "complete" and head() == before
+
+
+def test_retry_spec_keeps_a_pinned_openrouter_upstream_and_reads_the_model_list_once():
+    from art_crit.retry import retry_spec
+    from art_crit.runner import Harnesses
+
+    harnesses = Harnesses()
+    run = {"id": "x", "harness": {"name": "pi"}, "model": "openrouter/test/model@deepinfra", "effort": "low"}
+    assert retry_spec(harnesses, run) == "pi:openrouter/test/model@deepinfra:low"
+    assert plan_for([retry_spec(harnesses, run)]) == [("pi", "openrouter/test/model@deepinfra", "low")]  # what `run` plans from it
+
+    class Listing:
+        calls = 0
+        pinned = lambda self, model, upstreams: model
+        display_model = lambda self, model: model
+
+        def models(self):
+            Listing.calls += 1
+            return ["a/b"]
+
+    listed = {}
+    for _ in range(3):
+        retry_spec({"pi": Listing()}, {"id": "y", "harness": {"name": "pi"}, "model": "a/b", "effort": "low"}, listed)
+    assert Listing.calls == 1
+
+
 # --- Ctrl-C -----------------------------------------------------------------------------------
 
 

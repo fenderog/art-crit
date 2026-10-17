@@ -145,7 +145,7 @@ function setupTabs() {
 // otherwise follow the default picks. Each is a toggle; the choice is saved to covers.json, so publish to share it.
 // `image` is a path inside the run (null = the run's own thumbnail); `item` is null for a game or page (one picture).
 function coverButtons(run, image, status) {
-  const isThumb = () => image != null && run.thumb === image;
+  const isThumb = () => image != null && run.thumb_override === true && run.thumb === image;
   const isPage = () => page.cover?.run === run.id && (page.cover.image ?? run.thumb) === (image ?? run.thumb);
   const make = (label, current, save) => {
     const b = el("button", { class: "cover-btn", text: label, attrs: { type: "button" } });
@@ -170,6 +170,7 @@ function coverButtons(run, image, status) {
     buttons.push(make("Use as run thumbnail", isThumb, async (on) => {
       await saveCover(slug, { thumb: { run: run.id, path: on ? image : null } });
       run.thumb = on ? image : null; // cleared: the default one applies again after a reload
+      run.thumb_override = on;
     }));
   }
   buttons.push(make("Use as page cover", isPage, async (on) => {

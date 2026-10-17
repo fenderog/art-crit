@@ -4,6 +4,7 @@ engines. Also `rm` and `list`, which both end by calling rebuild()."""
 import json
 import re
 import shutil
+import sys
 from datetime import datetime, timedelta, timezone
 
 from .kinds.media import add_thumbs, write_thumb
@@ -57,17 +58,67 @@ def apply_ranking(page_dir, runs):
         run["rank"] = kept.get(run["id"])
 
 
-def apply_covers(page_dir, runs):
-    """Set `cover` on the runs named in data/<slug>/covers.json: a path (relative to the run, an image it made that
-    shows the subject well, e.g. a front view instead of the back) or false (never a home-page picture, e.g. the
-    only picture shows a character from behind). Entries for runs that are gone, or paths that don't exist, are
-    ignored (the file is curated by hand, so it is never rewritten)."""
+def load_covers(page_dir):
+    """data/<slug>/covers.json (hand-curated, or written by the local `api/cover`):
+    {"thumbs": {run: path}, "page": {"run": id, "image": path?}, "covers": {run: path | false}}.
+    Raises CritError when the file isn't a JSON object."""
     path = page_dir / "covers.json"
-    covers = json.loads(path.read_text()).get("covers", {}) if path.is_file() else {}
+    if not path.is_file():
+        return {}
+    try:
+        covers = json.loads(path.read_text())
+    except ValueError as e:
+        raise CritError(f"{path}: not valid JSON ({e})")
+    if not isinstance(covers, dict):
+        raise CritError(f"{path}: expected a JSON object")
+    return covers
+
+
+def cover_section(covers, key):
+    """covers.json's `thumbs` or `covers` as a dict ({} when it's missing or isn't an object)."""
+    section = covers.get(key)
+    return section if isinstance(section, dict) else {}
+
+
+def _covers_or_none(page_dir):
+    """What `rebuild` reads: a broken covers.json is reported and ignored, so it can't stop every page's rebuild."""
+    try:
+        return load_covers(page_dir)
+    except CritError as e:
+        print(f"warning: {e}; ignoring it", file=sys.stderr)
+        return {}
+
+
+def _is_file(page_dir, run_id, rel):
+    return isinstance(rel, str) and (page_dir / "runs" / run_id / rel).is_file()
+
+
+def apply_covers(page_dir, runs, covers):
+    """Apply covers.json's overrides to the runs (in page.json only; run.json stays the record):
+    `thumbs` replaces a run's `thumb` (its main picture on cards and tables) and marks it `thumb_override: true`,
+    `covers` sets `cover`, the picture the home page may use for the run instead (a path), or false to keep the run
+    off the home page. Entries for runs or files that don't exist are ignored."""
+    thumbs, home = cover_section(covers, "thumbs"), cover_section(covers, "covers")
     for run in runs:
-        cover = covers.get(run["id"])
-        if cover is False or (isinstance(cover, str) and (page_dir / "runs" / run["id"] / cover).is_file()):
+        thumb = thumbs.get(run["id"])
+        if _is_file(page_dir, run["id"], thumb):
+            run["thumb"] = thumb
+            run["thumb_override"] = True
+        cover = home.get(run["id"])
+        if cover is False or _is_file(page_dir, run["id"], cover):
             run["cover"] = cover
+
+
+def page_cover(page_dir, runs, covers):
+    """The page's own pick for its home-page picture: {"run": id, "image": path} from covers.json's `page`, or None
+    (use the default pick). `image` falls back to the run's cover picture. Ignored when the run is failed or gone,
+    or the image is."""
+    pick = covers.get("page")
+    run = next((r for r in runs if isinstance(pick, dict) and r["id"] == pick.get("run") and not run_failed(r)), None)
+    if not run:
+        return None
+    image = pick.get("image") or cover_of(run)
+    return {"run": run["id"], "image": image} if _is_file(page_dir, run["id"], image) else None
 
 
 def rebuild(root):
@@ -94,7 +145,8 @@ def rebuild(root):
 
         runs.sort(key=effort_sort_key)
         apply_ranking(page_dir, runs)
-        apply_covers(page_dir, runs)
+        covers = _covers_or_none(page_dir)
+        apply_covers(page_dir, runs, covers)
         (page_dir / "results.json").unlink(missing_ok=True)
         for run in runs:
             output = run.get("output")
@@ -117,6 +169,9 @@ def rebuild(root):
         refs_dir = page_dir / "references"  # --ref files published by import; the viewer lists them by name
         if refs_dir.is_dir():
             page["references"] = sorted(p.name for p in refs_dir.iterdir() if p.is_file())
+        picked = page_cover(page_dir, runs, covers)  # the owner's pick for the home page, else the viewer chooses (see Covers)
+        if picked:
+            page["cover"] = picked
         page_json_path.write_text(json.dumps(page, indent=2) + "\n")
 
         thumb_run = _pick_thumb(runs)
@@ -128,7 +183,8 @@ def rebuild(root):
                 "n_runs": len(runs),
                 "models": sorted({r["model"] for r in runs}),
                 "updated": page["updated"],
-                "thumb": f"data/{slug}/runs/{thumb_run['id']}/{cover_of(thumb_run)}" if thumb_run else None,
+                "thumb": f"data/{slug}/runs/{picked['run']}/{picked['image']}" if picked
+                else f"data/{slug}/runs/{thumb_run['id']}/{cover_of(thumb_run)}" if thumb_run else None,
             }
         )
 

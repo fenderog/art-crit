@@ -221,6 +221,14 @@ Under `art-crit serve`, each runs-table row gets a picker (– or 1st, 2nd, …,
 sort first and show 🥇🥈🥉 (then #4, #5…) across the page, gallery, compare, and run views. The live
 site can't write rankings — only your local `art-crit serve` can.
 
+## Choose the thumbnails
+
+The home page and cards pick pictures by default (a page's cover is one of its highest-effort runs; a run's
+thumbnail is its first image). To override one, open a run page under `art-crit serve`: each image has **Use as run
+thumbnail** and **Use as page cover** toggles (a game or page only has the cover toggle). Pressing a pressed toggle
+clears it. Choices go to `docs/data/<page>/covers.json` (overrides only, so everything you don't set keeps its default);
+`art-crit publish` puts them online.
+
 ## Request a prompt
 
 The home page's top bar has a **Request a prompt** button: write the task, pick its kind and add an optional note.
@@ -257,6 +265,13 @@ Godot exports (fullscreen-only playback).
 Every import cleans first: hidden reasoning blobs and machine-specific keys go, home and volume paths
 get rewritten per `[clean]` in `art-crit.toml`, then everything is secret-scanned. A hit stops the import
 before anything is written.
+
+## Retry failed runs
+
+`art-crit retry <page>` runs the page's failed runs again: the same harness, model and effort, with the
+page's own prompt, kind and references, published as each one finishes. A failed run is deleted once its
+retry works; if the retry fails too, the old run stays and the command exits 1. Name run ids to retry only those
+(`art-crit retry <page> <run-id>`), and use `-n` first to see the plan. Takes `-y`, `-j`, `-T` and `--no-publish` like `run`.
 
 ## Other commands
 

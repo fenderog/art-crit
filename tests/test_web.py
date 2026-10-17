@@ -1072,6 +1072,66 @@ def test_ranking_can_be_edited_through_bench_serve(bench_served, page):
     assert_no_errors(page)
 
 
+def test_covers_can_be_overridden_through_bench_serve(bench_served, page):
+    """Run page, local only: each image gets "Use as run thumbnail" / "Use as page cover" toggles that write covers.json."""
+    import json
+
+    docs, base = bench_served
+    run_id = "model-x-high-20260102-000000"
+    covers = docs / "data/art/covers.json"
+    page.goto(f"{base}run.html?p=art&r={run_id}")
+    page.wait_for_selector(".cover-btn")
+    assert page.locator(".cover-btn").count() == 6  # a thumbnail and a page-cover button for each image (svg, png; the video has a poster)
+    # this run's default thumb is its first image: that is no override, so nothing is pressed until the owner sets one
+    assert page.locator(".cover-btn[aria-pressed=true]").count() == 0
+    page.locator(".cover-btn", has_text="Use as run thumbnail").first.click()
+    page.wait_for_function("() => document.querySelectorAll('.cover-btn[aria-pressed=true]').length === 1")
+    page.locator(".cover-btn[aria-pressed=true]").click()  # clears it again
+    page.wait_for_function("() => document.querySelectorAll('.cover-btn[aria-pressed=true]').length === 0")
+    assert not covers.exists()
+    page.reload()
+    page.wait_for_selector(".cover-btn")
+    assert page.locator(".cover-btn[aria-pressed=true]").count() == 0
+    page.locator(".cover-btn", has_text="Use as run thumbnail").last.click()
+    page.wait_for_function("() => document.querySelector('.cover-status').textContent.startsWith('Saved')")
+    page.locator(".cover-btn", has_text="Use as page cover").first.click()
+    page.wait_for_function("() => document.querySelectorAll('.cover-btn[aria-pressed=true]').length === 2")
+    saved = json.loads(covers.read_text())
+    assert set(saved) == {"thumbs", "page"} and saved["page"]["run"] == run_id
+    assert saved["thumbs"][run_id] != saved["page"]["image"]
+    runs = {r["id"]: r for r in json.loads((docs / "data/art/page.json").read_text())["runs"]}
+    assert runs[run_id]["thumb"] == saved["thumbs"][run_id]
+
+    for left in (1, 0):  # a pressed button clears its override
+        page.locator(".cover-btn[aria-pressed=true]").first.click()
+        page.wait_for_function("(n) => document.querySelectorAll('.cover-btn[aria-pressed=true]').length === n", arg=left)
+    assert not covers.exists()
+    assert_no_errors(page)
+
+
+def test_the_owners_page_cover_starts_the_home_slideshow(bench_served, page):
+    """The tile and the featured slideshow's first slide both show the picked image, not the run's default thumbnail."""
+    import json
+
+    from art_crit.site import rebuild
+
+    docs, base = bench_served
+    runs = docs / "data/art/runs"
+    other = runs / "model-y-high-20260102-000000"
+    shutil.copytree(runs / ART_HIGH_ID, other)  # a second model, so the featured picture is a slideshow
+    record = json.loads((other / "run.json").read_text())
+    (other / "run.json").write_text(json.dumps({**record, "id": other.name, "model": "other-org/model-y"}))
+    (docs / "data/art/covers.json").write_text(json.dumps({"page": {"run": ART_HIGH_ID, "image": "media/dot.png"}}))
+    rebuild(docs.parent)
+
+    page.goto(base + "index.html")
+    page.wait_for_selector(".v2-feature-media .slide")
+    srcs = page.locator(".v2-feature-media .slide").evaluate_all("els => els.map(e => e.getAttribute('src'))")
+    assert len(srcs) == 2 and srcs[0].endswith(f"{ART_HIGH_ID}/media/dot.png")
+    assert page.locator(".v2-feature-media .slide.is-on").get_attribute("src") == srcs[0]
+    assert_no_errors(page)
+
+
 # ---------------------------------------------------------------- community votes
 class VoteApi:
     """In-memory stand-in for the Worker's /api (cloudflare/votes.mjs): the same JSON, plus a sign-in that just flips a flag."""

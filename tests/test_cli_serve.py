@@ -99,7 +99,7 @@ def _put(url, body, headers=None):
 def test_api_local_says_ranking_is_available(served):
     _, base = served
     status, _, body = _get(base + "api/local")
-    assert status == 200 and json.loads(body) == {"rank": True, "requests": True, "runs": True}
+    assert status == 200 and json.loads(body) == {"rank": True, "cover": True, "requests": True, "runs": True}
 
 
 def test_saving_a_ranking_writes_it_and_rebuilds(served):
@@ -113,6 +113,57 @@ def test_saving_a_ranking_writes_it_and_rebuilds(served):
 
     _put(base + "api/rank?p=demo", {"ranks": {HIGH: 1, LOW: None}})  # null = unranked
     assert json.loads((docs / "data/demo/ranking.json").read_text())["ranks"] == {HIGH: 1}
+
+
+def test_saving_covers_sets_and_clears_the_owners_overrides(served):
+    docs, base = served
+    for run_id in (HIGH, LOW):
+        (docs / "data/demo/runs" / run_id / "front.jpg").write_bytes(b"x")
+    covers = docs / "data/demo/covers.json"
+    page = lambda: json.loads((docs / "data/demo/page.json").read_text())
+    thumbs = lambda: {r["id"]: r["thumb"] for r in page()["runs"]}
+
+    assert _put(base + "api/cover?p=demo", {"thumb": {"run": HIGH, "path": "front.jpg"}})[0] == 200
+    assert thumbs()[HIGH] == "front.jpg" and "cover" not in page()  # a run's main thumbnail, no page pick yet
+    overridden = {r["id"]: r.get("thumb_override") for r in page()["runs"]}
+    assert overridden[HIGH] is True and overridden[LOW] is None  # only a real override is marked
+    assert _put(base + "api/cover?p=demo", {"page": {"run": LOW, "image": "front.jpg"}})[0] == 200
+    assert "cover" not in page()  # the failed run is saved but can't be the page's cover
+    assert _put(base + "api/cover?p=demo", {"page": {"run": HIGH, "image": "front.jpg"}})[0] == 200
+    assert page()["cover"] == {"run": HIGH, "image": "front.jpg"}
+    assert json.loads(covers.read_text()) == {"thumbs": {HIGH: "front.jpg"}, "page": {"run": HIGH, "image": "front.jpg"}}
+    summary = next(p for p in json.loads((docs / "data/pages.json").read_text()) if p["slug"] == "demo")
+    assert summary["thumb"] == f"data/demo/runs/{HIGH}/front.jpg"
+
+    _put(base + "api/cover?p=demo", {"page": None, "thumb": {"run": HIGH, "path": None}})  # back to the defaults
+    assert not covers.exists() and "cover" not in page()
+
+
+@pytest.mark.parametrize("query, body, error", [
+    ("p=../../etc", {"page": None}, "bad page slug"),
+    ("p=nope", {"page": None}, "no such page"),
+    ("p=demo", {}, "expected thumb and/or page"),
+    ("p=demo", {"thumb": {"run": "not-a-run", "path": "a.jpg"}}, "no such run"),
+    ("p=demo", {"page": {"run": f"../runs/{HIGH}"}}, "no such run"),
+    ("p=demo", {"thumb": {"run": [HIGH], "path": "a.jpg"}}, "no such run"),
+    ("p=demo", {"thumb": {"run": HIGH, "path": "../../../data/pages.json"}}, "not an image"),
+    ("p=demo", {"thumb": {"run": HIGH, "path": "missing.jpg"}}, "not an image"),
+    ("p=demo", {"page": {"run": HIGH, "image": "run.json"}}, "not an image"),
+])
+def test_bad_covers_are_refused(served, query, body, error):
+    docs, base = served
+    status, out = _put(base + "api/cover?" + query, body)
+    assert status == 400 and error in out["error"]
+    assert not (docs / "data/demo/covers.json").exists()
+
+
+@pytest.mark.parametrize("text", ["{not json", '["a list"]'])
+def test_a_broken_covers_json_is_not_written_over(served, text):
+    docs, base = served
+    (docs / "data/demo/covers.json").write_text(text)
+    status, out = _put(base + "api/cover?p=demo", {"page": {"run": HIGH}})
+    assert status == 400 and "covers.json" in out["error"] and "fix or delete it" in out["error"]
+    assert (docs / "data/demo/covers.json").read_text() == text
 
 
 @pytest.mark.parametrize("query, ranks, error", [

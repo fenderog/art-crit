@@ -280,6 +280,35 @@ def test_covers_json_picks_or_excludes_a_runs_home_page_picture(bench_root, batc
     assert json.loads((bench_root / "docs/data/pages.json").read_text())[0]["thumb"] == f"data/voxel-horse/runs/{low}/{runs[low]['thumb']}"
 
 
+@pytest.mark.parametrize("text", ["{not json", '["a list"]', '{"thumbs": [], "covers": "x", "page": 3}'])
+def test_a_broken_covers_json_cannot_stop_a_rebuild(bench_root, batch_dir, capsys, text):
+    main(["import", str(batch_dir), "--root", str(bench_root)])
+    data = bench_root / "docs/data/voxel-horse"
+    before = (data / "page.json").read_text()
+    (data / "covers.json").write_text(text)
+    assert main(["rebuild", "--root", str(bench_root)]) == 0
+    assert (data / "page.json").read_text() == before  # ignored: the defaults apply
+    assert ("covers.json" in capsys.readouterr().err) == (text != '{"thumbs": [], "covers": "x", "page": 3}')
+
+
+def test_a_failed_run_cannot_be_the_pages_cover_and_an_override_is_marked(bench_root, batch_dir):
+    main(["import", str(batch_dir), "--root", str(bench_root)])
+    data = bench_root / "docs/data/voxel-horse"
+    high = _high_id(bench_root)
+    run_json = data / "runs" / high / "run.json"
+    (data / "runs" / high / "front.jpg").write_bytes(b"x")
+    (data / "covers.json").write_text(json.dumps({"page": {"run": high, "image": "front.jpg"}, "thumbs": {high: "front.jpg"}}))
+    main(["rebuild", "--root", str(bench_root)])
+    page = json.loads((data / "page.json").read_text())
+    assert page["cover"] == {"run": high, "image": "front.jpg"}
+    assert next(r for r in page["runs"] if r["id"] == high)["thumb_override"] is True
+
+    run = json.loads(run_json.read_text())
+    run_json.write_text(json.dumps({**run, "state": "failed"}))
+    main(["rebuild", "--root", str(bench_root)])
+    assert "cover" not in json.loads((data / "page.json").read_text())
+
+
 needs_ffmpeg = pytest.mark.skipif(not shutil.which("ffmpeg") or not shutil.which("ffprobe"), reason="needs ffmpeg")
 
 

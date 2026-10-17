@@ -32,8 +32,9 @@ transcript with every tool call, and metrics (tokens, cost, duration).
 
 ```
 src/art_crit/          CLI, standard library only (argparse, json, subprocess, tomllib, http.server)
-  cli.py            argparse wiring: import, list, rm, rebuild, serve, publish, run, models
+  cli.py            argparse wiring: import, list, rm, rename, retry, rebuild, serve, publish, run, models
   config.py         art-crit.toml parsed once (`Config.load`) + `RunRequest` (the inputs of one `art-crit run`)
+  retry.py          `art-crit retry`: failed runs of a page -> one `run --page` batch, then drop the ones that now work (ADR-0031)
   importer.py       run directory (or a batch of them) -> docs/data/<page>/runs/<id>/ (clean, secret scan, then move)
   clean.py          session cleaning, path rewrites, secret scan/redact
   site.py           rebuild page.json (with runs) / pages.json (+ each run's rank from ranking.json), rm, list, engine GC
@@ -101,6 +102,7 @@ uv run art-crit models --harness grok-build    # live grok models, effort menu f
 uv run art-crit models --harness muse-code     # muse models + levels (a table in harness.py)
 uv run art-crit models --harness codex         # codex models + levels (live from `codex debug models`)
 uv run art-crit run --dry-run "prompt" -m claude-code:opus:high -m openai-codex/gpt-6-sol:high   # mixed harnesses
+uv run art-crit retry --dry-run <slug> [run-id]          # run a page's failed runs again (costs money without -n); replaces each one that now works
 uv run art-crit import <run-dir|batch-dir> --page <slug>   # publish runs written by `art-crit run`
 uv run art-crit run --no-publish "prompt" -m MODEL:LEVEL   # import locally only; run publishes each run by default (ADR-0019)
 uv run art-crit publish -m "msg"         # git add docs && commit && push (Pages deploys in ~1 min)
@@ -278,9 +280,11 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   needs a priority there and a re-run of `test_runs_table_never_scrolls_horizontally`. Measure with Playwright
   (`.table-wrap` clientWidth vs `table.scrollWidth`), never guess breakpoints. `.table-wrap { overflow-x: auto }` stays
   only as a safety net.
-- **Home covers must not show a character from behind.** `data/<slug>/covers.json` (hand-curated, see SPEC.md Covers)
-  swaps a run's cover for another image it made, or drops the run from covers (`false`). When a new run could become a
-  page's cover (top effort level), look at its picture; `coverOf()` (runs.js) is what the home page reads.
+- **Covers are the owner's overrides** (`data/<slug>/covers.json`, SPEC.md Covers): `thumbs` (a run's main thumbnail), `page`
+  (the home-page picture) and `covers`; with none set the viewer's default picks apply, so never turn an override into a
+  requirement. They are set locally on the run page through `art-crit serve`'s `PUT api/cover` (like rankings, never on the
+  published site) or by hand. A default cover should not show a character from behind: when a new run could become a page's
+  cover (top effort level), look at its picture and add an override if needed. `coverOf()` (runs.js) is what the home page reads.
 - **Provider icons** on the home cards are OpenRouter's, vendored in `docs/assets/vendor/icons/` (`VENDOR_ICONS` in runs.js,
   keyed by `vendorOf()`, which gives `z` for `z-ai` and `x` for `x-ai`). A new vendor shows its initial until one is added.
 - **Runs table markup is load-bearing for the phone layout:** at ≤720px CSS turns rows into cards using each cell's
