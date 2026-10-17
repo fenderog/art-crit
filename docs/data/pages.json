@@ -3,7 +3,7 @@
     "slug": "surfing-pelican",
     "title": "Surfing pelican",
     "kind": "web",
-    "n_runs": 61,
+    "n_runs": 62,
     "models": [
       "anthropic/claude-haiku-5-5",
       "anthropic/claude-opus-5-5",
@@ -23,8 +23,8 @@
       "openrouter/z-ai/glm-5.3-prime",
       "xai/grok-4.7"
     ],
-    "updated": "2026-10-17T22:51:24Z",
-    "thumb": "data/surfing-pelican/runs/muse-wonder-full-1.0-mc-low-20261017-154616/thumb.jpg"
+    "updated": "2026-10-17T22:55:24Z",
+    "thumb": "data/surfing-pelican/runs/muse-wonder-full-1.0-mc-medium-20261017-154616/thumb.jpg"
   },
   {
     "slug": "3d-octopus-ramen-shop",
