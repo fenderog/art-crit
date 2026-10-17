@@ -35,6 +35,8 @@ src/art_crit/          CLI, standard library only (argparse, json, subprocess, t
   cli.py            argparse wiring: import, list, rm, rename, retry, rebuild, serve, publish, run, models
   config.py         art-crit.toml parsed once (`Config.load`) + `RunRequest` (the inputs of one `art-crit run`)
   retry.py          `art-crit retry`: failed runs of a page -> one `run --page` batch, then drop the ones that now work (ADR-0031)
+  video.py          `art-crit video`: social-media videos of runs (ffmpeg + headless Chrome), local only (ADR-0032);
+                    video_cards.py = its text cards (HTML screenshotted by Chrome: this ffmpeg has no drawtext)
   importer.py       run directory (or a batch of them) -> docs/data/<page>/runs/<id>/ (clean, secret scan, then move)
   clean.py          session cleaning, path rewrites, secret scan/redact
   site.py           rebuild page.json (with runs) / pages.json (+ each run's rank from ranking.json), rm, list, engine GC
@@ -103,6 +105,7 @@ uv run art-crit models --harness muse-code     # muse models + levels (a table i
 uv run art-crit models --harness codex         # codex models + levels (live from `codex debug models`)
 uv run art-crit run --dry-run "prompt" -m claude-code:opus:high -m openai-codex/gpt-6-sol:high   # mixed harnesses
 uv run art-crit retry --dry-run <slug> [run-id]          # run a page's failed runs again (costs money without -n); replaces each one that now works
+uv run art-crit video <slug> <run-id> <run-id> -d 3 -o tmp/vid     # social videos (ffmpeg + Chrome, no model); also the compare page's local panel
 uv run art-crit import <run-dir|batch-dir> --page <slug>   # publish runs written by `art-crit run`
 uv run art-crit run --no-publish "prompt" -m MODEL:LEVEL   # import locally only; run publishes each run by default (ADR-0019)
 uv run art-crit publish -m "msg"         # git add docs && commit && push (Pages deploys in ~1 min)
@@ -169,6 +172,10 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   loosen either, add CORS headers to the API, or add another write path. Only GitHub ids are stored (never tokens), and votes are not in git.
   `tallies` is kept only by the triggers in `cloudflare/schema.sql`: never write it from the Worker. Apply the schema to D1
   *before* deploying a Worker that needs it (an older Worker runs on a newer schema, not the reverse).
+- **Social videos stay local** (ADR-0032): `art-crit video` and `POST/GET api/video` write only under `<root>/videos/` (outside `docs/`,
+  git-ignored), the API follows the `api/rank` write checks and its GETs the monitor's (loopback `Host`, no CORS headers), and a
+  file is served only by a name its job listed. Games are recorded through `play.html` (the sandbox), model-made SVGs only
+  through an `<img>`, and every string on a text card is escaped.
 - **Per-run MCP config** (ADR-0025): a kind's MCP servers reach the agent through flags or files in the run's own
   dirs (`--mcp-config`, `-c mcp_servers.*`, `work/.pi/mcp.json` + `--approve`, `work/.grok/config.toml`), never `~/.pi`,
   `~/.claude`, `~/.codex` or `~/.grok`. The one exception, with the user's consent: agy and muse read MCP servers only

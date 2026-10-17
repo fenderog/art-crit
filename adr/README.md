@@ -58,3 +58,4 @@ Copy `template.md` to `NNNN-short-title.md` using the next number, and add it to
 | [0029](0029-thumbnails-cache-headers-and-module-preload.md) | Import-time thumbnails, cache headers for run files, module preloads | Accepted |
 | [0030](0030-lanes-design-and-prompt-requests-as-issues.md) | The lanes design for home, page and compare; prompt requests become GitHub issues | Accepted |
 | [0031](0031-retry-is-a-cli-command-over-run-page.md) | Retry is a CLI command that reuses `run --page` and replaces a failed run once its retry works | Accepted |
+| [0032](0032-social-videos-are-local.md) | Social videos are made locally with ffmpeg and headless Chrome, from the CLI or the local compare page | Accepted |

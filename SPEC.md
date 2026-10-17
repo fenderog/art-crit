@@ -222,6 +222,7 @@ art-crit list                      # pages and their runs
 art-crit rm <slug> [<run_id>] [-f/--failed] [-y/--yes]   # remove a run (or a whole page); --failed removes every failed run instead, then rebuild
 art-crit rename <slug> <new> [-t/--title TEXT]   # move a page to a new slug (rewrites each run.json `page`), then rebuild
 art-crit retry <slug> [<run_id>...] [-y/--yes] [-n/--dry-run] [-j N] [-T/--timeout D] [--no-publish]   # run failed runs again (see Retry)
+art-crit video <slug> <run_id>... [-l/--layout reveal|grid|wide]... [-d/--seconds N] [-o/--out DIR]   # social-media videos of 2-12 runs (see Social videos)
 art-crit rebuild                   # regenerate page.json + pages.json from runs/*/run.json; delete engines no run references
 art-crit serve [-p/--port 8000]    # serve docs/ locally: Access-Control-Allow-Origin: *, .wasm as application/wasm, NO COOP/COEP headers
                                 #   plus the local-only ranking, prompt-request and run-monitor APIs (see Ranking,
@@ -562,7 +563,7 @@ nothing. `--dry-run` prints the batch plan and changes nothing. A retry costs mo
 The page owner ranks runs in the browser; there is no CLI command for it. Only `art-crit serve` can save a ranking
 (GitHub Pages is static), so the published site shows rankings read-only.
 
-- `art-crit serve` answers `GET api/local` → `{"rank": true, "cover": true, "requests": true, "runs": true}` and `PUT api/rank?p=<slug>` with body
+- `art-crit serve` answers `GET api/local` → `{"rank": true, "cover": true, "requests": true, "runs": true, "video": true}` and `PUT api/rank?p=<slug>` with body
   `{"ranks": {"<run id>": <int>|null, ...}}`. It validates the slug (`[a-z0-9][a-z0-9-]*`, page must exist), that every
   id is a run of the page, and that each rank is a whole number from 1 to the number of runs (ties allowed; `null`
   = unranked), writes `data/<slug>/ranking.json`, then rebuilds. Errors are `400 {"error": ...}`.
@@ -600,6 +601,33 @@ and/or `{"page": {"run", "image"?}|null}` (null clears); same loopback / same-or
 must be a run of the page, `path` and `image` must be an image file inside that run's directory, and the file's other keys are kept. The run page then shows
 "Use as run thumbnail" and "Use as page cover" toggles on each image (a game or page: "Use as page cover" only), only when
 `api/local` says `cover: true`. Publishing is the usual `art-crit publish`.
+
+## Social videos
+
+`art-crit video <slug> <run_id>...` (and the local compare page's **Make social videos** panel) makes MP4s of 2 to 12 runs of
+a page, one per layout, for posting. They are made on this machine and never published: the default folder is
+`<root>/videos/<slug>/` (git-ignored, outside `docs/`), named `<UTC stamp>-<slug>-<layout>.mp4`. The command prints the
+files and the site's compare link for those runs, to paste into the post. Needs ffmpeg + ffprobe and Playwright with Chrome
+(`.[verify]`); failed runs can't be included.
+
+- **Layouts** (`-l`, repeatable, default all three): `reveal` 1080x1920, an intro card (the prompt), then each run in turn with
+  its model, effort, time, tokens and cost under the picture, then an outro; `grid` 1080x1920, the intro, then every run at
+  once in labelled tiles (2 columns up to 6 runs, else 3), then the outro; `wide` 1920x1080, like `reveal` with the
+  caption in a panel beside the picture. H.264, 30 fps, a silent AAC track (platforms expect one).
+- **One source clip per run** (`-d`, 2 to 20 seconds, default 6, silent, 1080x1080, used by every layout): its video if it has
+  one; else its 3D model, recorded in the run page's own viewer while it is orbited; else its images (up to 3, the owner's
+  thumbnail pick first) with a slow zoom. A game or page is recorded in `play.html` (the site's sandbox), clicked and played
+  with a few key presses. A recording that fails falls back to the run's pictures (said in the progress output).
+- Text cards are HTML screenshotted by Chrome (this ffmpeg has no `drawtext`); every string from a run or prompt is
+  escaped and the card pages have no scripts. Model-made SVGs are only drawn through an `<img>` in Chrome (ADR-0004).
+- **Local API** (`art-crit serve` only; ADR-0032): `POST api/video?p=<slug>` with `{"runs": [ids], "layouts"?: [...], "seconds"?: n}`
+  checks the request (400 with the reason) and starts a background job, one at a time → `{"job": id}`;
+  `GET api/video?job=<id>` → `{state: running|done|failed, step, files, link, error}`; `GET api/video/file?job=<id>&name=<file>`
+  serves one of that job's `files` (nothing else). Same loopback / same-origin / JSON checks as `api/rank`; the two GETs
+  also need a loopback `Host` and carry no CORS headers, so another website can't read or start anything.
+- The panel (`assets/lanes/video.js`, loaded by the lanes compare page only when `api/local` says `video`) has a checkbox per
+  layout and a button; it polls the job, previews each video and links the download and the compare link. The classic compare
+  page has no panel.
 
 ## Prompt requests
 

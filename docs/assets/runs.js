@@ -250,10 +250,15 @@ export async function saveRanks(slug, ranks) {
 // Covers (the main thumbnail of a run, the home-page picture of a page) are likewise set only through `art-crit serve`:
 // body = {thumb: {run, path|null}} and/or {page: {run, image?}|null}. Overrides only; with none set the default picks apply.
 export async function canEditCovers() {
+  return localFeature("cover");
+}
+
+// Whether `art-crit serve` on this machine offers a local-only feature (`api/local` lists them); never on the published site.
+export async function localFeature(name) {
   if (!["localhost", "127.0.0.1", "[::1]"].includes(location.hostname)) return false;
   try {
     const res = await fetch("api/local", { cache: "no-store" });
-    return res.ok && (await res.json()).cover === true;
+    return res.ok && (await res.json())[name] === true;
   } catch {
     return false;
   }

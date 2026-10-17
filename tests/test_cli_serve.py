@@ -99,7 +99,7 @@ def _put(url, body, headers=None):
 def test_api_local_says_ranking_is_available(served):
     _, base = served
     status, _, body = _get(base + "api/local")
-    assert status == 200 and json.loads(body) == {"rank": True, "cover": True, "requests": True, "runs": True}
+    assert status == 200 and json.loads(body) == {"rank": True, "cover": True, "requests": True, "runs": True, "video": True}
 
 
 def test_saving_a_ranking_writes_it_and_rebuilds(served):

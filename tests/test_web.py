@@ -1132,6 +1132,39 @@ def test_the_owners_page_cover_starts_the_home_slideshow(bench_served, page):
     assert_no_errors(page)
 
 
+def test_the_compare_page_makes_social_videos_only_on_the_local_server(bench_served, site, page):
+    import json
+
+    from art_crit.site import rebuild
+
+    docs, base = bench_served
+    runs = docs / "data/art/runs"
+    other = runs / "model-y-high-20260102-000000"
+    shutil.copytree(runs / ART_HIGH_ID, other)
+    record = json.loads((other / "run.json").read_text())
+    (other / "run.json").write_text(json.dumps({**record, "id": other.name, "model": "other-org/model-y"}))
+    rebuild(docs.parent)
+    ids = f"{ART_HIGH_ID},{other.name}"
+
+    page.goto(f"{site}compare.html?p=art&r=model-x-low-20260102-000000,{ART_HIGH_ID}")  # the published site (no local API): no video maker
+    page.wait_for_selector(".v2-col")
+    assert page.locator(".v2-video").count() == 0
+
+    page.goto(f"{base}compare.html?p=art&r={ids}")
+    page.wait_for_selector(".v2-video")
+    assert page.locator(".v2-video-opt input:checked").count() == 3  # every format by default
+    page.locator(".v2-video-opt", has_text="Vertical · one at a time").locator("input").uncheck()
+    page.locator(".v2-video-opt", has_text="Vertical · all at once").locator("input").uncheck()
+    page.get_by_role("button", name="Make videos").click()
+    page.wait_for_selector(".v2-video-item video", timeout=120000)
+    assert page.locator(".v2-video-item").count() == 1
+    assert "-wide.mp4" in page.locator(".v2-video-item a[download]").get_attribute("download")
+    assert page.locator(".v2-video-results a[target=_blank]").get_attribute("href").endswith(f"&r={ART_HIGH_ID}%2C{other.name}")
+    assert page.locator(".v2-video .cover-status").inner_text().startswith("Done")
+    assert len(list((docs.parent / "videos/art").glob("*-wide.mp4"))) == 1
+    assert_no_errors(page)
+
+
 # ---------------------------------------------------------------- community votes
 class VoteApi:
     """In-memory stand-in for the Worker's /api (cloudflare/votes.mjs): the same JSON, plus a sign-in that just flips a flag."""

@@ -1,4 +1,4 @@
-"""art-crit: argparse wiring for import/list/rm/rename/retry/rebuild/serve/publish/run/models."""
+"""art-crit: argparse wiring for import/list/rm/rename/retry/video/rebuild/serve/publish/run/models."""
 
 import argparse
 import subprocess
@@ -12,6 +12,7 @@ from .kinds import KINDS
 from .retry import cmd_retry
 from .runner import cmd_models, cmd_run, resolve_ref
 from .serve import serve_forever
+from .video import LAYOUTS, compare_url, make_videos
 from .site import cmd_list, cmd_rename, cmd_rm, rebuild
 from .util import CritError
 
@@ -52,6 +53,13 @@ def build_parser():
     rt.add_argument("-y", "--yes", action="store_true", help="don't ask for confirmation")
     rt.add_argument("-n", "--dry-run", action="store_true", help="print the plan and exit")
     rt.add_argument("--no-publish", dest="publish", action="store_false", help="import at the end only; push later with `art-crit publish`")
+
+    vid = sub.add_parser("video", parents=[common], help="make social-media videos comparing runs of a page (needs ffmpeg and Playwright)")
+    vid.add_argument("slug")
+    vid.add_argument("run_ids", nargs="+", metavar="run_id", help="2 to 12 runs, shown in this order")
+    vid.add_argument("-l", "--layout", dest="layouts", action="append", choices=list(LAYOUTS), help="reveal (vertical, one at a time), grid (vertical, all at once) or wide (landscape, one at a time); repeatable (default: all three)")
+    vid.add_argument("-d", "--seconds", type=int, default=6, help="seconds per run (default 6)")
+    vid.add_argument("-o", "--out", type=Path, help="output folder (default <root>/videos/<page>)")
 
     sub.add_parser("rebuild", parents=[common], help="regenerate page.json + pages.json")
 
@@ -130,6 +138,11 @@ def main(argv=None):
         if args.command == "retry":
             return cmd_retry(config, args.slug, args.run_ids, yes=args.yes, dry_run=args.dry_run,
                              parallel=args.parallel, timeout=args.timeout, publish=args.publish)
+        if args.command == "video":
+            for path in make_videos(root, args.slug, args.run_ids, args.layouts, args.seconds, args.out):
+                print(path)
+            print(f"link for the post: {compare_url(args.slug, args.run_ids)}")
+            return 0
         if args.command == "rebuild":
             rebuild(root)
             return 0

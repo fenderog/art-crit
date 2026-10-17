@@ -1,7 +1,7 @@
 import { el, qs, qsList, loadPage } from "../dom.js";
 import { fmtNum, fmtDuration, fmtCost } from "../fmt.js";
 import { renderOutput, kindUi } from "../output.js";
-import { runDir, runUrl, effortPill, prettyModelName, modelParts, vendorOf, vendorName, vendorMark, vendorOptions, rankBy } from "../runs.js";
+import { localFeature, runDir, runUrl, effortPill, prettyModelName, modelParts, vendorOf, vendorName, vendorMark, vendorOptions, rankBy } from "../runs.js";
 import { loadVotes, voteBar } from "../votes.js";
 import { headerAuth, promptDialog, plural, offlineVotes } from "./common.js";
 
@@ -87,6 +87,7 @@ if (page) {
         el("button", { class: "v2-link-btn", text: "View final prompt", attrs: { type: "button" }, on: { click: () => dialog.open() } }),
       ]),
       winners.length ? el("div", { class: "v2-wins" }, winners) : null,
+      (await localFeature("video")) ? (await import("./video.js")).videoPanel(slug, runs.map((r) => r.id)) : null,
       el("div", { class: "v2-cols" }, runs.map(col)),
       el("p", { class: "v2-cmp-note", text: "Green marks the best value in each row among the selected runs. Bars are scaled to the largest value." }),
     );

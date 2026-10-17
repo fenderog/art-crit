@@ -273,6 +273,16 @@ page's own prompt, kind and references, published as each one finishes. A failed
 retry works; if the retry fails too, the old run stays and the command exits 1. Name run ids to retry only those
 (`art-crit retry <page> <run-id>`), and use `-n` first to see the plan. Takes `-y`, `-j`, `-T` and `--no-publish` like `run`.
 
+## Make videos for social media
+
+`art-crit video <page> <run-id> <run-id> ...` (2 to 12 runs) writes vertical (1080x1920) and landscape videos that compare them:
+the prompt, then each model's output with its name, effort, time and cost, and a grid with everyone at once. Games and 3D
+models are recorded playing and turning, SVGs and images get a slow zoom, and a run's own video plays. Pick layouts with
+`-l reveal|grid|wide` (default all three) and the seconds per run with `-d`. On the compare page, `art-crit serve` shows a
+"Make social videos" panel that does the same with checkboxes, a preview and downloads. Files go to `videos/<page>/`
+(git-ignored, never published), and the command prints the site's compare link for the post. Needs ffmpeg and
+Playwright with Chrome (`uv tool install --editable '.[verify]'`).
+
 ## Other commands
 
 - `art-crit list` — pages and their runs.

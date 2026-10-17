@@ -2,12 +2,16 @@
 
 Plus a local-only API (the published site never has it, so the viewer only shows ranking and
 prompt-request controls when served by `art-crit serve`):
-  GET api/local                 -> {"rank": true, "cover": true, "requests": true, "runs": true}
+  GET api/local                 -> {"rank": true, "cover": true, "requests": true, "runs": true, "video": true}
   PUT api/rank?p=<slug>         body {"ranks": {"<run id>": 1, ...}}  (null/missing = unranked)
     -> writes docs/data/<slug>/ranking.json and rebuilds, so page.json carries each run's rank.
   PUT api/cover?p=<slug>        body {"thumb": {"run", "path"|null}} and/or {"page": {"run", "image"?}|null}
     -> your pick of a run's main thumbnail and/or the page's home-page picture, in data/<slug>/covers.json (overrides
     only: with none set the viewer's default picks apply), then rebuilds.
+  POST api/video?p=<slug>       body {"runs": [ids], "layouts"?: [...], "seconds"?: n}  -> {"job": id}: makes the compare page's
+    social-media videos in the background (video.py, SPEC.md "Social videos"); one job at a time.
+  GET api/video?job=<id>        -> {"state", "step", "files", "link", "error"} (loopback only, no CORS headers)
+  GET api/video/file?job=<id>&name=<file>   -> one of that job's finished videos (a name from "files", nothing else)
   GET api/requests              -> {"requests": [...], "sets": [names from art-crit.toml [sets]]}
   PUT api/requests              body {"add": {"prompt", "kind", "title"?, "note"?, "set"?}} or {"remove": "<id>"}
     -> requests.json next to docs/ (outside it, so prompt requests are never published).
@@ -33,7 +37,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
-from . import site
+from . import site, video
 from .config import Config
 from .harness import HARNESSES
 from .runner import STOP_FILE
@@ -406,6 +410,48 @@ def stop_run(docs_root, batch, run_id):
     return None
 
 
+VIDEO_JOBS = {}  # job id -> {"state", "step", "files", "dir", "link", "error"}; the viewer polls it
+VIDEO_LOCK = threading.Lock()
+
+
+def start_video(root, slug, body):
+    """Check the request, then make the videos in a background thread. Returns (job id, None) or (None, error)."""
+    if not SLUG_RE.match(slug or ""):
+        return None, "bad page slug"
+    if not isinstance(body, dict) or not isinstance(body.get("runs"), list) or not isinstance(body.get("layouts", []), list):
+        return None, "expected runs (a list) and optionally layouts (a list) and seconds"
+    seconds = body.get("seconds", 6)
+    runs, layouts = [str(r) for r in body["runs"]], [str(l) for l in body.get("layouts", [])]
+    try:
+        if not isinstance(seconds, int) or isinstance(seconds, bool):
+            raise CritError("seconds must be a whole number")
+        video.check_request(root, slug, runs, layouts, seconds)
+    except CritError as e:
+        return None, str(e)
+    with VIDEO_LOCK:
+        if any(j["state"] == "running" for j in VIDEO_JOBS.values()):
+            return None, "a video is already being made; wait for it to finish"
+        job_id = secrets.token_hex(8)
+        job = VIDEO_JOBS[job_id] = {"state": "running", "step": "starting", "files": [], "dir": None, "error": None,
+                                    "link": video.compare_url(slug, runs)}
+
+    def work():
+        try:
+            files = video.make_videos(root, slug, runs, layouts or None, seconds,
+                                      say=lambda step: job.update(step=step))
+            job.update(state="done", step="done", files=[f.name for f in files], dir=str(files[0].parent))
+        except Exception as e:  # CritError, or whatever Chrome/ffmpeg raised: show it, never kill the server
+            job.update(state="failed", error=str(e) or type(e).__name__)
+
+    threading.Thread(target=work, daemon=True).start()
+    return job_id, None
+
+
+def video_status(job_id):
+    job = VIDEO_JOBS.get(job_id)
+    return {k: v for k, v in job.items() if k != "dir"} if job else None
+
+
 class _Handler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
         # The monitor's reads carry run dirs and prompts, so they are answered without CORS headers
@@ -461,7 +507,12 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         path = urlsplit(self.path).path
         if path.endswith("/api/local"):
-            return self._json(200, {"rank": True, "cover": True, "requests": True, "runs": True})
+            return self._json(200, {"rank": True, "cover": True, "requests": True, "runs": True, "video": True})
+        if path.endswith("/api/video/file"):
+            return self._video_file(parse_qs(urlsplit(self.path).query))
+        if path.endswith("/api/video"):
+            status = video_status(parse_qs(urlsplit(self.path).query).get("job", [None])[0])
+            return self._local_json(404, {"error": "no such job"}) if status is None else self._local_json(200, status)
         if path.endswith("/api/requests"):
             return self._json(200, {"requests": load_requests(self.directory), "sets": model_sets(self.directory)})
         if path.endswith("/api/runs"):
@@ -472,6 +523,22 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
             data, error = run_detail(self.directory, query.get("b", [None])[0], query.get("r", [None])[0])
             return self._local_json(400, {"error": error}) if error else self._local_json(200, data)
         return super().do_GET()
+
+    def _video_file(self, query):
+        """One finished video of a job, by a name that job listed (loopback only, no CORS headers)."""
+        self._local_only = True
+        job = VIDEO_JOBS.get(query.get("job", [None])[0])
+        name = query.get("name", [None])[0]
+        if not self._loopback():
+            return self._json(403, {"error": "the local API is only served on a loopback address"})
+        if not job or name not in job["files"]:
+            return self._json(404, {"error": "no such video"})
+        data = (Path(job["dir"]) / name).read_bytes()
+        self.send_response(200)
+        self.send_header("Content-Type", "video/mp4")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
 
     def do_PUT(self):
         url = urlsplit(self.path)
@@ -493,11 +560,15 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
         return self._json(200, {"ok": True})
 
     def do_POST(self):
-        if not urlsplit(self.path).path.endswith("/api/stop"):
+        url = urlsplit(self.path)
+        if not url.path.endswith(("/api/stop", "/api/video")):
             return self._json(404, {"error": "not found"})
         body = self._write_body()
         if body is None:
             return
+        if url.path.endswith("/api/video"):
+            job, error = start_video(Path(self.directory).parent, parse_qs(url.query).get("p", [None])[0], body)
+            return self._json(400, {"error": error}) if error else self._json(200, {"job": job})
         if not isinstance(body, dict):
             return self._json(400, {"error": "expected an object"})
         error = stop_run(self.directory, body.get("batch"), body.get("run"))
