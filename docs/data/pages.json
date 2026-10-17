@@ -3,7 +3,7 @@
     "slug": "surfing-pelican",
     "title": "Surfing pelican",
     "kind": "web",
-    "n_runs": 22,
+    "n_runs": 23,
     "models": [
       "anthropic/claude-haiku-5-5",
       "anthropic/claude-opus-5-5",
@@ -13,8 +13,8 @@
       "openai-codex/gpt-6-astra",
       "openai-codex/gpt-6.1-sol"
     ],
-    "updated": "2026-10-17T16:18:20Z",
-    "thumb": "data/surfing-pelican/runs/gpt-6.1-sol-low-20261017-091651/thumb.jpg"
+    "updated": "2026-10-17T16:18:50Z",
+    "thumb": "data/surfing-pelican/runs/muse-wonder-1.0-mc-medium-20261017-090728/thumb.jpg"
   },
   {
     "slug": "3d-octopus-ramen-shop",
