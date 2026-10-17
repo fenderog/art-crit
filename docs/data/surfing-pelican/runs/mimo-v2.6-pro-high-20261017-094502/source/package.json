@@ -1,0 +1,14 @@
+{
+  "name": "surfing-pelican",
+  "version": "1.0.0",
+  "description": "An animated, non-interactive surfing pelican built with three.js",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "esbuild main.js --bundle --format=esm --outfile=dist/app.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "three": "^0.186.1"
+  }
+}
