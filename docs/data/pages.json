@@ -3,7 +3,7 @@
     "slug": "surfing-pelican",
     "title": "Surfing pelican",
     "kind": "web",
-    "n_runs": 31,
+    "n_runs": 32,
     "models": [
       "anthropic/claude-haiku-5-5",
       "anthropic/claude-opus-5-5",
@@ -14,9 +14,10 @@
       "openai-codex/gpt-6-astra",
       "openai-codex/gpt-6.1-sol",
       "openrouter/z-ai/glm-5.3",
-      "openrouter/z-ai/glm-5.3-flashx"
+      "openrouter/z-ai/glm-5.3-flashx",
+      "openrouter/z-ai/glm-5.3-prime"
     ],
-    "updated": "2026-10-17T16:45:35Z",
+    "updated": "2026-10-17T16:45:59Z",
     "thumb": "data/surfing-pelican/runs/glm-5.3-flashx-low-20261017-094502/thumb.jpg"
   },
   {
