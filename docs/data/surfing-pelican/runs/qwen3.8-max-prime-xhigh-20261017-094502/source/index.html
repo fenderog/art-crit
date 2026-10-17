@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Dawn Patrol — a surfing pelican</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --ink: #f8ece0;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    background: #061219;
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: default;
+  }
+  body {
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, sans-serif;
+  }
+  #app { position: fixed; inset: 0; }
+  #app canvas { display: block; width: 100%; height: 100%; }
+
+  /* ---- filmic grade -------------------------------------------------- */
+  .grade { position: fixed; inset: 0; pointer-events: none; }
+  .grade.warm {
+    background: linear-gradient(
+      178deg,
+      rgba(255, 196, 126, 0.13) 0%,
+      rgba(255, 214, 170, 0.04) 34%,
+      rgba(0, 0, 0, 0) 52%,
+      rgba(6, 62, 84, 0.2) 100%
+    );
+    mix-blend-mode: soft-light;
+  }
+  .grade.vignette {
+    background: radial-gradient(
+      128% 96% at 50% 46%,
+      rgba(0, 0, 0, 0) 42%,
+      rgba(2, 12, 18, 0.34) 74%,
+      rgba(2, 10, 15, 0.62) 100%
+    );
+    mix-blend-mode: multiply;
+  }
+  .grade.scan {
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.014) 0px,
+      rgba(255, 255, 255, 0.014) 1px,
+      rgba(0, 0, 0, 0) 1px,
+      rgba(0, 0, 0, 0) 3px
+    );
+    opacity: 0.5;
+  }
+
+  /* ---- title card ---------------------------------------------------- */
+  .card {
+    position: fixed;
+    left: clamp(16px, 4.2vw, 56px);
+    bottom: clamp(16px, 4.4vh, 52px);
+    pointer-events: none;
+    color: var(--ink);
+    opacity: 0;
+    transform: translateY(10px);
+    animation: rise 2.2s cubic-bezier(0.22, 0.7, 0.2, 1) 0.5s forwards,
+      settle 3s ease 9s forwards;
+    text-shadow: 0 2px 18px rgba(4, 20, 28, 0.75);
+  }
+  .card .kicker {
+    font-size: clamp(9px, 1.05vw, 12px);
+    letter-spacing: 0.42em;
+    text-transform: uppercase;
+    opacity: 0.72;
+    margin: 0 0 0.55em;
+    font-weight: 600;
+  }
+  .card h1 {
+    font-size: clamp(21px, 3.5vw, 46px);
+    line-height: 0.98;
+    letter-spacing: 0.02em;
+    margin: 0;
+    font-weight: 300;
+  }
+  .card h1 b { font-weight: 700; letter-spacing: -0.01em; }
+  .card .meta {
+    margin: 0.85em 0 0;
+    font-size: clamp(9px, 1vw, 12px);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    opacity: 0.55;
+    display: flex;
+    gap: 0.9em;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .card .meta i {
+    font-style: normal;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ff9d6b;
+    box-shadow: 0 0 10px #ff9d6b;
+    animation: blink 3.4s ease-in-out infinite;
+  }
+  @keyframes rise { to { opacity: 1; transform: translateY(0); } }
+  @keyframes settle { to { opacity: 0.42; } }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+  .hint {
+    position: fixed;
+    right: clamp(16px, 4.2vw, 56px);
+    bottom: clamp(16px, 4.4vh, 52px);
+    pointer-events: none;
+    color: var(--ink);
+    opacity: 0;
+    font-size: clamp(8px, 0.92vw, 11px);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    text-align: right;
+    animation: rise 2.4s ease 2.4s forwards, settle 3s ease 11s forwards;
+    text-shadow: 0 2px 14px rgba(4, 20, 28, 0.7);
+  }
+
+  /* ---- curtain ------------------------------------------------------- */
+  #curtain {
+    position: fixed;
+    inset: 0;
+    background: #041016;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 1.9s ease;
+    z-index: 10;
+  }
+  #curtain.up { opacity: 0; }
+
+  #fallback {
+    position: fixed;
+    inset: 0;
+    display: none;
+    place-content: center;
+    text-align: center;
+    color: var(--ink);
+    padding: 24px;
+    font-size: 14px;
+    letter-spacing: 0.08em;
+    z-index: 20;
+  }
+</style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <div class="grade warm"></div>
+  <div class="grade scan"></div>
+  <div class="grade vignette"></div>
+
+  <div class="card">
+    <p class="kicker">Pelican Point &middot; first light</p>
+    <h1>DAWN <b>PATROL</b></h1>
+    <p class="meta"><i></i> 6ft @ 17s &nbsp;/&nbsp; offshore &nbsp;/&nbsp; glassy</p>
+  </div>
+
+  <p class="hint">a film &middot; no controls</p>
+
+  <div id="curtain"></div>
+  <div id="fallback">This scene needs WebGL.</div>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>
