@@ -3,7 +3,7 @@
     "slug": "surfing-pelican",
     "title": "Surfing pelican",
     "kind": "web",
-    "n_runs": 67,
+    "n_runs": 68,
     "models": [
       "anthropic/claude-haiku-5-5",
       "anthropic/claude-opus-5-5",
@@ -25,7 +25,7 @@
       "openrouter/z-ai/glm-5.3-prime",
       "xai/grok-4.7"
     ],
-    "updated": "2026-10-17T17:45:38Z",
+    "updated": "2026-10-17T17:52:29Z",
     "thumb": "data/surfing-pelican/runs/gemini-3.8-flash-agy-high-20261017-090728/thumb.jpg"
   },
   {
