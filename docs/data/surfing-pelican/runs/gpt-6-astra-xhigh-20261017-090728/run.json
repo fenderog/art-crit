@@ -1,0 +1,41 @@
+{
+  "id": "gpt-6-astra-xhigh-20261017-090728",
+  "page": "surfing-pelican",
+  "model": "openai-codex/gpt-6-astra",
+  "effort": "xhigh",
+  "kind": "web",
+  "started_at": "2026-10-17T16:08:22Z",
+  "batch": "2026-10-17-090728-surfing-pelican",
+  "harness": {
+    "name": "pi",
+    "version": "1.3.0"
+  },
+  "state": "failed",
+  "error": "Your authentication token has expired. Please try refreshing it.",
+  "route": null,
+  "tools": {
+    "allowed": {
+      "builtin": null,
+      "mcp": {}
+    },
+    "used": {}
+  },
+  "metrics": {
+    "duration_ms": 791,
+    "cost_usd": 0.0,
+    "tool_calls": 0,
+    "turns": 1,
+    "tokens_total": 0,
+    "tokens_input": 0,
+    "tokens_output": 0,
+    "tokens_reasoning": 0,
+    "tokens_cache_read": 0
+  },
+  "thumb": null,
+  "output": null,
+  "session": {
+    "conversation": "session/conversation.json",
+    "stderr": "session/stderr.txt"
+  },
+  "source": null
+}
