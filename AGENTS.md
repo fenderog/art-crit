@@ -206,6 +206,19 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   - Model ids can contain `:`, so levels are read from after the last colon.
   - art-crit keeps no list of pi models (Codex included): they come live from `pi --list-models`. New ones show up
     after `pi update --models` refreshes pi's catalog.
+  - That catalog can lag OpenRouter, because pi.dev's overlay feeds it, not OpenRouter's live list: a model that is
+    live upstream but missing from `pi --list-models` fails planning for a whole set (one unknown spec aborts all of
+    it), while pi itself would accept it as a "custom model id" with a made-up level menu. Bridge it with a
+    `providers.<name>.models` entry in `~/.pi/agent/models.json` that mirrors the sibling model's metadata (it adds
+    to the provider's list, it doesn't replace it). It shadows the official entry for that id once the catalog
+    catches up, so delete it then: `oss-frontier` carried `deepseek/deepseek-v4.1-flash-1017` that way for a day.
+  - An `openai-codex` run can die on its first request with "Your authentication token has expired. Please try
+    refreshing it." while the stored OAuth JWT is still days from its `exp`: `pi auth check` reports `ready` and
+    pi therefore never refreshes it, and the ChatGPT backend answers 401 `token_expired` (reproduce with a curl
+    POST to `https://chatgpt.com/backend-api/codex/responses` carrying the token). We hit it right after a Codex
+    CLI re-login that morning (`~/.codex/auth.json` held a different auth session id). Force a refresh with
+    `pi auth print-bearer-token --provider openai-codex --min-expiry 480h` (it exits 1 on the unmet min-expiry
+    *after* persisting the new token) or `/login openai-codex`; art-crit's own `retry` then re-runs the batch.
   - `--mode json` stdout (`harness/events.jsonl`, never published; `Pi.session_file` skips it) is ~1 MB of `message_update` streaming snapshots and
     carries no timestamps, so tool durations come from the session entries' timestamps (`add_tool_durations`).
 - **Claude Code's stream-json:** per-message `usage` is a snapshot taken before the output is written (output
