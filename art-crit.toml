@@ -20,5 +20,5 @@ frontier = ["claude-code:opus:low..xhigh", "claude-code:claude-sonnet-5-5:low..x
 # oss-frontier is pi-only. deepseek-v4.1-flash-1017 is live on OpenRouter but not in pi's catalog yet, so it
 # needs a local ~/.pi/agent/models.json entry to be planned at all (drop that entry once `pi update --models`
 # lists it; it also shadows the official metadata while it exists). Without it one unknown spec fails the set.
-oss-frontier = ["openrouter/z-ai/glm-5.3", "openrouter/z-ai/glm-5.3-prime", "openrouter/z-ai/glm-5.3-flashx", "openrouter/moonshotai/kimi-k3", "openrouter/deepseek/deepseek-v4.1-flash", "openrouter/deepseek/deepseek-v4.1-flash-1017", "openrouter/qwen/qwen3.8-max-prime", "openrouter/xiaomi/mimo-v2.6-pro", "openrouter/stepfun/step-5-preview"]
+oss-frontier = ["openrouter/z-ai/glm-5.3", "openrouter/z-ai/glm-5.3-prime", "openrouter/z-ai/glm-5.3-flashx", "openrouter/moonshotai/kimi-k3", "openrouter/deepseek/deepseek-v4.1-flash", "openrouter/deepseek/deepseek-v4.1-flash-1017", "openrouter/xiaomi/mimo-v2.6-pro", "openrouter/stepfun/step-5-preview"]
 
