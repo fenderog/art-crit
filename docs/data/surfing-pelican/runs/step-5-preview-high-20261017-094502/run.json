@@ -1,0 +1,76 @@
+{
+  "id": "step-5-preview-high-20261017-094502",
+  "page": "surfing-pelican",
+  "model": "openrouter/stepfun/step-5-preview",
+  "effort": "high",
+  "kind": "web",
+  "started_at": "2026-10-17T17:20:32Z",
+  "batch": "2026-10-17-094502-surfing-pelican",
+  "harness": {
+    "name": "pi",
+    "version": "1.3.0"
+  },
+  "state": "timeout",
+  "error": "timed out after 5700s",
+  "route": {
+    "requested": null,
+    "served": [
+      "InferenceNet"
+    ],
+    "cost_usd": 1.4548398,
+    "pi_cost_usd": 1.4548398000000002
+  },
+  "tools": {
+    "allowed": {
+      "builtin": null,
+      "mcp": {}
+    },
+    "used": {
+      "bash": 90,
+      "edit": 28,
+      "write": 20,
+      "read": 19
+    }
+  },
+  "metrics": {
+    "duration_ms": 5700021,
+    "cost_usd": 1.4548398,
+    "tool_calls": 157,
+    "turns": 157,
+    "tokens_total": 233989,
+    "tokens_input": 78057,
+    "tokens_output": 155932,
+    "tokens_reasoning": 102807,
+    "tokens_cache_read": 19115328
+  },
+  "thumb": null,
+  "output": null,
+  "session": {
+    "conversation": "session/conversation.json",
+    "stderr": "session/stderr.txt"
+  },
+  "source": {
+    "root": "source/",
+    "files": [
+      "_preview1.png",
+      "_preview2.png",
+      "_smoke.js",
+      "index.html",
+      "main.js",
+      "package-lock.json",
+      "package.json",
+      "src/cameraRig.js",
+      "src/extras.js",
+      "src/fish.js",
+      "src/geom.js",
+      "src/glsl.js",
+      "src/hud.js",
+      "src/ocean.js",
+      "src/pelican.js",
+      "src/sky.js",
+      "src/spray.js",
+      "src/uniforms.js",
+      "src/waves.js"
+    ]
+  }
+}

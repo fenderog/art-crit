@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Surfing Pelican — a small film about a big bird</title>
+<meta name="description" content="An animated, non-interactive short: a pelican rides a golden-hour swell." />
+<style>
+  /* minimal boot styling only; the film look is injected by main.js */
+  html, body { margin: 0; padding: 0; height: 100%; background: #0b1620; overflow: hidden; }
+  #stage { position: fixed; inset: 0; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<noscript style="color:#e8dcc8;font:14px/1.5 system-ui;padding:2rem;display:block">
+  This page is a WebGL film and needs JavaScript.
+</noscript>
+<script type="module" src="main.js"></script>
+</body>
+</html>
