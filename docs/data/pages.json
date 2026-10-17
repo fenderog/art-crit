@@ -3,11 +3,12 @@
     "slug": "surfing-pelican",
     "title": "Surfing pelican",
     "kind": "web",
-    "n_runs": 1,
+    "n_runs": 2,
     "models": [
-      "anthropic/claude-sonnet-5-5"
+      "anthropic/claude-sonnet-5-5",
+      "openai-codex/gpt-6.1-sol"
     ],
-    "updated": "2026-10-17T16:07:59Z",
+    "updated": "2026-10-17T16:08:09Z",
     "thumb": "data/surfing-pelican/runs/claude-sonnet-5-5-cc-low-20261017-090728/thumb.jpg"
   },
   {
