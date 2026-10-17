@@ -3,7 +3,7 @@
     "slug": "surfing-pelican",
     "title": "Surfing pelican",
     "kind": "web",
-    "n_runs": 75,
+    "n_runs": 60,
     "models": [
       "anthropic/claude-haiku-5-5",
       "anthropic/claude-opus-5-5",
@@ -15,17 +15,15 @@
       "openai-codex/gpt-6-astra",
       "openai-codex/gpt-6.1-sol",
       "openrouter/deepseek/deepseek-v4.1-flash",
-      "openrouter/deepseek/deepseek-v4.1-flash-1017",
       "openrouter/moonshotai/kimi-k3",
       "openrouter/qwen/qwen3.8-max-prime",
       "openrouter/stepfun/step-5-preview",
-      "openrouter/xiaomi/mimo-v2.6-pro",
       "openrouter/z-ai/glm-5.3",
       "openrouter/z-ai/glm-5.3-flashx",
       "openrouter/z-ai/glm-5.3-prime",
       "xai/grok-4.7"
     ],
-    "updated": "2026-10-17T18:55:32Z",
+    "updated": "2026-10-17T18:05:21Z",
     "thumb": "data/surfing-pelican/runs/gemini-3.8-flash-agy-high-20261017-090728/thumb.jpg"
   },
   {
