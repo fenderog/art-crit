@@ -3,7 +3,7 @@
     "slug": "surfing-pelican",
     "title": "Surfing pelican",
     "kind": "web",
-    "n_runs": 14,
+    "n_runs": 15,
     "models": [
       "anthropic/claude-haiku-5-5",
       "anthropic/claude-opus-5-5",
@@ -12,7 +12,7 @@
       "openai-codex/gpt-6-astra",
       "openai-codex/gpt-6.1-sol"
     ],
-    "updated": "2026-10-17T16:11:31Z",
+    "updated": "2026-10-17T16:12:07Z",
     "thumb": "data/surfing-pelican/runs/muse-spark-1.3-mc-minimal-20261017-090728/thumb.jpg"
   },
   {
