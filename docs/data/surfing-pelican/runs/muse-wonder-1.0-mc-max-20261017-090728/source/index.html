@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Surfing Pelican — a non-interactive Three.js loop</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; overflow: hidden; background: #8fd0e6;
+    font-family: Georgia, "Times New Roman", serif; color: #12343b;
+  }
+  #scene { position: fixed; inset: 0; }
+  #scene canvas { display: block; width: 100%; height: 100%; }
+  .overlay {
+    position: fixed; inset: 0; pointer-events: none;
+    display: flex; flex-direction: column; justify-content: space-between;
+    padding: clamp(18px, 3.5vw, 36px);
+  }
+  .card {
+    max-width: 430px; background: rgba(255, 253, 247, 0.88);
+    border: 1px solid rgba(18, 52, 59, 0.16); border-radius: 18px;
+    padding: 18px 20px 16px; box-shadow: 0 12px 32px rgba(18, 52, 59, 0.14);
+    backdrop-filter: blur(6px);
+  }
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: #c2512c; margin: 0 0 8px;
+  }
+  h1 { font-size: clamp(30px, 4.6vw, 46px); line-height: 0.98; margin: 0 0 10px; font-weight: 700; }
+  .sub { font-size: 15px; line-height: 1.5; margin: 0; color: #33565e; }
+  .foot { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
+  .badge {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11px;
+    letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap;
+    background: #12343b; color: #fff7e8; border-radius: 999px; padding: 8px 12px;
+  }
+  .note {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11px;
+    letter-spacing: 0.04em; color: rgba(18, 52, 59, 0.75); text-align: right; line-height: 1.6;
+  }
+  @media (max-width: 640px) {
+    .note { display: none; }
+    .card { max-width: calc(100vw - 36px); }
+  }
+</style>
+</head>
+<body>
+  <main id="scene" aria-label="Animated 3D scene of a pelican surfing a wave"></main>
+  <div class="overlay" aria-hidden="true">
+    <section class="card">
+      <p class="eyebrow">Non-interactive &middot; Three.js loop</p>
+      <h1>The surfing pelican</h1>
+      <p class="sub">No buttons, no steering. He carves, flaps for balance,
+      and rides the swell forever &mdash; just watch the spray.</p>
+    </section>
+    <div class="foot">
+      <span class="badge">&#9679; Auto-playing loop</span>
+      <p class="note">Procedural ocean &middot; No assets<br/>Resize the window &mdash; he adapts</p>
+    </div>
+  </div>
+  <script type="module" src="main.js"></script>
+</body>
+</html>
