@@ -1,5 +1,16 @@
 [
   {
+    "slug": "surfing-pelican",
+    "title": "Surfing pelican",
+    "kind": "web",
+    "n_runs": 1,
+    "models": [
+      "anthropic/claude-sonnet-5-5"
+    ],
+    "updated": "2026-10-17T16:07:59Z",
+    "thumb": "data/surfing-pelican/runs/claude-sonnet-5-5-cc-low-20261017-090728/thumb.jpg"
+  },
+  {
     "slug": "3d-octopus-ramen-shop",
     "title": "3D Octopus Ramen Shop",
     "kind": "blender",
