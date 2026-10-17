@@ -1,0 +1,10 @@
+import sys
+src = open('main.js').read()
+src = src.replace('rider.quaternion.slerp(riderTargetQuat, 1 - Math.pow(0.001, dt));', 'rider.quaternion.identity();')
+src = src.replace('const camAngle = Math.sin(t * 0.052) * 0.42 + 0.06;', 'const camAngle = %s;' % sys.argv[1])
+src = src.replace('const dist = 12.6 + Math.sin(t * 0.083) * 0.9;', 'const dist = 13.5;')
+src = src.replace('rider.position.y + 4.55 + Math.sin(t * 0.31) * 0.34,', 'rider.position.y + 2.4,')
+src = src.replace('new THREE.Vector3(0, 2.15, 0)', 'new THREE.Vector3(0, 2.3, 0)')
+open('.__dbg.js','w').write(src)
+html = open('index.html').read().replace('src="main.js"', 'src=".__dbg.bundle.js"')
+open('.__dbg.html','w').write(html)

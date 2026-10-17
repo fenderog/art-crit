@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Surfing Pelican</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: linear-gradient(#0b1c2c, #12354f 55%, #1c6ea3);
+        font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+      }
+      #scene {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+        touch-action: none;
+      }
+      /* soft cinematic vignette over the canvas */
+      .vignette {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: radial-gradient(
+          ellipse at 50% 45%,
+          rgba(0, 0, 0, 0) 45%,
+          rgba(2, 12, 22, 0.28) 100%
+        );
+        mix-blend-mode: multiply;
+      }
+      .caption {
+        position: fixed;
+        left: clamp(16px, 4vw, 56px);
+        bottom: clamp(14px, 4vh, 44px);
+        pointer-events: none;
+        color: #eaf6ff;
+        text-shadow: 0 2px 18px rgba(2, 20, 34, 0.75);
+        animation: drift-in 1.8s ease-out both, breathe 9s ease-in-out 2.4s infinite;
+      }
+      .caption h1 {
+        margin: 0;
+        font-size: clamp(22px, 4.2vw, 46px);
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+      .caption p {
+        margin: 0.35em 0 0;
+        font-size: clamp(11px, 1.6vw, 16px);
+        letter-spacing: 0.32em;
+        text-transform: uppercase;
+        opacity: 0.72;
+      }
+      @keyframes drift-in {
+        from {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes breathe {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.62;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="scene"></canvas>
+    <div class="vignette"></div>
+    <div class="caption">
+      <h1>Surfing Pelican</h1>
+      <p>an endless ride</p>
+    </div>
+    <script type="module" src="main.js"></script>
+  </body>
+</html>
