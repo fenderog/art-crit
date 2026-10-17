@@ -296,7 +296,8 @@
           "scripts/main.gd.uid"
         ]
       },
-      "rank": null
+      "rank": null,
+      "cover": false
     },
     {
       "id": "claude-opus-5-5-cc-medium-20260929-141252",
@@ -352,7 +353,8 @@
           "voxel.gd.uid"
         ]
       },
-      "rank": null
+      "rank": null,
+      "cover": false
     },
     {
       "id": "claude-opus-5-5-cc-high-20260929-141252",
@@ -412,7 +414,8 @@
           "scripts/world.gd.uid"
         ]
       },
-      "rank": null
+      "rank": null,
+      "cover": false
     },
     {
       "id": "claude-opus-5-5-cc-xhigh-20260929-141252",
@@ -485,7 +488,8 @@
           "scripts/voxel_model.gd.uid"
         ]
       },
-      "rank": null
+      "rank": null,
+      "cover": false
     },
     {
       "id": "gpt-6.1-sol-low-20260929-164650",
@@ -919,7 +923,8 @@
           "voxel_horse.gd.uid"
         ]
       },
-      "rank": null
+      "rank": null,
+      "cover": false
     },
     {
       "id": "claude-haiku-5-5-cc-medium-20261007-144942",
@@ -972,7 +977,8 @@
           "project.godot"
         ]
       },
-      "rank": null
+      "rank": null,
+      "cover": false
     },
     {
       "id": "claude-haiku-5-5-cc-high-20261007-144942",
@@ -1031,7 +1037,8 @@
           "scripts/voxel_builder.gd.uid"
         ]
       },
-      "rank": null
+      "rank": null,
+      "cover": false
     },
     {
       "id": "claude-haiku-5-5-cc-xhigh-20261007-144942",
@@ -1088,7 +1095,8 @@
           "voxel_horse.gd.uid"
         ]
       },
-      "rank": null
+      "rank": null,
+      "cover": false
     },
     {
       "id": "claude-haiku-5-5-cc-max-20261007-144942",
@@ -1148,7 +1156,8 @@
           "voxel_horse.gd.uid"
         ]
       },
-      "rank": null
+      "rank": null,
+      "cover": false
     }
   ]
 }
