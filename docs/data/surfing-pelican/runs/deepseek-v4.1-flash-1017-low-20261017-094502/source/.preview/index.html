@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pelican Surf — A Coastal Daydream</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0b2b3a;
+    }
+    body {
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      color: #fff5e6;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    #vignette {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse at 50% 46%, transparent 42%, rgba(4, 20, 30, 0.34) 100%);
+      z-index: 2;
+    }
+    .hud {
+      position: fixed;
+      z-index: 3;
+      pointer-events: none;
+      text-shadow: 0 2px 18px rgba(0, 22, 34, 0.55);
+    }
+    .title {
+      top: 30px;
+      left: 34px;
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+      animation: rise 1.6s cubic-bezier(.2,.8,.2,1) both;
+    }
+    .title-mark {
+      width: 7px;
+      height: 39px;
+      margin-top: 3px;
+      border-radius: 6px;
+      background: linear-gradient(180deg, #ffcf7d, #ff7b5c 70%, rgba(255, 123, 92, 0));
+      box-shadow: 0 0 22px rgba(255, 170, 90, .55);
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(21px, 2.6vw, 31px);
+      font-weight: 650;
+      letter-spacing: .2em;
+      line-height: 1.02;
+      text-transform: uppercase;
+    }
+    .subtitle {
+      margin: 8px 0 0;
+      font-size: 10px;
+      letter-spacing: .36em;
+      text-transform: uppercase;
+      color: rgba(255, 245, 230, .72);
+      font-weight: 500;
+    }
+    .tagline {
+      right: 34px;
+      bottom: 30px;
+      text-align: right;
+      font-size: 10px;
+      line-height: 1.9;
+      letter-spacing: .3em;
+      text-transform: uppercase;
+      color: rgba(255, 245, 230, .62);
+      animation: rise 2s .35s cubic-bezier(.2,.8,.2,1) both;
+    }
+    .tagline em {
+      font-style: normal;
+      color: #ffd28b;
+    }
+    .tagline .rule {
+      display: block;
+      width: 76px;
+      height: 1px;
+      margin: 11px 0 11px auto;
+      background: linear-gradient(90deg, transparent, rgba(255, 210, 139, .8));
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @media (max-width: 640px) {
+      .title { top: 22px; left: 22px; }
+      .tagline { right: 22px; bottom: 22px; font-size: 9px; letter-spacing: .24em; }
+      .subtitle { letter-spacing: .24em; }
+    }
+  </style>
+</head>
+<body>
+  <div id="vignette"></div>
+  <header class="hud title">
+    <div class="title-mark"></div>
+    <div>
+      <h1>Pelican&nbsp;Surf</h1>
+      <p class="subtitle">A coastal daydream</p>
+    </div>
+  </header>
+  <div class="hud tagline">
+    <em>Pacific coast</em><br />
+    longboard · 06:42 a.m.
+    <span class="rule"></span>
+    paddle out, tune in
+  </div>
+  <script type="module" src="main.js"></script>
+</body>
+</html>
