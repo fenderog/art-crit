@@ -3,7 +3,7 @@
     "slug": "surfing-pelican",
     "title": "Surfing pelican",
     "kind": "web",
-    "n_runs": 52,
+    "n_runs": 53,
     "models": [
       "anthropic/claude-haiku-5-5",
       "anthropic/claude-opus-5-5",
@@ -21,7 +21,7 @@
       "openrouter/z-ai/glm-5.3-flashx",
       "openrouter/z-ai/glm-5.3-prime"
     ],
-    "updated": "2026-10-17T17:07:00Z",
+    "updated": "2026-10-17T17:10:35Z",
     "thumb": "data/surfing-pelican/runs/qwen3.8-max-prime-medium-20261017-094502/thumb.jpg"
   },
   {
