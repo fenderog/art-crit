@@ -1,0 +1,68 @@
+{
+  "id": "qwen3.8-max-prime-high-20261017-094502",
+  "page": "surfing-pelican",
+  "model": "openrouter/qwen/qwen3.8-max-prime",
+  "effort": "high",
+  "kind": "web",
+  "started_at": "2026-10-17T16:53:11Z",
+  "batch": "2026-10-17-094502-surfing-pelican",
+  "harness": {
+    "name": "pi",
+    "version": "1.3.0"
+  },
+  "state": "failed",
+  "error": "400: {\"message\":\"tool_calls[0].function.name must be a non-empty string (got empty string)\",\"code\":400,\"metadata\":{\"provider_name\":\"Alibaba\"}}",
+  "route": {
+    "requested": null,
+    "served": [
+      "Alibaba"
+    ],
+    "cost_usd": 1.520712,
+    "pi_cost_usd": 1.5207120000000003
+  },
+  "tools": {
+    "allowed": {
+      "builtin": null,
+      "mcp": {}
+    },
+    "used": {
+      "write": 9,
+      "bash": 7,
+      "edit": 3,
+      "": 1,
+      "read": 1
+    }
+  },
+  "metrics": {
+    "duration_ms": 756272,
+    "cost_usd": 1.520712,
+    "tool_calls": 21,
+    "turns": 21,
+    "tokens_total": 162164,
+    "tokens_input": 86501,
+    "tokens_output": 75663,
+    "tokens_reasoning": 38199,
+    "tokens_cache_read": 533504
+  },
+  "thumb": null,
+  "output": null,
+  "session": {
+    "conversation": "session/conversation.json",
+    "stderr": "session/stderr.txt"
+  },
+  "source": {
+    "root": "source/",
+    "files": [
+      "index.html",
+      "package-lock.json",
+      "package.json",
+      "src/glsl.js",
+      "src/ocean.js",
+      "src/palette.js",
+      "src/pelican.js",
+      "src/sky.js",
+      "src/surfboard.js",
+      "src/waves.js"
+    ]
+  }
+}
