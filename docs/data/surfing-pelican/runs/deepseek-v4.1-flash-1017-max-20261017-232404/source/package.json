@@ -1,0 +1,16 @@
+{
+  "name": "pelican-point",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "An animated golden-hour surfing pelican scene built with Three.js",
+  "scripts": {
+    "start": "python3 -m http.server 4173",
+    "check": "esbuild main.js --bundle --format=esm --outfile=/dev/null"
+  },
+  "dependencies": {
+    "esbuild": "^0.28.2",
+    "puppeteer-core": "^25.14.0",
+    "three": "^0.186.1"
+  }
+}
