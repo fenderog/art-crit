@@ -222,7 +222,7 @@ art-crit list                      # pages and their runs
 art-crit rm <slug> [<run_id>] [-f/--failed] [-y/--yes]   # remove a run (or a whole page); --failed removes every failed run instead, then rebuild
 art-crit rename <slug> <new> [-t/--title TEXT]   # move a page to a new slug (rewrites each run.json `page`), then rebuild
 art-crit retry <slug> [<run_id>...] [-y/--yes] [-n/--dry-run] [-j N] [-T/--timeout D] [--no-publish]   # run failed runs again (see Retry)
-art-crit video <slug> <run_id>... [-l/--layout reveal|grid|wide]... [-d/--seconds N] [-o/--out DIR]   # social-media videos of 2-12 runs (see Social videos)
+art-crit video <slug> <run_id>... [-l/--layout reveal|grid|wide]... [-d/--seconds N] [--no-sound] [-o/--out DIR]   # social-media videos of 2-12 runs (see Social videos)
 art-crit rebuild                   # regenerate page.json + pages.json from runs/*/run.json; delete engines no run references
 art-crit serve [-p/--port 8000]    # serve docs/ locally: Access-Control-Allow-Origin: *, .wasm as application/wasm, NO COOP/COEP headers
                                 #   plus the local-only ranking, prompt-request and run-monitor APIs (see Ranking,
@@ -610,23 +610,38 @@ a page, one per layout, for posting. They are made on this machine and never pub
 files and the site's compare link for those runs, to paste into the post. Needs ffmpeg + ffprobe and Playwright with Chrome
 (`.[verify]`); failed runs can't be included.
 
-- **Layouts** (`-l`, repeatable, default all three): `reveal` 1080x1920, an intro card (the prompt), then each run in turn with
-  its model, effort, time, tokens and cost under the picture, then an outro; `grid` 1080x1920, the intro, then every run at
-  once in labelled tiles (2 columns up to 6 runs, else 3), then the outro; `wide` 1920x1080, like `reveal` with the
-  caption in a panel beside the picture. H.264, 30 fps, a silent AAC track (platforms expect one).
-- **One source clip per run** (`-d`, 2 to 20 seconds, default 6, silent, 1080x1080, used by every layout): its video if it has
+- **Layouts** (`-l`, repeatable, default all three), each `hook` → runs → `finale`: `reveal` 1080x1920, each run in turn
+  (`-d` seconds each); `grid` 1080x1920, every run at once in numbered tiles that land one after another, then a spotlight
+  that steps through them; `wide` 1920x1080, like `reveal` with the caption in a panel beside the picture.
+  H.264, 30 fps, AAC sound (`video_sound.py`: a 120 bpm beat with a whoosh on each cut, pops and ticks on what lands and
+  counts, a ding for the pick; `--no-sound` / `"sound": false` = a silent track, which platforms still expect).
+- **The motion** (`scene/scene.js`, timings in `video.TIMING`): the `hook` (3 s; its first frame is already the cover) shows a
+  tilted, drifting wall of every run's clip, the site's logo (`assets/logo.svg`, in its dark-mode colours: the scene is
+  opened with a dark colour scheme; the logo also tops each run's bar and the grid), a headline (`N AI models. Same prompt.`, or `<model> / N effort levels.` when
+  every run is one model) and the prompt typing into a bubble (whitespace collapsed, at most 600 characters). A run's turn:
+  its card springs in with motion blur and whips out at the end; its number badge, vendor icon and name, effort meter and
+  time / tokens / cost (counting up) follow, with a story-style progress bar, the run counter and the prompt at the top.
+  With 3+ runs, one sticker each goes to the runs that stand out (`video.stickers`: FASTEST, CHEAPEST, PRICIEST, SLOWEST, in
+  that order; unreported costs don't count). The `finale` (4.5 s): every run as a numbered tile (`video.tile_boxes`), "Place
+  your vote", "on <logo> ↓" (→ when wide) and the site pill; if any of the runs has an owner's rank, the best-ranked one
+  gets a crown and the line becomes "My pick: #n. What's yours?". Names are the site's own (`runs.js`: `prettyModelName`, vendor names,
+  icons and hues).
+- **One source clip per run** (`-d`, 2 to 20 seconds, default 4, silent, 1080x1080, used by every layout): its video if it has
   one; else its 3D model, recorded in the run page's own viewer while it is orbited; else its images (up to 3, the owner's
   thumbnail pick first) with a slow zoom. A game or page is recorded in `play.html` (the site's sandbox), clicked and played
   with a few key presses. A recording that fails falls back to the run's pictures (said in the progress output).
-- Text cards are HTML screenshotted by Chrome (this ffmpeg has no `drawtext`); every string from a run or prompt is
-  escaped and the card pages have no scripts. Model-made SVGs are only drawn through an `<img>` in Chrome (ADR-0004).
-- **Local API** (`art-crit serve` only; ADR-0032): `POST api/video?p=<slug>` with `{"runs": [ids], "layouts"?: [...], "seconds"?: n}`
+- **Rendering** (ADR-0033): each clip is cut into JPEG frames (full and half size), and each layout is drawn frame by frame by
+  `scene/scene.html` in a GPU Chrome: `renderFrame(f)` is a pure function of the frame number, then a CDP screenshot is piped
+  into ffmpeg with the sound. The scene, its `plan-<layout>.json` and the frames are served from the job's temp folder, with
+  `assets/` linked to `docs/assets/`; the scene has a strict CSP and puts every string from a run or prompt in with
+  `textContent`. Model-made SVGs are only drawn through an `<img>` in Chrome (ADR-0004).
+- **Local API** (`art-crit serve` only; ADR-0032): `POST api/video?p=<slug>` with `{"runs": [ids], "layouts"?: [...], "seconds"?: n, "sound"?: bool}`
   checks the request (400 with the reason) and starts a background job, one at a time → `{"job": id}`;
   `GET api/video?job=<id>` → `{state: running|done|failed, step, files, link, error}`; `GET api/video/file?job=<id>&name=<file>`
   serves one of that job's `files` (nothing else). Same loopback / same-origin / JSON checks as `api/rank`; the two GETs
   also need a loopback `Host` and carry no CORS headers, so another website can't read or start anything.
 - The panel (`assets/lanes/video.js`, loaded by the lanes compare page only when `api/local` says `video`) has a checkbox per
-  layout and a button; it polls the job, previews each video and links the download and the compare link. The classic compare
+  layout, a Sound checkbox and a button; it polls the job, previews each video and links the download and the compare link. The classic compare
   page has no panel.
 
 ## Prompt requests

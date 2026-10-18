@@ -1,0 +1,83 @@
+/* The look of the `art-crit video` scene. Sizes that depend on the layout are set from scene.js. */
+
+* { box-sizing: border-box; margin: 0; }
+html, body { overflow: hidden; background: #07070b; }
+body {
+  position: relative;
+  color: #f6f5fb;
+  font-family: -apple-system, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.abs { position: absolute; transform-origin: 50% 50%; will-change: transform, opacity; }
+.layer { position: absolute; inset: 0; }
+.hl { color: #ffe14d; }
+.dim { color: rgba(246, 245, 251, 0.62); }
+
+/* the opening: a tilted wall of every run, the headline and the prompt being typed */
+.mosaic { position: absolute; display: grid; transform-origin: 50% 50%; }
+.mosaic img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 22px; display: block; background: #15151d; }
+.shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(7, 7, 11, 0.55), rgba(7, 7, 11, 0.82) 55%, rgba(7, 7, 11, 0.94)); }
+.headline { font-weight: 900; letter-spacing: -0.04em; line-height: 0.98; text-shadow: 0 6px 40px rgba(0, 0, 0, 0.55); }
+.headline > div { white-space: nowrap; }
+.bubble {
+  background: rgba(22, 21, 31, 0.9);
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  border-radius: 40px;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
+}
+.bubble-label { display: flex; align-items: center; gap: 14px; font-weight: 800; letter-spacing: 0.16em; color: #b9adff; }
+.bubble-label i { width: 14px; height: 14px; border-radius: 50%; background: #ffe14d; }
+.bubble-text { font-weight: 650; line-height: 1.26; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
+.caret { display: inline-block; width: 0.48em; height: 1em; margin-left: 0.08em; vertical-align: -0.14em; background: #ffe14d; border-radius: 3px; }
+
+/* one run at a time */
+.card { position: absolute; overflow: hidden; background: #000; transform-origin: 50% 50%; }
+.card img, .tile img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.card .ring, .tile .ring { position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.16); }
+.num {
+  position: absolute; display: grid; place-items: center; border-radius: 50%;
+  background: #fff; color: #0b0b10; font-weight: 900; letter-spacing: -0.04em;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+.sticker {
+  position: absolute; padding: 0.38em 0.72em; border-radius: 0.42em; white-space: nowrap;
+  background: #ffe14d; color: #111018; font-weight: 900; letter-spacing: 0.05em;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.45);
+}
+.progress { position: absolute; display: flex; gap: 8px; }
+.progress span { position: relative; flex: 1; height: 7px; border-radius: 4px; overflow: hidden; background: rgba(255, 255, 255, 0.22); }
+.progress i { position: absolute; inset: 0; background: #fff; transform-origin: 0 50%; }
+.toprow { display: flex; justify-content: space-between; align-items: center; font-weight: 800; letter-spacing: 0.12em; }
+.logo { display: block; filter: drop-shadow(0 4px 24px rgba(0, 0, 0, 0.5)); }
+.mini-prompt { font-weight: 600; line-height: 1.3; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; color: rgba(246, 245, 251, 0.78); }
+.vendor-row { display: flex; align-items: center; gap: 0.55em; font-weight: 700; color: rgba(246, 245, 251, 0.72); white-space: nowrap; }
+.vendor-icon { flex: none; display: grid; place-items: center; border-radius: 50%; background: #fff; overflow: hidden; font-weight: 900; color: #fff; }
+.vendor-icon img { width: 64%; height: 64%; object-fit: contain; }
+.name { font-weight: 900; letter-spacing: -0.045em; line-height: 1.02; white-space: nowrap; }
+.name.wraps { white-space: normal; }
+.mask { display: inline-block; overflow: hidden; vertical-align: top; padding: 0 0.04em 0.1em 0; margin-bottom: -0.1em; }
+.word { display: inline-block; }
+.effort { display: inline-flex; align-items: center; gap: 0.6em; padding: 0.28em 0.8em 0.28em 0.6em; border-radius: 999px; background: rgba(255, 255, 255, 0.11); font-weight: 800; }
+.meter { display: flex; align-items: flex-end; gap: 0.16em; }
+.meter b { width: 0.26em; border-radius: 0.08em; background: rgba(255, 255, 255, 0.24); }
+.meter b.on { background: #ffe14d; }
+.stats { display: flex; gap: 1.1em; }
+.stat small { display: block; font-size: 0.4em; font-weight: 800; letter-spacing: 0.14em; color: rgba(246, 245, 251, 0.55); margin-bottom: 0.18em; }
+.stat strong { display: block; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.flash { position: absolute; inset: 0; background: #fff; opacity: 0; }
+
+/* everyone at once */
+.tile { position: absolute; overflow: hidden; background: #000; transform-origin: 50% 50%; }
+.tile .scrim { position: absolute; left: 0; right: 0; bottom: 0; background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.88)); }
+.tile .scrim b { display: block; font-weight: 850; letter-spacing: -0.02em; line-height: 1.08; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile .scrim span { display: block; font-weight: 700; color: rgba(246, 245, 251, 0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile.pick .ring { box-shadow: inset 0 0 0 6px #ffe14d; }
+.tile.spot .ring { box-shadow: inset 0 0 0 5px #fff; }
+.crown { position: absolute; }
+.crown svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.5)); }
+.question { font-weight: 900; letter-spacing: -0.04em; line-height: 1; white-space: nowrap; text-shadow: 0 6px 40px rgba(0, 0, 0, 0.55); }
+.cta { font-weight: 800; color: #ffe14d; white-space: nowrap; }
+.cta-ask { display: inline-flex; align-items: center; gap: 0.32em; }
+.cta-ask .logo { display: inline-block; margin-top: 0.1em; }
+.url-pill { display: inline-flex; align-items: center; gap: 0.5em; padding: 0.5em 1em; border-radius: 999px; background: #fff; color: #0b0b10; font-weight: 800; white-space: nowrap; }
+.url-pill i { width: 0.55em; height: 0.55em; border-radius: 50%; background: #7a5cff; }

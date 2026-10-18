@@ -65,7 +65,7 @@ export function videoPanel(slug, runIds) {
   });
   return el("section", { class: "v2-video" }, [
     el("h2", { text: "Make social videos" }),
-    el("p", { class: "v2-cmp-note", text: "Local only. One animated video per format: a hook with the prompt, each run with its model, effort, time and cost, then \"Which one wins?\". Games and 3D models are recorded and every frame is drawn in Chrome, so it takes a minute or two." }),
+    el("p", { class: "v2-cmp-note", text: "Local only. One animated video per format: a hook with the prompt, each run with its model, effort, time and cost, then \"Place your vote on art-crit\". Games and 3D models are recorded and every frame is drawn in Chrome, so it takes a minute or two." }),
     el("div", { class: "v2-video-opts" }, [...boxes.map((b) => b.node), el("label", { class: "v2-video-opt" }, [sound, "Sound"]), button, status]),
     results,
   ]);

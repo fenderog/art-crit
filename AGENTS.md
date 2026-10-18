@@ -35,8 +35,10 @@ src/art_crit/          CLI, standard library only (argparse, json, subprocess, t
   cli.py            argparse wiring: import, list, rm, rename, retry, rebuild, serve, publish, run, models
   config.py         art-crit.toml parsed once (`Config.load`) + `RunRequest` (the inputs of one `art-crit run`)
   retry.py          `art-crit retry`: failed runs of a page -> one `run --page` batch, then drop the ones that now work (ADR-0031)
-  video.py          `art-crit video`: social-media videos of runs (ffmpeg + headless Chrome), local only (ADR-0032);
-                    video_cards.py = its text cards (HTML screenshotted by Chrome: this ffmpeg has no drawtext)
+  video.py          `art-crit video`: social-media videos of runs (ffmpeg + headless Chrome), local only (ADR-0032): source
+                    clips -> JPEG frames -> a plan (timeline, `TIMING`, tiles, stickers) per layout -> frames drawn in Chrome
+                    piped into ffmpeg (ADR-0033); scene/ = the animated page that draws them (imports docs' runs.js);
+                    video_sound.py = the synthesized beat + sound effects, cued from the same plan
   importer.py       run directory (or a batch of them) -> docs/data/<page>/runs/<id>/ (clean, secret scan, then move)
   clean.py          session cleaning, path rewrites, secret scan/redact
   site.py           rebuild page.json (with runs) / pages.json (+ each run's rank from ranking.json), rm, list, engine GC
@@ -175,7 +177,7 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
 - **Social videos stay local** (ADR-0032): `art-crit video` and `POST/GET api/video` write only under `<root>/videos/` (outside `docs/`,
   git-ignored), the API follows the `api/rank` write checks and its GETs the monitor's (loopback `Host`, no CORS headers), and a
   file is served only by a name its job listed. Games are recorded through `play.html` (the sandbox), model-made SVGs only
-  through an `<img>`, and every string on a text card is escaped.
+  through an `<img>`, and the video scene puts every string from a run or prompt in with `textContent` (it has a strict CSP).
 - **Per-run MCP config** (ADR-0025): a kind's MCP servers reach the agent through flags or files in the run's own
   dirs (`--mcp-config`, `-c mcp_servers.*`, `work/.pi/mcp.json` + `--approve`, `work/.grok/config.toml`), never `~/.pi`,
   `~/.claude`, `~/.codex` or `~/.grok`. The one exception, with the user's consent: agy and muse read MCP servers only
@@ -269,6 +271,12 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   and have no run directories, so there is nothing to poll. Don't "fix" them by inventing ids.
 - **`harness/stop` must stay a request, never a kill**: the monitor's server doesn't own the agent process, and a pid
   recorded anywhere could be reused. The runner polls for it once a second, so a timeout can overshoot by ≤1s.
+- **Video scene (`scene/scene.js`):** a frame must be a pure function of its number: no CSS transitions/animations, timers or
+  `Date`, or frames come out different on a slower machine. `pose()` sets `visibility` on each node it poses, and a
+  `visibility: visible` child shows through a hidden parent, so a container must be posed too (only opacity hides children):
+  The finale's headline was missing until its container was. Change a beat in `video.TIMING`, not as a literal in scene.js, so
+  the sound cues stay on it. The renderer Chrome runs without the SwiftShader flags (about 5x faster per frame); the game
+  recorder keeps them. Iterate on the look by rendering from cached clips and looking at frames (`ffmpeg -ss T -frames:v 1`).
 - **`replaceChildren()`/`append()` print `null` as text**; `el()` skips null children, so pass optional nodes
   through `el()` or `.filter(Boolean)`.
 - **Tools recorded per run:** `Harness.tools(mcp)` (+ `BUILTIN_TOOLS` where the command names them) feeds `run.json.tools.allowed`;

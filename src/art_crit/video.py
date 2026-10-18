@@ -1,10 +1,12 @@
 """`art-crit video`: social-media videos that compare some runs of a page, made on this machine with ffmpeg and headless
-Chrome (never published: they go to <root>/videos/, outside docs/). SPEC.md "Social videos", ADR-0032.
+Chrome (never published: they go to <root>/videos/, outside docs/). SPEC.md "Social videos", ADR-0032, ADR-0033.
 
 Every run becomes one silent 1080x1080 source clip (`make_source`): its video, a turntable of its 3D model, a recording of
-its game or page, or its pictures with a slow zoom. Each requested layout lays the sources over text cards
-(`video_cards`, screenshotted by Chrome because ffmpeg here has no drawtext) and joins the segments."""
+its game or page, or its pictures with a slow zoom. The clips are cut into frames, and each layout is drawn frame by frame
+by the scene in scene/ (an animated page in Chrome: the opening, each run's card and caption, the closing question), with
+a sound track from `video_sound`, straight into ffmpeg."""
 
+import base64
 import contextlib
 import json
 import shutil
@@ -14,7 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import quote
 
-from . import video_cards as cards
+from . import video_sound
 from .site import run_failed
 from .util import CritError
 
@@ -26,8 +28,10 @@ BG = "0x0e0e13"
 LAYOUTS = {"reveal": (1080, 1920), "grid": (1080, 1920), "wide": (1920, 1080)}
 LAYOUT_NAMES = {"reveal": "Vertical, one at a time", "grid": "Vertical, all at once", "wide": "Landscape, one at a time"}
 MAX_RUNS = 12
-INTRO_S, OUTRO_S, FADE_S = 2.2, 2.2, 0.25
-ENCODE = ["-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p", "-r", str(FPS), "-an"]
+SECONDS = 4  # per run, by default: short-form video moves fast
+ENCODE = ["-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p", "-r", str(FPS)]
+SILENT = [*ENCODE, "-an"]  # the source clips
+SCENE = Path(__file__).with_name("scene")
 MAX_IMAGES = 3
 
 
@@ -37,11 +41,11 @@ def ffmpeg(*args):
         raise CritError(f"ffmpeg failed: {r.stderr.strip()[-500:]}")
 
 
-def join(parts, out, *extra):
-    """Concatenate clips that were encoded alike without re-encoding them (plus `extra` output options)."""
+def join(parts, out):
+    """Concatenate clips that were encoded alike without re-encoding them."""
     listing = Path(parts[0]).with_name(f"{Path(out).stem}-parts.txt")
     listing.write_text("".join(f"file '{p}'\n" for p in parts))
-    ffmpeg("-f", "concat", "-safe", "0", "-i", listing, *extra, "-c:v", "copy", out)
+    ffmpeg("-f", "concat", "-safe", "0", "-i", listing, "-c:v", "copy", out)
 
 
 def fit(side=SIDE):
@@ -49,20 +53,18 @@ def fit(side=SIDE):
     return f"scale={side}:{side}:force_original_aspect_ratio=decrease,pad={side}:{side}:(ow-iw)/2:(oh-ih)/2:color={BG},setsar=1"
 
 
-def pad2(n):
-    return f"{n:.2f}"
-
-
 # ---- headless Chrome ------------------------------------------------------------------------------------------------
 
 class Studio:
-    """The site served from docs/ and one Chrome, which screenshots cards and records games."""
+    """The site served from docs/ and a Chrome that records games and draws SVGs (`browser`, with the verify step's
+    software WebGL), plus the scene served from the work folder and a Chrome that renders it (`renderer`, on the GPU:
+    about 5x faster per frame)."""
 
-    def __init__(self, origin, browser):
-        self.origin, self.browser = origin, browser
+    def __init__(self, origin, browser, scene, renderer):
+        self.origin, self.browser, self.scene, self.renderer = origin, browser, scene, renderer
 
     def screenshot(self, html, size, out):
-        """A card (HTML with no scripts) or a picture page, as a PNG of exactly `size`."""
+        """A picture page (HTML with no scripts), as a PNG of exactly `size`."""
         context = self.browser.new_context(viewport={"width": size[0], "height": size[1]}, java_script_enabled=False)
         try:
             page = context.new_page()
@@ -73,24 +75,31 @@ class Studio:
 
 
 @contextlib.contextmanager
-def studio(docs):
+def studio(docs, work):
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
         raise CritError("videos need Playwright and Chrome: uv tool install --editable '.[verify]' (see the README)")
     from .serve import serve_in_thread
 
-    server = serve_in_thread(docs)
+    for f in SCENE.iterdir():
+        shutil.copy(f, Path(work) / f.name)
+    (Path(work) / "assets").symlink_to(Path(docs).resolve() / "assets")  # the scene imports the site's runs.js
+    servers = [serve_in_thread(docs), serve_in_thread(work)]
+    origins = [f"http://127.0.0.1:{s.server_address[1]}" for s in servers]
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(channel="chrome", args=["--enable-unsafe-swiftshader", "--use-angle=swiftshader"])
+            renderer = p.chromium.launch(channel="chrome")
             try:
-                yield Studio(f"http://127.0.0.1:{server.server_address[1]}", browser)
+                yield Studio(origins[0], browser, origins[1], renderer)
             finally:
+                renderer.close()
                 browser.close()
     finally:
-        server.shutdown()
-        server.server_close()
+        for server in servers:
+            server.shutdown()
+            server.server_close()
 
 
 def record(studio, url, prepare, act, work, size=(1080, 1200)):
@@ -170,7 +179,7 @@ def _recorded_clip(studio, url, prepare, act, work, size, seconds):
     video, box = record(studio, url, prepare, act, work, size)
     out = Path(work) / f"{video.stem}.mp4"
     # the recording starts at page creation: the clip is the end of it, after the booting and the first click
-    ffmpeg("-sseof", f"-{seconds}", "-i", video, "-t", seconds, "-vf", f"{crop_filter(box, size)},tpad=stop_mode=clone:stop_duration={seconds}", *ENCODE, out)
+    ffmpeg("-sseof", f"-{seconds}", "-i", video, "-t", seconds, "-vf", f"{crop_filter(box, size)},tpad=stop_mode=clone:stop_duration={seconds}", *SILENT, out)
     return out
 
 
@@ -180,11 +189,11 @@ def still_clip(image, frames, out):
     """A picture held for `frames` frames with a slow zoom in (drawn on a 2x canvas so the zoom doesn't jitter)."""
     big = SIDE * 2
     zoom = f"zoompan=z='min(1+0.0005*on,1.1)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={frames}:s={SIDE}x{SIDE}:fps={FPS}"
-    ffmpeg("-i", image, "-vf", f"{fit(big)},{zoom},format=yuv420p", "-frames:v", frames, *ENCODE, out)
+    ffmpeg("-i", image, "-vf", f"{fit(big)},{zoom},format=yuv420p", "-frames:v", frames, *SILENT, out)
 
 
 def video_clip(path, seconds, out):
-    ffmpeg("-i", path, "-vf", f"fps={FPS},{fit()},tpad=stop_mode=clone:stop_duration={seconds}", "-t", seconds, *ENCODE, out)
+    ffmpeg("-i", path, "-vf", f"fps={FPS},{fit()},tpad=stop_mode=clone:stop_duration={seconds}", "-t", seconds, *SILENT, out)
 
 
 def items_of(run):
@@ -246,89 +255,182 @@ def _thumb_clip(run_dir, thumb, seconds, out):
     return out
 
 
-# ---- text and layouts -----------------------------------------------------------------------------------------------
+# ---- the scene: timeline, plan, rendering ---------------------------------------------------------------------------
+
+TIMING = {  # seconds; the scene (scene/scene.js) and the sound cues (`cues`) both read these
+    "hook": 3.0, "finale": 4.5,  # the opening and the closing question
+    "bubble": 0.55, "type_from": 0.8,  # the prompt's bubble pops in, then the prompt types (type_s, by its length)
+    "enter": 0.5, "exit": 0.28,  # a run's card springs in, then whips out at the end of its turn
+    "name": 0.32, "stats": 0.78, "count": 0.9, "sticker": 1.35,  # its caption: the name, then the counting numbers
+    "tiles": 0.0, "stagger": 0.07,  # every run's tile, one after another
+    "question": 0.35, "cta": 1.4, "pick": 2.5,  # "Place your vote", "on art-crit", the owner's pick
+}
+TILE_BOX = {"reveal": (36, 380, 1008, 1180), "grid": (36, 380, 1008, 1180), "wide": (60, 240, 1800, 790)}
+MAX_PROMPT = 600  # characters the opening types out
+
 
 def run_info(run):
-    """What a caption says about a run."""
-    model = run["model"].split("@")[0]
-    parts = model.split("/")
-    vendor = parts[1] if parts[0] == "openrouter" and len(parts) > 2 else parts[0] if len(parts) > 1 else ""
+    """What the scene says about a run (the model id is named by the site's own runs.js)."""
     m = run.get("metrics") or {}
-    cost = m.get("cost_usd") or 0
-    metrics = []
-    if m.get("duration_ms"):
-        s = round(m["duration_ms"] / 1000)
-        metrics.append(f"{s // 60}m {s % 60:02d}s" if s >= 60 else f"{s}s")
-    if m.get("tokens_total"):
-        metrics.append(f"{m['tokens_total'] / 1000:.0f}k tokens" if m["tokens_total"] >= 1000 else f"{m['tokens_total']} tokens")
-    if cost > 0:
-        metrics.append(f"${cost:.2f}" if cost >= 0.01 else f"${cost:.3f}")
-    return {"vendor": vendor, "name": parts[-1], "effort": run["effort"], "metrics": metrics}
+    return {"model": run["model"], "effort": run["effort"], "duration_s": round(m["duration_ms"] / 1000, 1) if m.get("duration_ms") else None,
+            "tokens": m.get("tokens_total") or None, "cost": m.get("cost_usd") or None}  # 0 = unreported, not free
 
 
-def grid_tiles(n):
-    """(boxes (x, y, side) of the n tiles, label height) for the vertical grid: 2 columns up to 6 runs, else 3."""
-    width, height = LAYOUTS["grid"]
-    top, bottom, label, gap = 300, 110, 64, 24
-    cols = 2 if n <= 6 else 3
+def stickers(infos):
+    """A label for the runs that stand out (3 runs or more): one sticker each, the first that applies wins."""
+    labels = [None] * len(infos)
+    if len(infos) < 3:
+        return labels
+    for key, best, label in [("duration_s", min, "FASTEST"), ("cost", min, "CHEAPEST"), ("cost", max, "PRICIEST"), ("duration_s", max, "SLOWEST")]:
+        values = [(i[key], n) for n, i in enumerate(infos) if i[key]]
+        if len(values) >= 3 and len({v for v, _ in values}) > 1:
+            n = best(values)[1]
+            labels[n] = labels[n] or label
+    return labels
+
+
+def tile_boxes(n, box, gap=24):
+    """n equal squares (x, y, side), as big as fit in `box` (x, y, w, h), in rows centred in it."""
+    bx, by, bw, bh = box
+    side, _, cols = max(  # the biggest tiles; on a tie, the fewest empty places
+        (min((bw - gap * (c - 1)) // c, (bh - gap * (-(-n // c) - 1)) // -(-n // c)) // 2 * 2, n - c * -(-n // c), c)
+        for c in range(1, n + 1))
     rows = -(-n // cols)
-    side = min((width - gap * (cols + 1)) // cols, (height - top - bottom - rows * label - gap * (rows + 1)) // rows) // 2 * 2
-    x0 = (width - (cols * side + (cols - 1) * gap)) // 2
-    y0 = top + (height - top - bottom - (rows * (side + label) + (rows - 1) * gap)) // 2
-    return [(x0 + (i % cols) * (side + gap), y0 + (i // cols) * (side + label + gap), side) for i in range(n)], label
+    y0 = by + (bh - rows * side - (rows - 1) * gap) // 2
+    tiles = []
+    for i in range(n):
+        row, col = divmod(i, cols)
+        in_row = min(cols, n - row * cols)
+        x0 = bx + (bw - in_row * side - (in_row - 1) * gap) // 2
+        tiles.append((x0 + col * (side + gap), y0 + row * (side + gap), side))
+    return tiles
 
 
-def card_segment(card, seconds, out):
-    ffmpeg("-loop", 1, "-framerate", FPS, "-t", seconds, "-i", card,
-           "-vf", f"fade=t=in:st=0:d={FADE_S},fade=t=out:st={pad2(seconds - FADE_S)}:d={FADE_S},format=yuv420p", *ENCODE, out)
+def frames(seconds):
+    return round(seconds * FPS)
 
 
-def overlay_segment(card, placed, seconds, out):
-    """The card with each (source clip, x, y, side) laid on it for `seconds`."""
-    inputs = ["-loop", 1, "-framerate", FPS, "-t", seconds, "-i", card]
-    chain, last = [], "0:v"
-    for n, (clip, x, y, side) in enumerate(placed, 1):
-        inputs += ["-i", clip]
-        chain.append(f"[{n}:v]scale={side}:{side}[s{n}];[{last}][s{n}]overlay={x}:{y}:shortest=1[o{n}]")
-        last = f"o{n}"
-    chain.append(f"[{last}]fade=t=in:st=0:d={FADE_S},fade=t=out:st={pad2(seconds - FADE_S)}:d={FADE_S},format=yuv420p[v]")
-    ffmpeg(*inputs, "-filter_complex", ";".join(chain), "-map", "[v]", "-t", seconds, *ENCODE, out)
-
-
-def compose(studio, layout, page, runs, sources, seconds, work, out):
-    size = LAYOUTS[layout]
-    prompt = page.get("prompt") or page["title"]
-    infos = [run_info(r) for r in runs]
-    base = Path(work) / layout
-    base.mkdir()
-    parts = []
-
-    def card_clip(name, html, secs):
-        png = base / f"{name}.png"
-        studio.screenshot(html, size, png)
-        part = base / f"{name}.mp4"
-        card_segment(png, secs, part)
-        parts.append(part)
-
-    card_clip("intro", cards.intro_card(size, page["title"], prompt, len(runs), page["kind"]), INTRO_S)
+def timeline(layout, n, seconds):
+    """The segments (type, first frame, frames, run) and the total number of frames."""
+    segments, at = [], 0
+    parts = [("hook", TIMING["hook"], None)]
     if layout == "grid":
-        tiles, label = grid_tiles(len(runs))
-        png = base / "grid.png"
-        studio.screenshot(cards.grid_card(size, page["title"], prompt, infos, tiles, label, SITE_NAME), size, png)
-        part = base / "grid.mp4"
-        overlay_segment(png, [(src, x, y, side) for src, (x, y, side) in zip(sources, tiles)], seconds, part)
-        parts.append(part)
+        parts.append(("grid", seconds + TIMING["tiles"] + TIMING["stagger"] * n, None))
     else:
-        for i, (info, src) in enumerate(zip(infos, sources), 1):
-            html, x, y = cards.run_card(layout, size, i, len(runs), info, prompt)
-            png = base / f"run-{i}.png"
-            studio.screenshot(html, size, png)
-            part = base / f"run-{i}.mp4"
-            overlay_segment(png, [(src, x, y, SIDE)], seconds, part)
-            parts.append(part)
-    card_clip("outro", cards.outro_card(size, SITE_NAME, len(runs)), OUTRO_S)
-    # social platforms like a sound track: add a silent one
-    join(parts, out, "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo", "-shortest", "-c:a", "aac", "-movflags", "+faststart")
+        parts += [("run", seconds, i) for i in range(n)]
+    parts.append(("finale", TIMING["finale"], None))
+    for kind, secs, run in parts:
+        segments.append({"type": kind, "start": at, "frames": frames(secs), "run": run, "spot": spotlight(kind, secs, n)})
+        at += frames(secs)
+    return segments, at
+
+
+def spotlight(kind, seconds, n):
+    """When the grid's spotlight starts stepping through the tiles, and how long it stays on each (if there's time)."""
+    if kind != "grid":
+        return None
+    start = TIMING["tiles"] + (n - 1) * TIMING["stagger"] + 0.6  # every tile has landed
+    each = (seconds - start) / n
+    return {"from": start, "each": each} if each >= 0.25 else None
+
+
+def type_seconds(prompt):
+    return min(1.6, max(0.6, len(prompt) / 45))
+
+
+def cues(plan):
+    """When each sound plays (seconds, kind), from the same timeline and timings as the pictures."""
+    t, n = plan["timing"], len(plan["runs"])
+    out = []
+    for seg in plan["segments"]:
+        at = seg["start"] / FPS
+        if at:
+            out.append((at - 0.14, "whoosh"))
+        if seg["type"] == "hook":
+            out += [(0, "hit"), (t["bubble"], "pop")]
+            out += [(t["type_from"] + k * 0.075, "tick") for k in range(int(t["type_s"] / 0.075))]
+        elif seg["type"] == "run":
+            out += [(at + t["name"], "pop")] + [(at + t["stats"] + k * 0.09, "tick") for k in range(int(t["count"] / 0.09))]
+            if plan["runs"][seg["run"]]["sticker"]:
+                out.append((at + t["sticker"], "pop"))
+        else:
+            if seg["type"] == "grid" or not any(s["type"] == "grid" for s in plan["segments"]):
+                out += [(at + t["tiles"] + i * t["stagger"] + 0.2, "pop") for i in range(n)]
+            if seg["spot"]:
+                out += [(at + seg["spot"]["from"] + i * seg["spot"]["each"], "tick") for i in range(n)]
+            if seg["type"] == "finale":
+                out += [(at, "hit"), (at + t["cta"], "pop")]
+                if any(r["pick"] for r in plan["runs"]):
+                    out.append((at + t["pick"], "ding"))
+    return out
+
+
+def scene_plan(layout, page, runs, clips, seconds):
+    """Everything scene.js needs for one layout (JSON; every string in it is shown with textContent)."""
+    prompt = " ".join((page.get("prompt") or page["title"]).split())
+    if len(prompt) > MAX_PROMPT:
+        prompt = prompt[:MAX_PROMPT - 1].rstrip() + "…"
+    infos = [run_info(r) for r in runs]
+    ranks = [r.get("rank") for r in runs if r.get("rank")]
+    best = min(ranks) if ranks else None
+    for info, run, label, count in zip(infos, runs, stickers(infos), clips):
+        info.update(sticker=label, pick=best is not None and run.get("rank") == best, frames=count)
+    segments, total = timeline(layout, len(runs), seconds)
+    return {"layout": layout, "size": LAYOUTS[layout], "fps": FPS, "frames": total, "segments": segments,
+            "timing": {**TIMING, "type_s": type_seconds(prompt)}, "tiles": tile_boxes(len(runs), TILE_BOX[layout]),
+            "prompt": prompt, "title": page["title"], "site": SITE_NAME, "runs": infos}
+
+
+def extract_frames(source, out_dir):
+    """The clip as numbered JPEGs, full size (f/) and half size for tiles (s/); returns how many frames."""
+    for sub, scale, q in (("f", SIDE, 3), ("s", SIDE // 2, 4)):
+        (out_dir / sub).mkdir(parents=True)
+        ffmpeg("-i", source, "-vf", f"scale={scale}:{scale}", "-q:v", q, out_dir / sub / "%04d.jpg")
+    return len(list((out_dir / "f").glob("*.jpg")))
+
+
+def render_layout(studio, plan, work, out, sound, say):
+    """Draw every frame of the plan in Chrome and pipe the screenshots, with the sound track, into ffmpeg."""
+    layout, total = plan["layout"], plan["frames"]
+    (Path(work) / f"plan-{layout}.json").write_text(json.dumps(plan))
+    if sound:
+        wav = Path(work) / f"{layout}.wav"
+        video_sound.soundtrack(cues(plan), total / FPS, wav)
+        audio = ["-i", wav]
+    else:  # platforms expect an audio track: a silent one
+        audio = ["-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo"]
+    w, h = plan["size"]
+    page = studio.renderer.new_page(viewport={"width": w, "height": h}, color_scheme="dark")  # the logo's dark colours
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    encoder = None
+    try:
+        page.goto(f"{studio.scene}/scene.html?plan=plan-{layout}.json")
+        try:
+            page.wait_for_function("() => window.sceneReady === true", timeout=30000)
+        except Exception:
+            raise CritError(f"the video scene didn't load: {'; '.join(errors) or 'timed out'}")
+        cdp = page.context.new_cdp_session(page)
+        encoder = subprocess.Popen(["ffmpeg", "-y", "-v", "error", "-f", "image2pipe", "-framerate", str(FPS), "-i", "-", *map(str, audio),
+                                    "-map", "0:v", "-map", "1:a", *ENCODE, "-c:a", "aac", "-b:a", "160k", "-shortest",
+                                    "-movflags", "+faststart", str(out)], stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+        for f in range(total):
+            if f % (FPS * 5) == 0:
+                say(f"rendering {layout}: {f * 100 // total}%")
+            page.evaluate("(f) => window.renderFrame(f)", f)
+            if errors:
+                raise CritError(f"the video scene failed: {errors[0]}")
+            shot = cdp.send("Page.captureScreenshot", {"format": "jpeg", "quality": 92, "optimizeForSpeed": True})
+            encoder.stdin.write(base64.b64decode(shot["data"]))
+        encoder.stdin.close()
+        if encoder.wait():
+            raise CritError(f"ffmpeg failed: {encoder.stderr.read().decode(errors='replace').strip()[-500:]}")
+    except BrokenPipeError:
+        raise CritError(f"ffmpeg failed: {encoder.stderr.read().decode(errors='replace').strip()[-500:]}")
+    finally:
+        if encoder and encoder.poll() is None:
+            encoder.kill()
+        page.close()
 
 
 def compare_url(slug, run_ids):
@@ -367,7 +469,7 @@ def check_request(root, slug, run_ids, layouts, seconds):
     return page, runs, layouts
 
 
-def make_videos(root, slug, run_ids, layouts=None, seconds=6, out_dir=None, say=print):
+def make_videos(root, slug, run_ids, layouts=None, seconds=SECONDS, out_dir=None, say=print, sound=True):
     """Make one video per layout of the given runs of a page; returns the files (in <root>/videos/<slug>/ by default)."""
     page, runs, layouts = check_request(root, slug, run_ids, layouts, seconds)
     docs = root / "docs"
@@ -375,17 +477,17 @@ def make_videos(root, slug, run_ids, layouts=None, seconds=6, out_dir=None, say=
     out_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
     files = []
-    with tempfile.TemporaryDirectory(prefix="art-crit-video-") as work, studio(docs) as chrome:
-        sources = []
-        for n, run in enumerate(runs, 1):
-            say(f"recording {n}/{len(runs)}: {run['model']} {run['effort']}")
+    with tempfile.TemporaryDirectory(prefix="art-crit-video-") as work, studio(docs, work) as chrome:
+        clips = []
+        for n, run in enumerate(runs):
+            say(f"recording {n + 1}/{len(runs)}: {run['model']} {run['effort']}")
             source = make_source(chrome, docs, slug, run, seconds, work, say)
             if source is None:
                 raise CritError(f"{run['id']} has no picture, video or model to show")
-            sources.append(source)
+            clips.append(extract_frames(source, Path(work) / "clips" / str(n)))
         for layout in layouts:
-            say(f"composing {layout} ({LAYOUT_NAMES[layout]})")
+            say(f"rendering {layout} ({LAYOUT_NAMES[layout]})")
             out = out_dir / f"{stamp}-{slug}-{layout}.mp4"
-            compose(chrome, layout, page, runs, sources, seconds, work, out)
+            render_layout(chrome, scene_plan(layout, page, runs, clips, seconds), work, out, sound, say)
             files.append(out)
     return files

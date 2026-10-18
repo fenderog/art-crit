@@ -12,7 +12,7 @@ from .kinds import KINDS
 from .retry import cmd_retry
 from .runner import cmd_models, cmd_run, resolve_ref
 from .serve import serve_forever
-from .video import LAYOUTS, compare_url, make_videos
+from .video import LAYOUTS, SECONDS, compare_url, make_videos
 from .site import cmd_list, cmd_rename, cmd_rm, rebuild
 from .util import CritError
 
@@ -58,7 +58,8 @@ def build_parser():
     vid.add_argument("slug")
     vid.add_argument("run_ids", nargs="+", metavar="run_id", help="2 to 12 runs, shown in this order")
     vid.add_argument("-l", "--layout", dest="layouts", action="append", choices=list(LAYOUTS), help="reveal (vertical, one at a time), grid (vertical, all at once) or wide (landscape, one at a time); repeatable (default: all three)")
-    vid.add_argument("-d", "--seconds", type=int, default=6, help="seconds per run (default 6)")
+    vid.add_argument("-d", "--seconds", type=int, default=SECONDS, help=f"seconds per run (default {SECONDS})")
+    vid.add_argument("--no-sound", dest="sound", action="store_false", help="a silent audio track instead of the beat and sound effects")
     vid.add_argument("-o", "--out", type=Path, help="output folder (default <root>/videos/<page>)")
 
     sub.add_parser("rebuild", parents=[common], help="regenerate page.json + pages.json")
@@ -139,7 +140,7 @@ def main(argv=None):
             return cmd_retry(config, args.slug, args.run_ids, yes=args.yes, dry_run=args.dry_run,
                              parallel=args.parallel, timeout=args.timeout, publish=args.publish)
         if args.command == "video":
-            for path in make_videos(root, args.slug, args.run_ids, args.layouts, args.seconds, args.out):
+            for path in make_videos(root, args.slug, args.run_ids, args.layouts, args.seconds, args.out, sound=args.sound):
                 print(path)
             print(f"link for the post: {compare_url(args.slug, args.run_ids)}")
             return 0

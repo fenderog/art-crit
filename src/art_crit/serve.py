@@ -8,7 +8,7 @@ prompt-request controls when served by `art-crit serve`):
   PUT api/cover?p=<slug>        body {"thumb": {"run", "path"|null}} and/or {"page": {"run", "image"?}|null}
     -> your pick of a run's main thumbnail and/or the page's home-page picture, in data/<slug>/covers.json (overrides
     only: with none set the viewer's default picks apply), then rebuilds.
-  POST api/video?p=<slug>       body {"runs": [ids], "layouts"?: [...], "seconds"?: n}  -> {"job": id}: makes the compare page's
+  POST api/video?p=<slug>       body {"runs": [ids], "layouts"?: [...], "seconds"?: n, "sound"?: bool}  -> {"job": id}: makes the compare page's
     social-media videos in the background (video.py, SPEC.md "Social videos"); one job at a time.
   GET api/video?job=<id>        -> {"state", "step", "files", "link", "error"} (loopback only, no CORS headers)
   GET api/video/file?job=<id>&name=<file>   -> one of that job's finished videos (a name from "files", nothing else)
@@ -420,11 +420,13 @@ def start_video(root, slug, body):
         return None, "bad page slug"
     if not isinstance(body, dict) or not isinstance(body.get("runs"), list) or not isinstance(body.get("layouts", []), list):
         return None, "expected runs (a list) and optionally layouts (a list) and seconds"
-    seconds = body.get("seconds", 6)
+    seconds, sound = body.get("seconds", video.SECONDS), body.get("sound", True)
     runs, layouts = [str(r) for r in body["runs"]], [str(l) for l in body.get("layouts", [])]
     try:
         if not isinstance(seconds, int) or isinstance(seconds, bool):
             raise CritError("seconds must be a whole number")
+        if not isinstance(sound, bool):
+            raise CritError("sound must be true or false")
         video.check_request(root, slug, runs, layouts, seconds)
     except CritError as e:
         return None, str(e)
@@ -438,7 +440,7 @@ def start_video(root, slug, body):
     def work():
         try:
             files = video.make_videos(root, slug, runs, layouts or None, seconds,
-                                      say=lambda step: job.update(step=step))
+                                      say=lambda step: job.update(step=step), sound=sound)
             job.update(state="done", step="done", files=[f.name for f in files], dir=str(files[0].parent))
         except Exception as e:  # CritError, or whatever Chrome/ffmpeg raised: show it, never kill the server
             job.update(state="failed", error=str(e) or type(e).__name__)

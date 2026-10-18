@@ -1152,7 +1152,10 @@ def test_the_compare_page_makes_social_videos_only_on_the_local_server(bench_ser
 
     page.goto(f"{base}compare.html?p=art&r={ids}")
     page.wait_for_selector(".v2-video")
-    assert page.locator(".v2-video-opt input:checked").count() == 3  # every format by default
+    assert page.locator(".v2-video-opt input[value]:checked").count() == 3  # every format by default
+    sound = page.locator(".v2-video-opt", has_text="Sound").locator("input")
+    assert sound.is_checked()
+    sound.uncheck()
     page.locator(".v2-video-opt", has_text="Vertical · one at a time").locator("input").uncheck()
     page.locator(".v2-video-opt", has_text="Vertical · all at once").locator("input").uncheck()
     page.get_by_role("button", name="Make videos").click()
