@@ -84,6 +84,23 @@ def test_cards_go_between_the_results_in_play_order():
     assert total == 3 + 4 * 2 + 5  # an empty slot counts as a still in the preview
 
 
+def test_renders_on_disk_are_listed_and_deleted(tmp_path):
+    folder = studio.renders_dir(tmp_path)
+    folder.mkdir(parents=True)
+    (folder / "20261019-100000-wipe.mp4").write_bytes(b"old")  # from before renders had a .json: named by its file
+    (folder / "20261020-100000-duel.mp4").write_bytes(b"new")
+    (folder / "20261020-100000-duel.json").write_text(json.dumps({"title": "Hi", "template": "Head to head", "format": "16:9", "slots": 2, "length": 9}))
+    (folder / "notes.txt").write_text("not a video")
+    listed = studio.renders(tmp_path)
+    assert [(r["name"], r["title"], r["template"], r["length"]) for r in listed] == [
+        ("20261020-100000-duel.mp4", "Hi", "Head to head", 9), ("20261019-100000-wipe.mp4", "20261019-100000-wipe", "Wipe", None)]
+    for bad in ("notes.txt", "../x.mp4", None):
+        with pytest.raises(CritError, match="no such video"):
+            studio.delete_render(tmp_path, bad)
+    studio.delete_render(tmp_path, "20261020-100000-duel.mp4")
+    assert sorted(p.name for p in folder.iterdir()) == ["20261019-100000-wipe.mp4", "notes.txt"]
+
+
 def test_the_sound_cues_follow_the_segments():
     plan = {"timing": video.TIMING, "metrics": True, "slots": [{}, {}], "segments": [
         {"type": "card", "start": 0, "frames": 60, "card": {"link": "x"}},
@@ -180,14 +197,24 @@ def test_the_api_renders_in_the_background_and_serves_only_its_files(api, site):
         time.sleep(0.5)
     assert state["state"] == "done" and len(state["files"]) == 1, state
     assert (state["title"], state["template"], state["format"], state["slots"], state["length"]) == ("Robots", "Head to head", "16:9", 2, 4)
-    assert [j["job"] for j in json.loads(call(base, "api/video/jobs")[1])["jobs"]][0] == job
-    status, data, headers = call(base, f"api/video/file?job={job}&name={state['files'][0]}")
+    name = state["files"][0]
+    listing = json.loads(call(base, "api/video/jobs")[1])
+    assert listing["jobs"] == []  # a finished render is listed as a file, with its .json's details
+    assert [(r["name"], r["title"], r["template"], r["length"]) for r in listing["renders"]] == [(name, "Robots", "Head to head", 4)]
+    status, data, headers = call(base, f"api/video/file?name={name}")
     assert status == 200 and headers["Content-Type"] == "video/mp4" and b"ftyp" in data[:32]
     assert "Access-Control-Allow-Origin" not in headers  # another website can't read it
-    for name in ("../../docs/index.html", "page.json", ""):
-        assert call(base, f"api/video/file?job={job}&name={name}")[0] == 404
-    assert (site / "videos/studio" / state["files"][0]).is_file()  # outside docs/: never published
+    for bad in ("../../docs/index.html", "page.json", "", name.replace(".mp4", ".json")):
+        assert call(base, f"api/video/file?name={bad}")[0] == 404
+    assert (site / "videos/studio" / name).is_file()  # outside docs/: never published
     assert call(base, "api/video?job=nope")[0] == 404
+
+    # delete: only a listed video, and its .json goes with it
+    for body in ({"name": "../../docs/index.html"}, {"name": "nope.mp4"}, {"job": "nope"}, {"name": 3}):
+        assert call(base, "api/video/delete", body)[0] == 400
+    assert call(base, "api/video/delete", {"name": name})[0] == 200
+    assert not list((site / "videos/studio").iterdir())
+    assert json.loads(call(base, "api/video/jobs")[1]) == {"jobs": [], "renders": []}
 
 
 def test_the_api_refuses_other_hosts_and_other_sites(api, site):  # noqa: F811
@@ -199,6 +226,7 @@ def test_the_api_refuses_other_hosts_and_other_sites(api, site):  # noqa: F811
     for path in ("api/video?job=x", "api/video/jobs", "api/studio"):
         assert call(base, path, None, {"Host": f"evil.example:{port}"})[0] == 403
     assert call(base, "api/video", spec, {"Origin": "https://evil.example"})[0] == 403
+    assert call(base, "api/video/delete", {"name": "x.mp4"}, {"Origin": "https://evil.example"})[0] == 403
     req = urllib.request.Request(base + "api/video", method="POST", data=b"{}", headers={"Content-Type": "text/plain"})
     with pytest.raises(urllib.error.HTTPError) as e:
         urllib.request.urlopen(req)

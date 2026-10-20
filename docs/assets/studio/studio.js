@@ -592,7 +592,8 @@ function drawSettings() {
 // ---- rendering ----------------------------------------------------------------------------------------------------
 
 let rendering = false;
-let jobs = [];
+let jobs = []; // renders under way or failed (the server's memory)
+let renders = []; // the finished videos in videos/studio/
 let pollTimer = null;
 
 async function render() {
@@ -611,7 +612,7 @@ async function render() {
 async function pollJobs() {
   clearTimeout(pollTimer);
   try {
-    jobs = (await getJSON("api/video/jobs")).jobs;
+    ({ jobs, renders } = await getJSON("api/video/jobs"));
   } catch {
     return;
   }
@@ -621,25 +622,46 @@ async function pollJobs() {
   if (rendering) pollTimer = setTimeout(pollJobs, 1500);
 }
 
+// {name} deletes a video file, {job} dismisses a failed render
+async function remove(body) {
+  try {
+    const res = await fetch("api/video/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`);
+  } catch (err) {
+    renderHint.textContent = `Could not delete it: ${err.message}`;
+  }
+  await pollJobs();
+}
+
+function renderRow(item, state, out, actions) {
+  const meta = [item.template, item.format, item.length != null ? clock(item.length) : null, item.slots ? `${item.slots} results` : null].filter(Boolean).join(" · ");
+  return el("div", { class: "st-render-row" }, [
+    el("div", { class: "st-row st-wrap-row" }, [
+      h("span", "st-strong", item.title),
+      h("span", "st-muted", meta),
+      h("span", "st-grow"),
+      state ? h("span", `st-state ${state[0]}`, state[1]) : null,
+      ...actions,
+    ]),
+    item.error ? h("p", "st-error", item.error) : null,
+    out,
+  ]);
+}
+
 function drawRenders() {
-  rendersBox.hidden = !jobs.length;
-  rendersBox.replaceChildren(h("h2", null, "Your renders"), el("div", { class: "st-render-list" }, jobs.map((j) => {
-    const url = j.files[0] ? `api/video/file?job=${encodeURIComponent(j.job)}&name=${encodeURIComponent(j.files[0])}` : null;
-    const state = j.state === "running" ? ["is-running", `Rendering · ${j.step}`] : j.state === "done" ? ["is-done", "Done"] : ["is-failed", "Failed"];
-    return el("div", { class: "st-render-row" }, [
-      el("div", { class: "st-row st-wrap-row" }, [
-        h("span", "st-strong", j.title),
-        h("span", "st-muted", `${j.template} · ${j.format} · ${clock(j.length)} · ${j.slots} results`),
-        h("span", "st-grow"),
-        h("span", `st-state ${state[0]}`, state[1]),
-      ]),
-      j.error ? h("p", "st-error", j.error) : null,
-      url ? el("div", { class: "st-render-out" }, [
-        el("video", { attrs: { src: url, controls: "", playsinline: "", preload: "metadata" } }),
-        el("a", { text: "Download", attrs: { href: url, download: j.files[0] } }),
-      ]) : null,
-    ]);
-  })));
+  rendersBox.hidden = !jobs.length && !renders.length;
+  const working = jobs.map((j) => renderRow(j, j.state === "running" ? ["is-running", `Rendering · ${j.step}`] : ["is-failed", "Failed"], null,
+    j.state === "running" ? [] : [button("st-btn", "Dismiss", () => remove({ job: j.job }))]));
+  const done = renders.map((r) => {
+    const url = `api/video/file?name=${encodeURIComponent(r.name)}`;
+    return renderRow(r, ["is-done", "Done"], el("div", { class: "st-render-out" }, [
+      el("video", { attrs: { src: url, controls: "", playsinline: "", preload: "metadata" } }),
+      el("a", { text: "Download", attrs: { href: url, download: r.name } }),
+    ]), [button("st-btn st-danger", "Delete", () => {
+      if (confirm(`Delete "${r.title}"? Its file (${r.name}) is removed from videos/studio/.`)) remove({ name: r.name });
+    }, { "aria-label": `Delete ${r.name}` })]);
+  });
+  rendersBox.replaceChildren(h("h2", null, "Your renders"), el("div", { class: "st-render-list" }, [...working, ...done]));
 }
 
 // ---- the result picker --------------------------------------------------------------------------------------------

@@ -1186,6 +1186,15 @@ def test_the_video_studio_makes_a_video_only_on_the_local_server(bench_served, s
     assert row.locator("video").count() == 1
     assert row.locator("a[download]").get_attribute("download").endswith("-duel.mp4")
     assert len(list((docs.parent / "videos/studio").glob("*-duel.mp4"))) == 1
+
+    # Delete asks first, then removes the file (and its .json) and the row
+    page.once("dialog", lambda d: d.dismiss())
+    row.get_by_role("button", name="Delete").click()
+    assert len(list((docs.parent / "videos/studio").glob("*-duel.mp4"))) == 1  # dismissed: kept
+    page.once("dialog", lambda d: d.accept())
+    row.get_by_role("button", name="Delete").click()
+    expect(page.locator(".st-render-row")).to_have_count(0)
+    assert not list((docs.parent / "videos/studio").iterdir())
     assert_no_errors(page)
 
 

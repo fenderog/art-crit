@@ -40,5 +40,5 @@ spec only, and the CLI keeps the three layouts.
 
 Designing a video needs no command line. The page depends on `studio.catalog()`'s shape and the plan endpoint, the scene
 on `runs.js` (through motion.js), and both scenes on motion.js, so a change there is checked by both scenes' tests. Renders
-run one at a time and their list lives in the server's memory (restarting `art-crit serve` forgets it; the files stay in
-`videos/studio/`). A spec saved in the browser can name runs that were later removed; the page then shows those slots empty.
+run one at a time; renders under way or failed live in the server's memory, while finished ones are the files in
+`videos/studio/` (each with a `.json` of its details), so the list survives a restart and Delete removes the file. A spec saved in the browser can name runs that were later removed; the page then shows those slots empty.

@@ -254,12 +254,41 @@ def describe(spec):
     return {"title": title, "template": template["name"], "format": template["format"], "slots": spec["count"]}
 
 
+def renders_dir(root):
+    return root / "videos" / "studio"
+
+
+def renders(root):
+    """The studio's videos on disk, newest first, with what each one's .json beside it says (older ones have none)."""
+    folder = renders_dir(root)
+    out = []
+    for path in sorted(folder.glob("*.mp4"), reverse=True) if folder.is_dir() else []:
+        try:
+            info = json.loads(path.with_suffix(".json").read_text())
+        except (OSError, ValueError):
+            template = TEMPLATES.get(path.stem.rsplit("-", 1)[-1], {})
+            info = {"template": template.get("name", ""), "format": template.get("format", "")}
+        out.append({"name": path.name, "title": info.get("title") or path.stem, "template": info.get("template", ""),
+                    "format": info.get("format", ""), "slots": info.get("slots"), "length": info.get("length"),
+                    "bytes": path.stat().st_size})
+    return out
+
+
+def delete_render(root, name):
+    """Remove one of the studio's videos (and its .json); only a name `renders` lists."""
+    if not isinstance(name, str) or name not in {r["name"] for r in renders(root)}:
+        raise CritError("no such video")
+    path = renders_dir(root) / name
+    path.unlink()
+    path.with_suffix(".json").unlink(missing_ok=True)
+
+
 def make_studio_video(root, spec, out_dir=None, say=print):
     """Render a complete spec into one MP4 (in <root>/videos/studio/ by default); returns its path."""
     spec, runs = check_spec(root, spec)
     video.check_tools()
     docs = root / "docs"
-    out_dir = Path(out_dir) if out_dir else root / "videos" / "studio"
+    out_dir = Path(out_dir) if out_dir else renders_dir(root)
     out_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
     out = out_dir / f"{stamp}-{spec['template']}.mp4"
@@ -286,4 +315,6 @@ def make_studio_video(root, spec, out_dir=None, say=print):
             video_sound.soundtrack(cues(plan), plan["frames"] / video.FPS, wav, spec["music"])
         say("rendering")
         video.render_layout(chrome, plan, work, out, wav, say, scene="studio.html")
+    # what the list of renders shows about it, next to it
+    out.with_suffix(".json").write_text(json.dumps({**describe(spec), "length": timeline(spec, runs)[1]}, indent=2) + "\n")
     return out

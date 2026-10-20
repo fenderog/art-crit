@@ -670,8 +670,10 @@ slots in order. Same requirements and output rules as `art-crit video`; files go
   they play; 2 · a preview of the frame (the runs' thumbnails in the template's layout, or the card at the playhead, or the
   card being edited) with back/play/forward, a scrubber and speed, the wipe position for the wipe; the timeline (a block
   per segment, sized by length, click to jump or edit a card), "Add a card", the card editor (heading, subtitle, link,
-  look, length, earlier/later, delete, done); the settings panel and Render; then "Your renders" (state, the video and a
-  download). The result picker is a modal dialog listing every run that didn't fail, filtered by prompt, type, vendor and
+  look, length, earlier/later, delete, done); the settings panel and Render; then "Your renders": renders under way (their
+  step) or failed (Dismiss), then every video in `videos/studio/`, newest first, with the video, Download and Delete
+  (after a confirm). Each render writes `<name>.json` beside its MP4 (title, template, format, slots, length) for this
+  list; an older video without one is listed by its file name. The result picker is a modal dialog listing every run that didn't fail, filtered by prompt, type, vendor and
   effort, grouped like the page's lanes: one row per model ("Vendor – Model", vendors and models by name), its runs by
   prompt and then effort.
 - **Local API** (`art-crit serve` only, like `api/rank`: loopback `Host`, same-origin, JSON; reads carry no CORS headers):
@@ -680,8 +682,10 @@ slots in order. Same requirements and output rules as `art-crit video`; files go
   labels}` (the preview's timeline, the same `studio.timeline` the render uses); `POST api/video` with `{"studio": spec}`
   checks it (400 with the reason) and starts a background render, one at a time → `{"job": id}`; `GET api/video?job=<id>`
   → `{job, state: running|done|failed, step, files, error, title, template, format, slots, length, started}`;
-  `GET api/video/jobs` → `{jobs: [...]}`, newest first; `GET api/video/file?job=<id>&name=<file>` serves one of that job's
-  `files` (nothing else).
+  `GET api/video/jobs` → `{jobs: [running or failed renders, newest first], renders: studio.renders(root)}`;
+  `GET api/video/file?name=<file>` serves one of those `renders` (nothing else); `POST api/video/delete` with
+  `{"name": file}` deletes a listed video and its `.json` (`studio.delete_render`), with `{"job": id}` dismisses a
+  finished or failed render from the server's memory (400 for anything else).
 
 ## Prompt requests
 

@@ -180,9 +180,9 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   `tallies` is kept only by the triggers in `cloudflare/schema.sql`: never write it from the Worker. Apply the schema to D1
   *before* deploying a Worker that needs it (an older Worker runs on a newer schema, not the reverse).
 - **Social videos stay local** (ADR-0032, ADR-0034): `art-crit video`, the video studio and `POST/GET api/video`, `GET api/studio`,
-  `POST api/studio/plan` write only under `<root>/videos/` (outside `docs/`,
+  `POST api/studio/plan`, `POST api/video/delete` write (and delete) only under `<root>/videos/` (outside `docs/`,
   git-ignored), the API follows the `api/rank` write checks and its GETs the monitor's (loopback `Host`, no CORS headers), and a
-  file is served only by a name its job listed. Games are recorded through `play.html` (the sandbox), model-made SVGs only
+  file is served or deleted only by a name `studio.renders` lists (never a path from the request). Games are recorded through `play.html` (the sandbox), model-made SVGs only
   through an `<img>`, and the video scenes (and studio.html) put every string from a run, a prompt or a card in with
   `textContent` (they have strict CSPs). The studio's rules live in studio.py: the page asks for the timeline rather than
   computing its own, so preview and render can't disagree.

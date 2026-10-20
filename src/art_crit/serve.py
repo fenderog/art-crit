@@ -13,8 +13,9 @@ prompt-request controls when served by `art-crit serve`):
   POST api/video                body {"studio": spec} -> {"job": id}: renders the video studio's video in the background
     (studio.py, SPEC.md "Video studio"); one job at a time.
   GET api/video?job=<id>        -> {"state", "step", "files", "error", "title", ...} (loopback only, no CORS headers)
-  GET api/video/jobs            -> {"jobs": [...]}: this server's renders, newest first (same rules)
-  GET api/video/file?job=<id>&name=<file>   -> one of that job's finished videos (a name from "files", nothing else)
+  GET api/video/jobs            -> {"jobs": [running or failed renders], "renders": [the videos in videos/studio/]} (same rules)
+  GET api/video/file?name=<file>  -> one of those videos (a name "renders" lists, nothing else)
+  POST api/video/delete         body {"name": file} deletes that video (and its .json); {"job": id} dismisses a failed render
   GET api/requests              -> {"requests": [...], "sets": [names from art-crit.toml [sets]]}
   PUT api/requests              body {"add": {"prompt", "kind", "title"?, "note"?, "set"?}} or {"remove": "<id>"}
     -> requests.json next to docs/ (outside it, so prompt requests are never published).
@@ -450,8 +451,29 @@ def video_status(job_id):
     return {k: v for k, v in job.items() if k != "dir"} if job else None
 
 
-def video_jobs():
-    return [video_status(j) for j in sorted(VIDEO_JOBS, key=lambda j: -VIDEO_JOBS[j]["started"])]
+def video_jobs(root):
+    """The renders under way or failed (this server's memory), and the finished videos on disk (studio.renders)."""
+    jobs = [video_status(j) for j in sorted(VIDEO_JOBS, key=lambda j: -VIDEO_JOBS[j]["started"]) if VIDEO_JOBS[j]["state"] != "done"]
+    return {"jobs": jobs, "renders": studio.renders(root)}
+
+
+def delete_video(root, body):
+    """Delete a finished video ({name}) or dismiss a failed render ({job}). Returns an error or None."""
+    if not isinstance(body, dict):
+        return "expected {name} or {job}"
+    if "job" in body:
+        job = VIDEO_JOBS.get(body["job"])
+        if not job or job["state"] == "running":
+            return "no such finished render"
+        VIDEO_JOBS.pop(body["job"])
+        return None
+    try:
+        studio.delete_render(root, body.get("name"))
+    except CritError as e:
+        return str(e)
+    for job_id in [j for j, job in VIDEO_JOBS.items() if body["name"] in job["files"]]:
+        VIDEO_JOBS.pop(job_id)
+    return None
 
 
 def studio_plan(root, spec):
@@ -521,7 +543,7 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
         if path.endswith("/api/video/file"):
             return self._video_file(parse_qs(urlsplit(self.path).query))
         if path.endswith("/api/video/jobs"):
-            return self._local_json(200, {"jobs": video_jobs()})
+            return self._local_json(200, video_jobs(Path(self.directory).parent))
         if path.endswith("/api/studio"):
             return self._local_json(200, studio.catalog())
         if path.endswith("/api/video"):
@@ -539,15 +561,15 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
         return super().do_GET()
 
     def _video_file(self, query):
-        """One finished video of a job, by a name that job listed (loopback only, no CORS headers)."""
+        """One of the studio's videos, by a name studio.renders lists (loopback only, no CORS headers)."""
         self._local_only = True
-        job = VIDEO_JOBS.get(query.get("job", [None])[0])
         name = query.get("name", [None])[0]
         if not self._loopback():
             return self._json(403, {"error": "the local API is only served on a loopback address"})
-        if not job or name not in job["files"]:
+        root = Path(self.directory).parent
+        if name not in {r["name"] for r in studio.renders(root)}:
             return self._json(404, {"error": "no such video"})
-        data = (Path(job["dir"]) / name).read_bytes()
+        data = (studio.renders_dir(root) / name).read_bytes()
         self.send_response(200)
         self.send_header("Content-Type", "video/mp4")
         self.send_header("Content-Length", str(len(data)))
@@ -575,7 +597,7 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
 
     def do_POST(self):
         url = urlsplit(self.path)
-        if not url.path.endswith(("/api/stop", "/api/video", "/api/studio/plan")):
+        if not url.path.endswith(("/api/stop", "/api/video", "/api/video/delete", "/api/studio/plan")):
             return self._json(404, {"error": "not found"})
         body = self._write_body()
         if body is None:
@@ -585,6 +607,9 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
             self._local_only = True  # a read of local data in a POST's clothing: no CORS headers either
             plan, error = studio_plan(root, body)
             return self._json(400, {"error": error}) if error else self._json(200, plan)
+        if url.path.endswith("/api/video/delete"):
+            error = delete_video(root, body)
+            return self._json(400, {"error": error}) if error else self._json(200, {"ok": True})
         if url.path.endswith("/api/video"):
             job, error = start_video(root, body)
             return self._json(400, {"error": error}) if error else self._json(200, {"job": job})
