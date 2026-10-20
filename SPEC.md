@@ -644,31 +644,44 @@ files and the site's compare link for those runs, to paste into the post. Needs 
 slots filled with runs from any page, text cards between them, and settings. It only works under `art-crit serve` (it asks
 `api/local` for `video`; elsewhere it says it runs locally), and the lanes home (and the classic one) link to it there. The
 lanes compare page links "Make a video of these runs in the video studio" to `studio.html?p=<slug>&r=<ids>`, which picks a
-template for that many runs (2 → Head to head, 3–4 → Line-up, 5 → Countdown, 6+ → Grid montage, the first six) and fills its
-slots in order. Same requirements and output rules as `art-crit video`; files go to `<root>/videos/studio/<UTC stamp>-<template>.mp4`.
+template for that many runs (2 → Head to head, 3 or more → Reveal, the first twelve) and fills its slots in order. A new
+studio starts like `art-crit video`'s reveal: the Reveal template with a Hook card first and a Finale card last, time and
+cost on. Same requirements and output rules as `art-crit video`; files go to `<root>/videos/studio/<UTC stamp>-<template>.mp4`.
 
-- **Templates** (`studio.TEMPLATES`): `duel` Head to head (16:9, Left / Right, all at once), `lineup` Line-up (16:9, 3 or 4,
+- **Templates** (`studio.TEMPLATES`): `art-crit video`'s three layouts: `reveal` (9:16, 2 to 12 runs, default 4, one after
+  another, numbered), `grid` (9:16, 2 to 12, all at once: the grid's header with the opening's lines and the shared prompt,
+  numbered tiles landing one after another, then the spotlight stepping through them) and `wide` (16:9, 2 to 12, one after
+  another with the caption beside the card); then `duel` Head to head (16:9, Left / Right, all at once), `lineup` Line-up (16:9, 3 or 4,
   numbered, all at once), `wipe` (16:9, Model A / Model B in one square; the divider sweeps from A to B, then settles at
   the spec's `wipe` %), `ladder` Effort ladder (9:16, low / medium / high / max, one after another), `countdown` (9:16, #5 to
   #1, one after another), `montage` Grid montage (1:1, 6 numbered tiles; after they land they dim and the first title card's
-  heading comes up over them). One-after-another templates draw each run like `art-crit video`'s `reveal` (card, badge,
-  caption with the effort meter, counting numbers when "time and cost" is on, a progress bar and the run's page title).
-- **Cards** (`studio.CARDS`): Title, Question, Section, Vote (with a link chip) and Credits, each with a heading (≤ 90), an
-  optional subtitle (≤ 280; a vote card also a link ≤ 60), a look (`studio.LOOKS`: Dark, Purple, Peach, Light) and 2, 3 or 5
-  seconds; at most 12. A card's `at` is how many result blocks play before it (all-at-once templates have one block), so a
+  heading comes up over them). One-after-another templates draw each run like `art-crit video`'s `reveal` (or `wide`, in 16:9):
+  card, badge, a sticker where one stands out (`video.stickers`, 3+ runs), the caption with the effort meter, counting
+  numbers when "time and cost" is on, a progress bar and the run's page title.
+- **Cards** (`studio.CARDS`): Hook and Finale are `art-crit video`'s opening and closing, drawn by the same code
+  (`scene/parts.js`), always on the glow, over the runs in the slots: the Hook's headline is its heading and subtitle, or
+  else `N AI models. / Same prompt.` (`<model> / N effort levels.` for one model; `N prompts.` when the slots come from
+  several pages), and the prompt types into a bubble only when every slot shares one; the Finale's question is its heading
+  (default "Place your vote"), the line under it its subtitle (default "on <logo> ↓"), its pill its link, and the crown
+  goes on the best-ranked run only when every slot is from one page (ranks are per page). Then Title, Question, Section,
+  Vote (with a link chip) and Credits, each with a heading (≤ 90), an optional subtitle (≤ 280; vote and finale cards also
+  a link ≤ 60), a look (`studio.LOOKS`: Glow = the videos' dark background with a drifting glow, Dark, Purple, Peach,
+  Light) and 2, 3 or 5 seconds; at most 12. A card's `at` is how many result blocks play before it (all-at-once templates have one block), so a
   large `at` means the end. Rendered: the look's colour opens as a circle, the heading's words rise in, the subtitle and the
   link chip follow; the video's opening card is complete on its first frame (the cover). Light looks invert the logo's ink.
-- **Settings**: seconds for each still (2, 3, 5), what happens when moving results differ in length (`together`: each stops
+- **Settings**: seconds for each still (2, 3, 5), seconds for each recording of a game, page or 3D model (4, 6, 8;
+  default 4, `art-crit video`'s pace), what happens when moving results differ in length (`together`: each stops
   on its last frame; `stretch`: each is slowed to fill the block; `loop`), music (`none` = a silent track, `upbeat`,
   `lofi`, `cinematic`; sound effects come with the music), labels (model + effort on each result) and time and cost.
-- **Lengths** (`studio.clip_seconds`): a still plays the still length; a video its own (2 to 10 s); a 3D model 6 s; a game
-  or web page 8 s (each recorded for that long). An all-at-once block lasts as long as its longest result.
+- **Lengths** (`studio.clip_seconds`): a still plays the still length; a video its own (2 to 10 s); a game, web page or 3D
+  model the recording length (recorded for that long). An all-at-once block lasts as long as its longest result.
 - **The spec** (`studio.check_spec`): `{template, count?, slots: [{page, run}|null], cards: [{id, type, heading, sub, link,
-  look, secs, at}], still, sync, music, labels, metrics, wipe}`. A render needs every slot filled with a run that didn't
+  look, secs, at}], still, record, sync, music, labels, metrics, wipe}` (`metrics` defaults to true, `record` to 4). A render needs every slot filled with a run that didn't
   fail; the same run may fill two slots (recorded once). The page keeps the spec in `localStorage` between visits.
 - **The page** (the design's "Video studio" artboard): 1 · template cards with a small diagram, format, slot count and how
   they play; 2 · a preview of the frame (the runs' thumbnails in the template's layout, or the card at the playhead, or the
-  card being edited) with back/play/forward, a scrubber and speed, the wipe position for the wipe; the timeline (a block
+  card being edited; a Hook or Finale card is sketched: its headline over the runs' pictures, or its question over
+  numbered tiles) with back/play/forward, a scrubber and speed, the wipe position for the wipe; the timeline (a block
   per segment, sized by length, click to jump or edit a card), "Add a card", the card editor (heading, subtitle, link,
   look, length, earlier/later, delete, done); the settings panel and Render; then "Your renders": renders under way (their
   step) or failed (Dismiss), then every video in `videos/studio/`, newest first, with the video, Download and Delete

@@ -8,21 +8,28 @@ import { EFFORTS, effortIndex, isFailed, localFeature, modelParts, prettyModelNa
 
 const main = document.getElementById("main");
 const STORE = "art-crit:studio";
-const PREVIEW_WIDTH = { duel: 780, lineup: 820, wipe: 780, ladder: 360, countdown: 360, montage: 580 };
-const MINI_COLS = { duel: 2, wipe: 2, ladder: 2, countdown: 1, montage: 3 };
+const PREVIEW_WIDTH = { reveal: 360, grid: 360, wide: 780, duel: 780, lineup: 820, wipe: 780, ladder: 360, countdown: 360, montage: 580 };
+const MINI_COLS = { reveal: 2, grid: 2, wide: 2, duel: 2, wipe: 2, ladder: 2, countdown: 1, montage: 3 };
 
 let C; // the catalog
 const RUNS = new Map(); // "<slug>/<run id>" -> a run the picker offers
 let PAGES = [];
+const PROMPTS = new Map(); // page slug -> its prompt (the Hook card's preview types it)
 let PLAN = null; // the server's timeline for the current spec
 let S; // what is saved between visits: the spec, minus nothing
 const ui = { editCard: null, picker: null, pos: 0, playing: false, speed: 1, filters: { page: "all", types: new Set(), vendors: new Set(), efforts: new Set() } };
 
 // ---- state --------------------------------------------------------------------------------------------------------
 
+// a new card of a type, with the catalog's defaults
+function newCard(id, type, n) {
+  const d = C.cards[type];
+  return { id, type, heading: d.heading, sub: d.sub, link: d.link || "", look: d.look, secs: d.secs || 3, at: atFor(type, n) };
+}
+// like `art-crit video`'s reveal: the opening, every run one after another, then the vote
 function defaults() {
-  const card = (id, type) => ({ id, type, heading: C.cards[type].heading, sub: C.cards[type].sub, link: C.cards[type].link || "", look: C.cards[type].look, secs: 3, at: atFor(type, 2) });
-  return { tpl: "duel", counts: {}, slots: {}, cards: [card("c1", "title"), card("c2", "vote")], nextCard: 3, still: 3, sync: "together", music: "upbeat", labels: true, metrics: false, wipe: 50 };
+  return { tpl: "reveal", counts: {}, slots: {}, cards: [newCard("c1", "hook", 4), newCard("c2", "finale", 4)], nextCard: 3,
+    still: 3, record: C.record_seconds[0], sync: "together", music: "upbeat", labels: true, metrics: true, wipe: 50 };
 }
 function load() {
   try {
@@ -36,7 +43,7 @@ function save() {
 }
 
 const tpl = () => C.templates[S.tpl];
-const slotCount = () => (tpl().counts ? (tpl().counts.includes(S.counts[S.tpl]) ? S.counts[S.tpl] : tpl().counts[0]) : tpl().labels.length);
+const slotCount = () => (tpl().counts ? (tpl().counts.includes(S.counts[S.tpl]) ? S.counts[S.tpl] : tpl().default ?? tpl().counts[0]) : tpl().labels.length);
 const labels = () => (tpl().counts ? Array.from({ length: slotCount() }, (_, i) => String(i + 1)) : tpl().labels);
 const units = () => (tpl().together ? 1 : slotCount());
 const picks = () => Array.from({ length: slotCount() }, (_, i) => (S.slots[S.tpl] || [])[i] || null);
@@ -46,8 +53,8 @@ function atFor(type, n) {
   return at === "middle" ? Math.floor(n / 2) : at;
 }
 function spec() {
-  return { template: S.tpl, count: slotCount(), slots: picks(), cards: S.cards, still: S.still, sync: S.sync, music: S.music,
-    labels: S.labels, metrics: S.metrics, wipe: S.wipe };
+  return { template: S.tpl, count: slotCount(), slots: picks(), cards: S.cards, still: S.still, record: S.record, sync: S.sync,
+    music: S.music, labels: S.labels, metrics: S.metrics, wipe: S.wipe };
 }
 
 // ---- runs ---------------------------------------------------------------------------------------------------------
@@ -65,6 +72,7 @@ async function loadRuns() {
   const pages = await Promise.all(PAGES.map((p) => getJSON(`data/${encodeURIComponent(p.slug)}/page.json`).catch(() => null)));
   pages.forEach((page, i) => {
     if (!page) return;
+    PROMPTS.set(PAGES[i].slug, page.prompt || page.title);
     for (const run of page.runs) {
       if (isFailed(run)) continue;
       const v = vendorOf(run.model);
@@ -182,7 +190,7 @@ function drawTemplates() {
       h("span", "st-template-desc", t.desc),
       el("span", { class: "st-chips" }, [
         h("span", "st-chip", t.format),
-        h("span", "st-chip", t.counts ? `${t.counts.join(" or ")} slots` : `${n} slots`),
+        h("span", "st-chip", t.counts ? `${t.counts.length > 2 ? `${t.counts[0]}–${t.counts.at(-1)}` : t.counts.join(" or ")} slots` : `${n} slots`),
         h("span", "st-chip", t.together ? "all at once" : "one after another"),
       ]),
     ]);
@@ -202,10 +210,20 @@ function pickTemplate(id) {
 function drawStep2() {
   const filled = picks().filter((p) => runOf(p)).length;
   step2Info.textContent = `${tpl().name} · ${filled} of ${slotCount()} filled`;
-  countBox.replaceChildren(...(tpl().counts ? [h("span", "st-muted", "Results"), ...tpl().counts.map((n) => button("st-pill", String(n), () => {
+  const pick = (n) => {
     S.counts[S.tpl] = n;
     changed({ all: true });
-  }, { "aria-pressed": String(n === slotCount()) }))] : []));
+  };
+  let choices = [];
+  if (tpl().counts?.length > 4) { // 2 to 12: a menu
+    const sel = el("select", { attrs: { "aria-label": "Results" } }, tpl().counts.map((n) => el("option", { text: String(n), attrs: { value: String(n) } })));
+    sel.value = String(slotCount());
+    sel.addEventListener("change", () => pick(Number(sel.value)));
+    choices = [sel];
+  } else if (tpl().counts) {
+    choices = tpl().counts.map((n) => button("st-pill", String(n), () => pick(n), { "aria-pressed": String(n === slotCount()) }));
+  }
+  countBox.replaceChildren(...(choices.length ? [h("span", "st-muted", "Results"), ...choices] : []));
 }
 
 // The segment at time x (seconds) of the plan.
@@ -260,12 +278,47 @@ function drawPreview() {
   });
 }
 
+// What the opening's headline says, the way scene/studio.js decides it (a Hook card's own lines win).
+function hookLines(card) {
+  const filled = picks().map(runOf).filter(Boolean);
+  const models = new Set(filled.map((r) => r.model));
+  const pages = new Set(filled.map((r) => r.ref.page));
+  const prompts = `${pages.size || 1} prompts.`;
+  const auto = models.size === 1 ? [filled[0].model, pages.size === 1 ? `${filled.length} effort levels.` : prompts]
+    : [`${models.size || slotCount()} AI models.`, pages.size <= 1 ? "Same prompt." : prompts];
+  return [card.heading || auto[0], card.sub || (card.heading ? "" : auto[1])];
+}
+
+// The Hook and Finale cards, sketched: the headline over the runs' pictures, or the question over numbered tiles.
+function scenePreview(card) {
+  const filled = picks().map(runOf);
+  // the hook's wall repeats every run to fill the frame; the finale shows each once, numbered
+  const shown = card.type === "hook" ? Array.from({ length: 48 }, (_, k) => filled[(k * 5 + Math.floor(k / 6)) % filled.length]) : filled;
+  const thumbs = el("div", { class: `st-scene-thumbs${card.type === "hook" ? " is-wall" : ""}` }, shown.map((r, i) => el("span", {}, [
+    r?.thumb ? el("img", { attrs: { src: r.thumb, alt: "" } }) : null,
+    card.type === "finale" ? h("b", null, labels()[i].startsWith("#") || /^\d+$/.test(labels()[i]) ? labels()[i] : String(i + 1)) : null,
+  ])));
+  if (card.type === "hook") {
+    const [a, b] = hookLines(card);
+    const pages = new Set(filled.filter(Boolean).map((r) => r.ref.page));
+    const page = pages.size === 1 ? PAGES.find((p) => p.slug === [...pages][0]) : null;
+    return el("div", { class: "st-scene-preview" }, [thumbs, el("div", { class: "st-scene-text" }, [
+      h("span", "st-scene-head", a), h("span", "st-scene-head st-yellow", b),
+      page ? h("span", "st-scene-bubble", PROMPTS.get(page.slug) || page.title) : null,
+    ])]);
+  }
+  return el("div", { class: "st-scene-preview is-finale" }, [el("div", { class: "st-scene-text" }, [
+    h("span", "st-scene-head", card.heading || "Place your vote"), h("span", "st-yellow", card.sub || "on art-crit ↓"),
+  ]), thumbs, card.link ? h("span", "st-card-link st-scene-link", card.link) : null]);
+}
+
 function cardPreview(card) {
+  if (C.cards[card.type].scene) return scenePreview(card);
   const look = C.looks[card.look];
   const box = el("div", { class: "st-card-preview" }, [
     h("span", "st-card-heading", card.heading),
     card.sub ? h("span", "st-card-sub", card.sub) : null,
-    card.type === "vote" && card.link ? h("span", "st-card-link", card.link) : null,
+    "link" in C.cards[card.type] && card.link ? h("span", "st-card-link", card.link) : null,
   ]);
   box.style.color = look.fg;
   box.querySelector(".st-card-heading").style.fontSize = tpl().format === "16:9" ? "30px" : "26px";
@@ -407,7 +460,8 @@ function stop() {
 function segmentName(g) {
   if (g.type === "card") {
     const c = cardById(g.card);
-    return `${C.cards[c?.type]?.label || "Card"}: ${c?.heading || "untitled"}`;
+    const heading = c?.type === "hook" ? hookLines(c).join(" ") : c?.heading || (c?.type === "finale" ? "Place your vote" : "untitled");
+    return `${C.cards[c?.type]?.label || "Card"}: ${heading}`;
   }
   if (g.type === "slots") return `${slotCount()} results together`;
   const r = runOf(picks()[g.slot]);
@@ -449,8 +503,8 @@ function drawTimeline() {
 function addCard(type) {
   if (S.cards.length >= C.limits.cards) return;
   const d = C.cards[type];
-  const card = { id: `c${S.nextCard++}`, type, heading: d.heading, sub: d.sub, link: d.link || "", look: d.look, secs: 3, at: atFor(type, units()) };
-  S.cards = type === "title" ? [card, ...S.cards] : [...S.cards, card];
+  const card = newCard(`c${S.nextCard++}`, type, units());
+  S.cards = d.at === 0 ? [card, ...S.cards] : [...S.cards, card];
   stop();
   ui.editCard = card.id;
   changed();
@@ -490,6 +544,7 @@ function drawEditor() {
     return;
   }
   const d = C.cards[card.type];
+  const scene = Boolean(d.scene); // Hook and Finale: drawn like `art-crit video`'s, on the glow; the texts are overrides
   const seq = PLAN?.segments || [];
   const k = seq.findIndex((g) => g.type === "card" && g.card === card.id);
   const input = (tag, value, max, onInput, attrs = {}) => {
@@ -520,11 +575,13 @@ function drawEditor() {
         drawPreview();
       }),
     ]),
-    el("label", { class: "st-field" }, [d.heading_label, input("input", card.heading, C.limits.heading, (v) => updateCard(card.id, { heading: v }), { type: "text" })]),
-    el("label", { class: "st-field" }, [el("span", {}, [`${d.sub_label} `, h("span", "st-muted", "optional")]), input("textarea", card.sub, C.limits.sub, (v) => updateCard(card.id, { sub: v }), { rows: "2" })]),
-    card.type === "vote" ? el("label", { class: "st-field" }, ["Link shown on the card", input("input", card.link, C.limits.link, (v) => updateCard(card.id, { link: v }), { type: "text" })]) : null,
+    d.hint ? h("p", "st-muted st-small st-hint", d.hint) : null,
+    el("label", { class: "st-field" }, [el("span", {}, [`${d.heading_label} `, scene ? h("span", "st-muted", "optional") : null]), input("input", card.heading, C.limits.heading, (v) => updateCard(card.id, { heading: v }), { type: "text", placeholder: card.type === "hook" ? hookLines({ heading: "", sub: "" })[0] : null })]),
+    el("label", { class: "st-field" }, [el("span", {}, [`${d.sub_label} `, h("span", "st-muted", "optional")]), input(scene ? "input" : "textarea", card.sub, scene ? C.limits.heading : C.limits.sub, (v) => updateCard(card.id, { sub: v }),
+      scene ? { type: "text", placeholder: card.type === "hook" ? hookLines({ heading: "", sub: "" })[1] : "on art-crit ↓" } : { rows: "2" })]),
+    "link" in d ? el("label", { class: "st-field" }, [el("span", {}, ["Link shown on the card ", h("span", "st-muted", "empty: none")]), input("input", card.link, C.limits.link, (v) => updateCard(card.id, { link: v }), { type: "text" })]) : null,
     el("div", { class: "st-row st-wrap-row" }, [
-      el("div", { class: "st-row" }, [h("span", "st-muted", "Look"), ...Object.entries(C.looks).map(([id, look]) => {
+      scene ? null : el("div", { class: "st-row" }, [h("span", "st-muted", "Look"), ...Object.entries(C.looks).map(([id, look]) => {
         const swatch = h("span", "st-swatch");
         swatch.style.background = look.bg;
         return el("button", { class: "st-pill", attrs: { type: "button", "aria-pressed": String(card.look === id) }, on: { click: () => { updateCard(card.id, { look: id }); drawEditor(); } } }, [swatch, look.label]);
@@ -537,6 +594,7 @@ function drawEditor() {
 // ---- settings -----------------------------------------------------------------------------------------------------
 
 const stillSel = el("select");
+const recordSel = el("select");
 const syncSel = el("select");
 const musicSel = el("select");
 const labelsBox = el("input", { attrs: { type: "checkbox" } });
@@ -549,6 +607,8 @@ const renderHint = h("span", "st-muted");
 function buildSettings() {
   const options = (sel, entries) => sel.replaceChildren(...entries.map(([v, text]) => el("option", { text, attrs: { value: String(v) } })));
   options(stillSel, C.seconds.map((s) => [s, `${s} seconds`]));
+  options(recordSel, C.record_seconds.map((s) => [s, `${s} seconds`]));
+  recordSel.addEventListener("change", () => { S.record = Number(recordSel.value); changed(); });
   options(syncSel, Object.entries(C.sync));
   options(musicSel, Object.entries(C.music));
   stillSel.addEventListener("change", () => { S.still = Number(stillSel.value); changed(); });
@@ -559,6 +619,7 @@ function buildSettings() {
   motionBox.replaceChildren(
     h("span", "st-strong", "Moving results"),
     h("span", "st-muted st-small", "Videos play their clip, 3D models turn on a turntable, games and web pages play as a screen recording."),
+    el("label", { class: "st-field" }, ["Seconds for each recording (games, pages, 3D models)", recordSel]),
     el("label", { class: "st-field" }, ["When lengths differ", syncSel]),
   );
   settings.replaceChildren(
@@ -576,6 +637,7 @@ function buildSettings() {
 
 function drawSettings() {
   stillSel.value = String(S.still);
+  recordSel.value = String(S.record);
   syncSel.value = S.sync;
   musicSel.value = S.music;
   labelsBox.checked = S.labels;
@@ -768,10 +830,10 @@ function prefill() {
   const ids = (params.get("r") || "").split(",").filter(Boolean);
   if (!slug || !ids.length) return;
   const n = ids.length;
-  const id = n <= 2 ? "duel" : n <= 4 ? "lineup" : n === 5 ? "countdown" : "montage";
+  const id = n <= 2 ? "duel" : "reveal";
   S.tpl = id;
-  if (id === "lineup") S.counts.lineup = n;
-  S.slots[id] = ids.slice(0, id === "montage" ? 6 : n).map((run) => (RUNS.has(`${slug}/${run}`) ? { page: slug, run } : null));
+  if (id === "reveal") S.counts.reveal = Math.min(n, 12);
+  S.slots[id] = ids.slice(0, 12).map((run) => (RUNS.has(`${slug}/${run}`) ? { page: slug, run } : null));
   history.replaceState(null, "", location.pathname);
 }
 

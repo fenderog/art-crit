@@ -1160,7 +1160,7 @@ def test_the_video_studio_makes_a_video_only_on_the_local_server(bench_served, s
     assert "Head to head" in page.locator('.st-template[aria-pressed="true"]').inner_text()
     assert page.locator(".st-slot.is-filled").count() == 2
     page.wait_for_selector(".st-seg")  # the timeline comes from api/studio/plan
-    assert page.locator(".st-seg").all_inner_texts()[0].startswith("Title:")
+    assert page.locator(".st-seg").all_inner_texts()[0].startswith("Hook:")  # like `art-crit video`: the opening first
 
     # a new card: its heading shows in the preview as it is typed, and it joins the timeline
     page.get_by_role("button", name="+ Question").click()
@@ -1176,12 +1176,12 @@ def test_the_video_studio_makes_a_video_only_on_the_local_server(bench_served, s
     page.get_by_role("button", name="Slot Right:").click()
     page.locator('.st-result[aria-label^="Use Model Y"]').first.click()
 
-    page.locator(".st-settings select").first.select_option("2")  # seconds per still
-    page.locator(".st-settings select").nth(2).select_option("none")  # music
+    page.get_by_label("Seconds for each still image").select_option("2")
+    page.get_by_label("Music").select_option("none")
     page.get_by_role("button", name="Render video").click()
-    # this render is listed first, under its title card's heading (other tests' renders may be in this process's job list)
+    # this render is listed first, under its template's name (no title card; other tests' renders may be in this process's job list)
     row = page.locator(".st-render-row").first
-    expect(row).to_contain_text("Which model built it best?")
+    expect(row).to_contain_text("Head to head")
     expect(row.locator(".st-state")).to_have_text("Done", timeout=180000)
     assert row.locator("video").count() == 1
     assert row.locator("a[download]").get_attribute("download").endswith("-duel.mp4")

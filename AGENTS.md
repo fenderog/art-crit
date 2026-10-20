@@ -38,7 +38,8 @@ src/art_crit/          CLI, standard library only (argparse, json, subprocess, t
   video.py          `art-crit video`: social-media videos of runs (ffmpeg + headless Chrome), local only (ADR-0032): source
                     clips -> JPEG frames -> a plan (timeline, `TIMING`, tiles, stickers) per layout -> frames drawn in Chrome
                     piped into ffmpeg (ADR-0033); scene/ = the animated pages that draw them (scene.js = the layouts,
-                    studio.js = the studio's templates and cards, motion.js = what both share; imports docs' runs.js);
+                    studio.js = the studio's templates and cards, parts.js = the opening (hook) and closing (finale) both
+                    use, motion.js = the helpers; imports docs' runs.js);
                     video_sound.py = the synthesized music styles + sound effects, cued from the same plan
   studio.py         the video studio (ADR-0034): `catalog()` (templates, looks, cards), `check_spec`, `timeline` (shared by
                     the page's preview through api/studio/plan and the render), `make_studio_video`

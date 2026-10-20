@@ -18,6 +18,13 @@ from .util import CritError
 FORMATS = {"16:9": (1920, 1080), "9:16": (1080, 1920), "1:1": (1080, 1080)}
 # together = every slot on screen at once (one shared segment); otherwise one segment per slot, in order
 TEMPLATES = {
+    # the three layouts of `art-crit video`
+    "reveal": {"name": "Reveal", "desc": "Two to twelve models one at a time, numbered, their time and cost counting up.",
+               "format": "9:16", "counts": list(range(2, 13)), "default": 4, "together": False, "badges": True, "stickers": True},
+    "grid": {"name": "Grid", "desc": "Two to twelve models at once in numbered tiles, then a spotlight steps through them.",
+             "format": "9:16", "counts": list(range(2, 13)), "default": 4, "together": True, "badges": True, "spotlight": True},
+    "wide": {"name": "Wide", "desc": "Like Reveal in landscape: each run with its caption beside it.",
+             "format": "16:9", "counts": list(range(2, 13)), "default": 4, "together": False, "badges": True, "stickers": True},
     "duel": {"name": "Head to head", "desc": "Two models side by side on the same prompt, then a vote card.",
              "format": "16:9", "labels": ["Left", "Right"], "together": True},
     "lineup": {"name": "Line-up", "desc": "Three or four models in a row, all playing at once.",
@@ -25,23 +32,32 @@ TEMPLATES = {
     "wipe": {"name": "Wipe", "desc": "Two models on the same prompt, layered, with a divider sliding between them.",
              "format": "16:9", "labels": ["Model A", "Model B"], "together": True, "wipe": True},
     "ladder": {"name": "Effort ladder", "desc": "One model climbing from low to max effort.",
-               "format": "9:16", "labels": ["low", "medium", "high", "max"], "together": False},
+               "format": "9:16", "labels": ["low", "medium", "high", "max"], "together": False, "stickers": True},
     "countdown": {"name": "Countdown", "desc": "Five models revealed from your #5 to your #1.",
-                  "format": "9:16", "labels": ["#5", "#4", "#3", "#2", "#1"], "together": False, "badges": True},
+                  "format": "9:16", "labels": ["#5", "#4", "#3", "#2", "#1"], "together": False, "badges": True, "stickers": True},
     "montage": {"name": "Grid montage", "desc": "Six models in a grid behind a title.",
                 "format": "1:1", "labels": ["1", "2", "3", "4", "5", "6"], "together": True, "badges": True, "title": True},
 }
 # where the tiles of a together template go (x, y, w, h), per format; the wipe stacks both runs in one square
-TILE_BOX = {"duel": (60, 90, 1800, 900), "lineup": (60, 140, 1800, 800), "wipe": (460, 40, 1000, 1000),
-            "montage": (40, 40, 1000, 1000)}
+TILE_BOX = {"grid": (36, 380, 1008, 1180), "duel": (60, 90, 1800, 900), "lineup": (60, 140, 1800, 800),
+            "wipe": (460, 40, 1000, 1000), "montage": (40, 40, 1000, 1000)}
+FINALE_BOX = {"9:16": (36, 380, 1008, 1180), "16:9": (60, 240, 1800, 790), "1:1": (40, 200, 1000, 790)}  # the Finale card's tiles
 LOOKS = {
+    "glow": {"label": "Glow", "bg": "#0c0b14", "fg": "#ffffff", "chip_bg": "#ffffff", "chip_fg": "#0b0b10"},
     "dark": {"label": "Dark", "bg": "#1c1b22", "fg": "#ffffff", "chip_bg": "#f9d9c4", "chip_fg": "#7a3410"},
     "accent": {"label": "Purple", "bg": "#4a2fc4", "fg": "#ffffff", "chip_bg": "#ffffff", "chip_fg": "#4a2fc4"},
     "peach": {"label": "Peach", "bg": "#f9d9c4", "fg": "#3d1a06", "chip_bg": "#1c1b22", "chip_fg": "#ffffff"},
     "light": {"label": "Light", "bg": "#ffffff", "fg": "#1c1b22", "chip_bg": "#4a2fc4", "chip_fg": "#ffffff"},
 }
-# `at` = how many result blocks play before the card (0 = the very start; past the last = the end)
+# `at` = how many result blocks play before the card (0 = the very start; past the last = the end). A `scene` card is
+# drawn like `art-crit video`'s opening (hook) or closing (finale), always on the glow; its texts are optional overrides.
 CARDS = {
+    "hook": {"label": "Hook", "heading": "", "sub": "", "look": "glow", "secs": 3, "at": 0, "scene": True,
+             "heading_label": "Headline", "sub_label": "Second line",
+             "hint": "Every run on a moving wall, a headline and the prompt typing out. Empty: \"N AI models. Same prompt.\""},
+    "finale": {"label": "Finale", "heading": "Place your vote", "sub": "", "link": "fenderog.com/art-crit", "look": "glow",
+               "secs": 5, "at": 99, "scene": True, "heading_label": "Question", "sub_label": "Line under it",
+               "hint": "Every run as a numbered tile, the question and a call to vote; a crown on your #1. Empty line: \"on art-crit ↓\""},
     "title": {"label": "Title", "heading": "Which model built it best?", "sub": "Same prompt, different models", "look": "dark",
               "at": 0, "heading_label": "Title", "sub_label": "Subtitle"},
     "question": {"label": "Question", "heading": "Can a model draw this?", "sub": "", "look": "accent", "at": 0,
@@ -57,12 +73,13 @@ SECONDS = (2, 3, 5)  # the choices for a card's length and a still picture's
 SYNC = {"together": "Start together, each stops at its end", "stretch": "Stretch all to the longest",
         "loop": "Loop the shorter ones"}
 MUSIC = {"none": "None", **video_sound.STYLES}
-TYPES = {  # what a run's output becomes in a video; `secs` = how long it's recorded (a video plays its own length)
+RECORD_SECONDS = (4, 6, 8)  # the choices for how long a game, page or 3D model is recorded (4 = `art-crit video`'s pace)
+TYPES = {  # what a run's output becomes in a video
     "image": {"label": "Image", "how": "still, slow zoom"},
     "video": {"label": "Video", "how": "plays its clip"},
-    "model": {"label": "3D model", "how": "3D turntable", "secs": 6},
-    "game": {"label": "Game", "how": "gameplay recording", "secs": 8},
-    "web": {"label": "Web page", "how": "page recording", "secs": 8},
+    "model": {"label": "3D model", "how": "3D turntable"},
+    "game": {"label": "Game", "how": "gameplay recording"},
+    "web": {"label": "Web page", "how": "page recording"},
 }
 LIMITS = {"heading": 90, "sub": 280, "link": 60, "cards": 12}
 SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
@@ -71,13 +88,13 @@ SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 def catalog():
     """What the page offers (GET api/studio): its choices come from here, so the page and the render agree."""
     return {"templates": {k: {**t, "size": FORMATS[t["format"]]} for k, t in TEMPLATES.items()}, "looks": LOOKS,
-            "cards": CARDS, "seconds": SECONDS, "sync": SYNC, "music": MUSIC, "types": TYPES, "limits": LIMITS}
+            "cards": CARDS, "seconds": SECONDS, "record_seconds": RECORD_SECONDS, "sync": SYNC, "music": MUSIC, "types": TYPES, "limits": LIMITS}
 
 
 def slot_labels(template, count=None):
     t = TEMPLATES[template]
     if "counts" in t:
-        return [str(i + 1) for i in range(count if count in t["counts"] else t["counts"][0])]
+        return [str(i + 1) for i in range(count if count in t["counts"] else t.get("default", t["counts"][0]))]
     return t["labels"]
 
 
@@ -92,15 +109,15 @@ def slot_type(run):
     return "model" if any(i["type"] == "model" for i in items) else "image"
 
 
-def clip_seconds(run, still):
-    """How long a run plays: a still picture `still` seconds, a video its own length (2 to 10 s), a recording its `secs`."""
+def clip_seconds(run, still, record=RECORD_SECONDS[0]):
+    """How long a run plays: a still picture `still` seconds, a video its own length (2 to 10 s), a recording `record`."""
     kind = slot_type(run)
     if kind == "image":
         return still
     if kind == "video":
         clip = next(i for i in video.items_of(run) if i["type"] == "video")
         return round(min(10, max(2, clip.get("duration_s") or 6)), 1)
-    return TYPES[kind]["secs"]
+    return record
 
 
 def _choice(value, options, what):
@@ -139,7 +156,7 @@ def check_spec(root, spec, complete=True):
             raise CritError(f"no such run: {slug}/{slot['run']}")
         if run_failed(run):
             raise CritError(f"{slot['run']} failed: it has nothing to show")
-        runs.append({**run, "page": slug, "page_title": pages[slug]["title"]})
+        runs.append({**run, "page": slug, "page_title": pages[slug]["title"], "page_prompt": video.prompt_text(pages[slug])})
     cards = spec.get("cards") or []
     if not isinstance(cards, list) or len(cards) > LIMITS["cards"]:
         raise CritError(f"at most {LIMITS['cards']} cards")
@@ -158,13 +175,15 @@ def check_spec(root, spec, complete=True):
         if not isinstance(at, int) or isinstance(at, bool) or at < 0:
             raise CritError("a card's place (at) is a whole number")
         clean_cards.append({"id": str(c.get("id") or len(clean_cards))[:20], "type": kind, **text,
-                            "link": text["link"] if kind == "vote" else "", "look": _choice(c.get("look"), LOOKS, "look"),
+                            "link": text["link"] if "link" in CARDS[kind] else "",
+                            "look": "glow" if CARDS[kind].get("scene") else _choice(c.get("look"), LOOKS, "look"),
                             "secs": _choice(c.get("secs", 3), SECONDS, "a card's length"), "at": at})
     clean = {"template": template, "count": len(labels), "slots": slots, "cards": clean_cards,
              "still": _choice(spec.get("still", 3), SECONDS, "seconds for a still"),
+             "record": _choice(spec.get("record", RECORD_SECONDS[0]), RECORD_SECONDS, "seconds for a recording"),
              "sync": _choice(spec.get("sync", "together"), SYNC, "sync"),
              "music": _choice(spec.get("music", "upbeat"), MUSIC, "music")}
-    for key, default in (("labels", True), ("metrics", False)):
+    for key, default in (("labels", True), ("metrics", True)):
         clean[key] = spec.get(key, default)
         if not isinstance(clean[key], bool):
             raise CritError(f"{key} must be true or false")
@@ -179,7 +198,7 @@ def timeline(spec, runs):
     """The segments in play order: [{type: card|slots|slot, start, secs, card?, slot?}] (seconds), and the total.
     Cards go before the result block their `at` names (clamped: a large `at` = the end), in list order."""
     template = TEMPLATES[spec["template"]]
-    lengths = [clip_seconds(r, spec["still"]) if r else spec["still"] for r in runs]
+    lengths = [clip_seconds(r, spec["still"], spec["record"]) if r else spec["still"] for r in runs]
     units = 1 if template["together"] else len(runs)
     segments, at = [], 0
     for u in range(units + 1):
@@ -198,7 +217,7 @@ def preview(root, spec):
     """What the page's preview needs (POST api/studio/plan): the timeline, and each slot's type and length."""
     spec, runs = check_spec(root, spec, complete=False)
     segments, total = timeline(spec, runs)
-    slots = [{"type": slot_type(r), "secs": clip_seconds(r, spec["still"])} if r else None for r in runs]
+    slots = [{"type": slot_type(r), "secs": clip_seconds(r, spec["still"], spec["record"])} if r else None for r in runs]
     return {"segments": segments, "total": total, "slots": slots, "labels": slot_labels(spec["template"], spec["count"])}
 
 
@@ -211,37 +230,57 @@ def scene_plan(spec, runs, clips):
     frames, at = [], 0
     for seg in segments:  # seconds -> frames, each segment a whole number of them
         n = video.frames(seg["secs"])
-        frames.append({**seg, "card": cards.get(seg.get("card")), "start": at, "frames": n})
+        spot = video.spotlight("grid", seg["secs"], len(runs)) if seg["type"] == "slots" and template.get("spotlight") else None
+        frames.append({**seg, "card": cards.get(seg.get("card")), "start": at, "frames": n, "spot": spot})
         at += n
     labels = slot_labels(spec["template"], spec["count"])
-    slots = [{**video.run_info(r), "label": label, "frames": count, "type": slot_type(r), "page_title": r["page_title"]}
-             for r, label, count in zip(runs, labels, clips)]
+    infos = [video.run_info(r) for r in runs]
+    stickers = video.stickers(infos) if template.get("stickers") else [None] * len(runs)
+    one_page = len({r["page"] for r in runs}) == 1
+    ranks = [r.get("rank") for r in runs if r.get("rank")] if one_page else []  # ranks only compare within a page
+    slots = [{**info, "label": label, "frames": count, "type": slot_type(r), "page_title": r["page_title"], "sticker": sticker,
+              "pick": bool(ranks) and r.get("rank") == min(ranks)}
+             for r, info, label, count, sticker in zip(runs, infos, labels, clips, stickers)]
     tiles = []
     if template["together"]:
         box = TILE_BOX[spec["template"]]
         tiles = [list(box[:2]) + [box[2]]] * len(runs) if template.get("wipe") else video.tile_boxes(len(runs), box)
     title = next((c["heading"] for c in spec["cards"] if c["type"] == "title" and c["heading"]), "")
+    prompt = runs[0]["page_prompt"] if one_page else ""  # the opening types the prompt only when every run shares it
     return {"mode": "studio", "layout": "studio", "size": size, "fps": video.FPS, "frames": at, "segments": frames,
             "template": {"id": spec["template"], **template}, "labels": spec["labels"], "metrics": spec["metrics"],
             "sync": spec["sync"], "wipe": spec["wipe"], "slots": slots, "tiles": tiles, "looks": LOOKS,
-            "timing": video.TIMING, "title": title if template.get("title") else ""}
+            "finale_tiles": video.tile_boxes(len(runs), FINALE_BOX[template["format"]]), "prompt": prompt,
+            "timing": {**video.TIMING, "type_s": video.type_seconds(prompt)}, "title": title if template.get("title") else ""}
 
 
 def cues(plan):
     """When each sound effect plays (seconds, kind), from the same segments as the pictures."""
-    t, out = plan["timing"], []
+    t, out, n = plan["timing"], [], len(plan["slots"])
     for seg in plan["segments"]:
         at = seg["start"] / video.FPS
-        if at:
-            out.append((at, "cut"))
-        if seg["type"] == "card":
+        out.append((at, "cut") if at else (0, "hit"))
+        card = seg["card"]
+        if seg["type"] == "card" and card["type"] == "hook":
+            if plan["prompt"]:
+                out.append((at + t["bubble"], "pop"))
+                out += [(at + t["type_from"] + k * 0.075, "tick") for k in range(int(t["type_s"] / 0.075))]
+        elif seg["type"] == "card" and card["type"] == "finale":
+            out += [(at + t["tiles"] + i * t["stagger"] + 0.2, "pop") for i in range(n)] + [(at + t["cta"], "pop")]
+            if any(s["pick"] for s in plan["slots"]):
+                out.append((at + t["pick"], "ding"))
+        elif seg["type"] == "card":
             out.append((at + 0.2, "pop"))
-            if seg["card"]["link"]:
+            if card["link"]:
                 out.append((at + 0.8, "pop"))
         elif seg["type"] == "slots":
-            out += [(at + t["tiles"] + i * t["stagger"] + 0.2, "pop") for i in range(len(plan["slots"]))]
+            out += [(at + t["tiles"] + i * t["stagger"] + 0.2, "pop") for i in range(n)]
+            if seg["spot"]:
+                out += [(at + seg["spot"]["from"] + i * seg["spot"]["each"], "tick") for i in range(n)]
         else:
             out.append((at + t["name"], "pop"))
+            if plan["slots"][seg["slot"]]["sticker"]:
+                out.append((at + t["sticker"], "pop"))
             if plan["metrics"]:
                 out += [(at + t["stats"] + k * 0.09, "tick") for k in range(int(t["count"] / 0.09))]
     return out
@@ -250,7 +289,7 @@ def cues(plan):
 def describe(spec):
     """One line about a render, for the page's list of renders."""
     template = TEMPLATES[spec["template"]]
-    title = next((c["heading"] for c in spec["cards"] if c["type"] == "title" and c["heading"]), template["name"])
+    title = next((c["heading"] for t in ("title", "hook") for c in spec["cards"] if c["type"] == t and c["heading"]), template["name"])
     return {"title": title, "template": template["name"], "format": template["format"], "slots": spec["count"]}
 
 
@@ -303,7 +342,7 @@ def make_studio_video(root, spec, out_dir=None, say=print):
                 clips.append(done[key][1])
                 continue
             say(f"recording {n + 1}/{len(runs)}: {run['model']} {run['effort']}")
-            source = video.make_source(chrome, docs, run["page"], run, clip_seconds(run, spec["still"]), work, say)
+            source = video.make_source(chrome, docs, run["page"], run, clip_seconds(run, spec["still"], spec["record"]), work, say)
             if source is None:
                 raise CritError(f"{run['id']} has no picture, video or model to show")
             clips.append(video.extract_frames(source, frames_dir))

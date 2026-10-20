@@ -12,7 +12,7 @@ import pytest
 from art_crit import studio, video, video_sound
 from art_crit.serve import serve_in_thread
 from art_crit.util import CritError
-from test_video import HIGH, OTHER, needs_tools, probe, site  # noqa: F401 (site is a fixture)
+from test_video import GAME, HIGH, OTHER, needs_tools, probe, site  # noqa: F401 (site is a fixture)
 from test_web_kind import in_thread
 
 ART = lambda run: {"page": "art", "run": run}  # noqa: E731
@@ -25,12 +25,15 @@ def card(type, at, secs=3, **kw):
 
 def test_the_catalog_matches_the_scene_and_the_page():
     c = studio.catalog()
-    assert set(c["templates"]) == {"duel", "lineup", "wipe", "ladder", "countdown", "montage"}
+    assert set(c["templates"]) == {"reveal", "grid", "wide", "duel", "lineup", "wipe", "ladder", "countdown", "montage"}
     for t in c["templates"].values():
         assert t["format"] in studio.FORMATS and t["size"] == studio.FORMATS[t["format"]]
     assert {k for k, t in studio.TEMPLATES.items() if t["together"]} == set(studio.TILE_BOX)
     assert set(c["music"]) == {"none", *video_sound.STYLES}
     assert studio.slot_labels("lineup", 4) == ["1", "2", "3", "4"] and studio.slot_labels("lineup", 9) == ["1", "2", "3"]
+    assert len(studio.slot_labels("reveal")) == 4 and len(studio.slot_labels("reveal", 12)) == 12  # 4 unless asked
+    assert {k for k, card in c["cards"].items() if card.get("scene")} == {"hook", "finale"}
+    assert set(studio.FINALE_BOX) == set(studio.FORMATS)
 
 
 def test_a_runs_type_and_length():
@@ -40,7 +43,7 @@ def test_a_runs_type_and_length():
                                           {"kind": "blender", "output": {"items": [{"type": "model"}]}})] == ["image", "video", "game", "web", "model"]
     assert studio.clip_seconds(still, 5) == 5 and studio.clip_seconds(clip, 5) == 7.4
     assert studio.clip_seconds({"output": {"items": [{"type": "video", "duration_s": 40}]}}, 3) == 10  # capped
-    assert studio.clip_seconds({"kind": "godot"}, 3) == studio.TYPES["game"]["secs"]
+    assert studio.clip_seconds({"kind": "godot"}, 3) == 4 and studio.clip_seconds({"kind": "godot"}, 3, 8) == 8  # a recording: `record`
 
 
 def test_a_bad_spec_is_refused_with_the_reason(site):  # noqa: F811
@@ -65,17 +68,21 @@ def test_a_bad_spec_is_refused_with_the_reason(site):  # noqa: F811
         ({"music": "jazz"}, "music must be"),
         ({"labels": "yes"}, "true or false"),
         ({"wipe": 120}, "0 to 100"),
+        ({"record": 5}, "seconds for a recording"),
     ]:
         with pytest.raises(CritError, match=error.replace("{", r"\{").replace("}", r"\}")):
             studio.check_spec(site, {**good, **patch}, complete="slots" not in patch or "empty" in error)
     spec, runs = studio.check_spec(site, {"template": "duel", "slots": [ART(HIGH)]}, complete=False)  # the preview allows gaps
     assert runs[1] is None and spec["slots"][1] is None
-    assert studio.check_spec(site, {**good, "cards": [card("title", 0, link="x")]})[0]["cards"][0]["link"] == ""  # only a vote card has one
+    assert studio.check_spec(site, {**good, "cards": [card("title", 0, link="x")]})[0]["cards"][0]["link"] == ""  # only vote and finale cards have one
+    checked = studio.check_spec(site, {**good, "cards": [{**card("finale", 99, link="x"), "look": "peach"}]})[0]
+    assert (checked["cards"][0]["link"], checked["cards"][0]["look"]) == ("x", "glow")  # the set pieces are always on the glow
+    assert (checked["metrics"], checked["record"]) == (True, 4)  # like `art-crit video`: numbers on, 4 s recordings
 
 
 def test_cards_go_between_the_results_in_play_order():
     run = {"kind": "media", "output": {"items": [{"type": "image"}]}}
-    base = {"still": 2, "cards": []}
+    base = {"still": 2, "record": 4, "cards": []}
     together, total = studio.timeline({**base, "template": "duel", "cards": [card("vote", 99), card("title", 0)]}, [run, run])
     assert [(s["type"], s.get("card")) for s in together] == [("card", "title0"), ("slots", None), ("card", "vote99")]
     assert [s["start"] for s in together] == [0, 3, 5] and total == 8
@@ -102,21 +109,41 @@ def test_renders_on_disk_are_listed_and_deleted(tmp_path):
 
 
 def test_the_sound_cues_follow_the_segments():
-    plan = {"timing": video.TIMING, "metrics": True, "slots": [{}, {}], "segments": [
-        {"type": "card", "start": 0, "frames": 60, "card": {"link": "x"}},
-        {"type": "slot", "start": 60, "frames": 60, "slot": 0}, {"type": "slot", "start": 120, "frames": 60, "slot": 1}]}
+    slot = {"sticker": None, "pick": False}
+    plan = {"timing": {**video.TIMING, "type_s": 1}, "metrics": True, "prompt": "", "slots": [{**slot, "sticker": "FASTEST"}, slot], "segments": [
+        {"type": "card", "start": 0, "frames": 60, "card": {"type": "vote", "link": "x"}},
+        {"type": "slot", "start": 60, "frames": 60, "slot": 0, "card": None}, {"type": "slot", "start": 120, "frames": 60, "slot": 1, "card": None}]}
     cues = studio.cues(plan)
-    assert sum(k == "cut" for _, k in cues) == 2 and sum(k == "pop" for _, k in cues) == 4
+    assert cues[0] == (0, "hit") and sum(k == "cut" for _, k in cues) == 2
+    assert sum(k == "pop" for _, k in cues) == 5  # the card's heading and link, each run's name, the sticker
     assert any(k == "tick" for _, k in cues) and all(at < 6 for at, _ in cues)
+    finale = {**plan, "slots": [slot, {**slot, "pick": True}], "segments": [{"type": "card", "start": 0, "frames": 150, "card": {"type": "finale", "link": ""}}]}
+    assert ("ding" in {k for _, k in studio.cues(finale)}) and sum(k == "pop" for _, k in studio.cues(finale)) == 3
+
+
+def test_the_scene_plan_shares_a_prompt_and_a_pick_only_within_one_page(site):  # noqa: F811
+    spec, runs = studio.check_spec(site, {"template": "reveal", "count": 3, "slots": [ART(HIGH), ART(OTHER), ART(GAME)],
+                                          "cards": [card("hook", 0), card("finale", 99)]})
+    runs[0]["rank"], runs[1]["rank"], runs[2]["rank"] = 3, 2, 1
+    plan = studio.scene_plan(spec, runs, [60, 60, 60])
+    assert plan["prompt"] and plan["timing"]["type_s"] > 0 and len(plan["finale_tiles"]) == 3
+    assert [s["pick"] for s in plan["slots"]] == [False, False, True] and [s["label"] for s in plan["slots"]] == ["1", "2", "3"]
+    mixed, mixed_runs = studio.check_spec(site, {"template": "duel", "slots": [ART(HIGH), {"page": "demo", "run": "model-x-high-20260101-001000"}]})
+    mixed_runs[0]["rank"] = 1
+    plan = studio.scene_plan(mixed, mixed_runs, [60, 60])
+    assert plan["prompt"] == "" and not any(s["pick"] for s in plan["slots"])  # two prompts: no typed prompt, no crown
 
 
 @needs_tools
 @pytest.mark.parametrize("template, slots, cards, size", [
     ("duel", [ART(HIGH), ART(OTHER)], [card("title", 0, secs=2), card("vote", 99, secs=2, link="fenderog.com/art-crit")], (1920, 1080)),
     ("ladder", [ART(HIGH), ART(OTHER), ART(HIGH), ART(OTHER)], [card("section", 2, secs=2)], (1080, 1920)),  # a run twice: recorded once
+    ("reveal", [ART(HIGH), ART(OTHER)], [card("hook", 0, heading=""), card("finale", 99, secs=5, link="fenderog.com/art-crit")], (1080, 1920)),
+    ("grid", [ART(HIGH), ART(OTHER)], [card("hook", 0, heading=""), card("finale", 99, secs=5)], (1080, 1920)),
+    ("wide", [ART(HIGH), ART(OTHER)], [card("finale", 99, secs=3)], (1920, 1080)),
 ])
 def test_a_template_renders_at_its_format_and_length(site, tmp_path, template, slots, cards, size):  # noqa: F811
-    spec = {"template": template, "slots": slots, "cards": cards, "still": 2, "music": "lofi", "metrics": True}
+    spec = {"template": template, "count": len(slots), "slots": slots, "cards": cards, "still": 2, "music": "lofi", "metrics": True}
     said = []
     out = in_thread(studio.make_studio_video, site, spec, tmp_path, said.append)
     width, height, seconds = probe(out)
@@ -130,7 +157,8 @@ def test_text_on_a_card_never_becomes_markup(site, tmp_path):  # noqa: F811
     """The studio scene puts card text in with textContent: a heading full of tags draws as text."""
     def render():
         spec, runs = studio.check_spec(site, {"template": "duel", "slots": [ART(HIGH), ART(OTHER)],
-                                              "cards": [card("title", 0, heading='<img src=x onerror="document.title=1"><b id=evil>')]})
+                                              "cards": [card("title", 0, heading='<img src=x onerror="document.title=1"><b id=evil>'),
+                                                        card("hook", 0, heading='<i id=evil2>'), card("finale", 99, heading='<u id=evil3>')]})
         work = tmp_path / "work"
         work.mkdir()
         with video.studio(site / "docs", work) as chrome:
@@ -140,8 +168,9 @@ def test_text_on_a_card_never_becomes_markup(site, tmp_path):  # noqa: F811
             tab.goto(f"{chrome.scene}/studio.html?plan=plan-studio.json")
             tab.wait_for_function("() => window.sceneReady === true")
             tab.evaluate("(f) => window.renderFrame(f)", 30)
-            return tab.evaluate("() => [document.getElementById('evil'), document.title, document.body.textContent.includes('<b id=evil>')]")
-    assert in_thread(render) == [None, "art-crit video scene", True]
+            return tab.evaluate("() => [['evil', 'evil2', 'evil3'].map((id) => document.getElementById(id)), document.title,"
+                                " ['<b id=evil>', '<i id=evil2>', '<u id=evil3>'].every((t) => document.body.textContent.includes(t))]")
+    assert in_thread(render) == [[None, None, None], "art-crit video scene", True]
 
 
 # --- the local API -------------------------------------------------------------------------------------------------

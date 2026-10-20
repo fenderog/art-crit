@@ -269,6 +269,12 @@ TILE_BOX = {"reveal": (36, 380, 1008, 1180), "grid": (36, 380, 1008, 1180), "wid
 MAX_PROMPT = 600  # characters the opening types out
 
 
+def prompt_text(page):
+    """A page's prompt as the opening types it: whitespace collapsed, at most MAX_PROMPT characters."""
+    prompt = " ".join((page.get("prompt") or page["title"]).split())
+    return prompt if len(prompt) <= MAX_PROMPT else prompt[:MAX_PROMPT - 1].rstrip() + "…"
+
+
 def run_info(run):
     """What the scene says about a run (the model id is named by the site's own runs.js)."""
     m = run.get("metrics") or {}
@@ -367,9 +373,7 @@ def cues(plan):
 
 def scene_plan(layout, page, runs, clips, seconds):
     """Everything scene.js needs for one layout (JSON; every string in it is shown with textContent)."""
-    prompt = " ".join((page.get("prompt") or page["title"]).split())
-    if len(prompt) > MAX_PROMPT:
-        prompt = prompt[:MAX_PROMPT - 1].rstrip() + "…"
+    prompt = prompt_text(page)
     infos = [run_info(r) for r in runs]
     ranks = [r.get("rank") for r in runs if r.get("rank")]
     best = min(ranks) if ranks else None

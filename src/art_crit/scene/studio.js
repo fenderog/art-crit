@@ -1,11 +1,13 @@
-// The scene the video studio renders (studio.py `scene_plan`, ADR-0034): text cards in their looks, and the runs in the
-// template's layout, either all at once (duel, line-up, wipe, montage) or one after another (ladder, countdown).
+// The scene the video studio renders (studio.py `scene_plan`, ADR-0034): text cards in their looks, the Hook and Finale
+// cards drawn like `art-crit video`'s opening and closing (parts.js), and the runs in the template's layout, either all
+// at once (grid, duel, line-up, wipe, montage) or one after another (reveal, wide, ladder, countdown).
 // Like scene.js, every frame is a pure function of its number; strings only ever go through textContent.
 
 import {
   box, caption, clamp, describeRun, drawCaption, el, fmtCost, fmtTime, frames, frameSrc, glow, hide, inCubic, lerp,
-  loadPlan, logo, outBack, outCubic, pose, prog, px, ready, show, spring,
+  loadPlan, logo, outBack, outCubic, pose, prog, px, ready, show, spring, fit,
 } from "./motion.js";
+import { finaleScene, hookScene } from "./parts.js";
 
 const plan = await loadPlan();
 const { fps: FPS, timing: T, segments: SEGMENTS, template: TPL, looks: LOOKS } = plan;
@@ -14,6 +16,16 @@ const S = Math.min(W, H); // type is sized from the short side, so every format 
 const ACCENT_HUE = 262;
 const slots = plan.slots.map(describeRun);
 const N = slots.length;
+const oneModel = new Set(slots.map((r) => r.pretty)).size === 1;
+const pick = slots.find((r) => r.pick) ?? null;
+
+// The opening's two lines, unless a Hook card says otherwise: like `art-crit video`'s, or the number of prompts.
+function hookLines(card) {
+  const prompts = `${new Set(slots.map((r) => r.page_title)).size} prompts.`;
+  const auto = oneModel ? [slots[0].pretty, plan.prompt ? `${N} effort levels.` : prompts]
+    : [`${new Set(slots.map((r) => r.pretty)).size} AI models.`, plan.prompt ? "Same prompt." : prompts];
+  return [card?.heading || auto[0], card?.sub || (card?.heading ? "" : auto[1])];
+}
 
 document.body.style.width = `${W}px`;
 document.body.style.height = `${H}px`;
@@ -27,12 +39,29 @@ const keep = (...nodes) => {
 // ---- text cards ---------------------------------------------------------------------------------------------------
 
 const cardEls = new Map(); // segment index -> its card's nodes
+const sceneEls = new Map(); // segment index -> a Hook or Finale card's set piece
 SEGMENTS.forEach((seg, i) => {
   if (seg.type !== "card") return;
+  if (seg.card.type === "hook") {
+    const hook = hookScene(document.body, slots, { size: plan.size, lines: hookLines(seg.card), prompt: plan.prompt });
+    keep(...hook.nodes);
+    sceneEls.set(i, hook);
+    return;
+  }
+  if (seg.card.type === "finale") {
+    const numbered = slots.map((r) => ({ ...r, label: TPL.badges ? r.label : String(r.num) }));
+    const finale = finaleScene(document.body, numbered, {
+      size: plan.size, tiles: plan.finale_tiles, question: (seg.card.heading || "Place your vote").split(/\s+/),
+      cta: seg.card.sub || null, link: seg.card.link, pick: pick && numbered[pick.index], byEffort: oneModel && Boolean(plan.prompt),
+    });
+    keep(...finale.nodes);
+    sceneEls.set(i, finale);
+    return;
+  }
   const look = LOOKS[seg.card.look];
   const light = seg.card.look === "peach" || seg.card.look === "light";
   const root = keep(el("div", "layer st-card", document.body));
-  root.style.background = look.bg;
+  if (seg.card.look !== "glow") root.style.background = look.bg; // the glow is drawn per frame (drawCard)
   root.style.color = look.fg;
   const shine = el("div", "layer st-shine", root);
   const mark = keep(box(el("div", "abs", root), S * 0.06, S * 0.06)); // posed; the logo inside keeps its own filter
@@ -52,7 +81,7 @@ SEGMENTS.forEach((seg, i) => {
     chip.style.background = look.chip_bg;
     chip.style.color = look.chip_fg;
   }
-  cardEls.set(i, { root, shine, mark, body, words, sub, chip });
+  cardEls.set(i, { root, shine, mark, body, words, sub, chip, glow: seg.card.look === "glow" });
 });
 
 // `first` = the video opens with this card: its first frame is the cover, so it starts complete and only punches in
@@ -60,6 +89,7 @@ function drawCard(c, t, d, first) {
   // the colour opens as a circle from the middle
   const open = first ? 1 : outCubic(prog(t, 0, 0.45));
   pose(c.root, { o: 1 });
+  if (c.glow) glow(c.root, t, ACCENT_HUE, W / 2, H * 0.45, plan.size);
   c.root.style.clipPath = open >= 1 ? "none" : `circle(${(Math.hypot(W, H) / 2) * open}px at 50% 50%)`;
   c.shine.style.background = `radial-gradient(${S * 0.9}px ${S * 0.7}px at ${50 + 20 * Math.sin(t * 0.7)}% ${35 + 10 * Math.cos(t * 0.5)}%, rgba(255,255,255,.16), transparent 70%)`;
   const out = outCubic(prog(t, d - T.exit, T.exit));
@@ -120,6 +150,24 @@ if (TPL.wipe) {
   divider = keep(box(el("div", "st-divider", document.body), x, y, 6, s));
   el("i", null, divider);
 }
+// the grid: a header like `art-crit video`'s grid layout (the opening's lines, then the shared prompt)
+let gridHead = null;
+let gridPrompt = null;
+let gridLogo = null;
+if (TPL.spotlight) {
+  const [a, b] = hookLines(null);
+  gridLogo = keep(box(logo(document.body, 44), 48, 44));
+  gridLogo.classList.add("abs");
+  gridHead = keep(box(el("div", "abs headline", document.body), 48, 120, 984));
+  el("span", null, gridHead, `${a} `);
+  el("span", "hl", gridHead, b);
+  fit(gridHead, 984, 72, 40);
+  if (plan.prompt) {
+    gridPrompt = keep(px(box(el("div", "abs mini-prompt", document.body), 48, 214, 984), 34));
+    gridPrompt.style.webkitLineClamp = "3";
+    gridPrompt.textContent = plan.prompt;
+  }
+}
 let title = null;
 let titleWords = [];
 if (plan.title) {
@@ -132,8 +180,13 @@ if (plan.title) {
   });
 }
 
-function drawTogether(t, d) {
+function drawTogether(t, d, spot) {
   const exit = inCubic(prog(t, d - T.exit, T.exit));
+  if (gridHead) {
+    pose(gridHead, { o: outCubic(prog(t, 0, 0.3)) * (1 - exit), y: lerp(-30, 0, outCubic(prog(t, 0, 0.4))) });
+    pose(gridLogo, { o: outCubic(prog(t, 0, 0.3)) * (1 - exit) });
+    if (gridPrompt) pose(gridPrompt, { o: outCubic(prog(t, 0.15, 0.3)) * (1 - exit) });
+  }
   tiles.forEach((tile, i) => {
     const at = T.tiles + (TPL.wipe ? 0 : i * T.stagger);
     const e = spring(prog(t, at, 0.6));
@@ -148,6 +201,7 @@ function drawTogether(t, d) {
     }
   });
   if (TPL.wipe) drawWipe(t, d, exit);
+  if (spot) spotlight(t, spot, exit);
   if (title) {
     // the montage: once the tiles have landed they dim and the title comes up over them
     const u = outCubic(prog(t, 1.2, 0.5)) * (1 - exit);
@@ -158,6 +212,30 @@ function drawTogether(t, d) {
       pose(w, { o: outCubic(clamp(v * 3)), s: lerp(0.4, 1, outBack(v)) });
     });
   }
+}
+
+// once the tiles have landed, a spotlight steps through them: each one in turn grows while the rest dim
+function spotlight(t, spot, exit) {
+  tiles.forEach((tile) => {
+    tile.tile.classList.remove("spot");
+    tile.tile.style.zIndex = "";
+    if (tile.badge) tile.badge.style.zIndex = "";
+  });
+  if (t < spot.from || exit > 0) return;
+  const k = Math.min(N - 1, Math.floor((t - spot.from) / spot.each));
+  const u = (t - spot.from - k * spot.each) / spot.each;
+  const grow = outBack(clamp(u * 4)) * (1 - inCubic(prog(u, 0.8, 0.2)));
+  tiles.forEach((tile, i) => {
+    if (i === k) {
+      pose(tile.tile, { s: 1 + 0.09 * grow });
+      if (tile.badge) pose(tile.badge, { s: 1 + 0.25 * grow, x: -tile.s * 0.045 * grow, y: -tile.s * 0.045 * grow });
+      tile.tile.classList.add("spot");
+      tile.tile.style.zIndex = "2";
+      if (tile.badge) tile.badge.style.zIndex = "3";
+    } else {
+      tile.tile.style.filter = `brightness(${1 - 0.45 * grow})`;
+    }
+  });
 }
 
 // the wipe: B is uncovered from the right as the divider sweeps across to the left, then the divider settles at plan.wipe
@@ -178,17 +256,27 @@ let chrome = null;
 let bars = [];
 let counter = null;
 let pageLine = null;
-const CARD = [90, 260, 900];
+// where things go one after another: `art-crit video`'s reveal (tall) and wide (the caption beside the card)
+const SEQ = W > H
+  ? { card: [60, 60, 960], badge: 112, sticker: 40, progress: [1100, 64, 760], toprow: [1100, 92, 760, 24], line: [1100, 138, 760, 30, 3],
+    info: [1100, 330, 760], sizes: { vendor: 34, name: [132, 64], effort: 38, stats: 58 } }
+  : { card: [90, 222, 900], badge: 104, sticker: 36, progress: [48, 40, 984], toprow: [48, 66, 984, 24], line: [48, 108, 984, 32, 2],
+    info: [90, 1160, 900], sizes: { vendor: 36, name: [124, 64], effort: 36, stats: 54 } };
+const CARD = SEQ.card;
 if (!TPL.together) {
   chrome = keep(el("div", "layer", document.body));
-  const progress = box(el("div", "progress", chrome), 48, 40, 984);
+  const [px0, py0, pw0] = SEQ.progress;
+  const progress = box(el("div", "progress", chrome), px0, py0, pw0);
   bars = slots.map(() => el("i", null, el("span", null, progress)));
-  const toprow = px(box(el("div", "abs toprow", chrome), 48, 66, 984), 24);
-  logo(toprow, 31);
+  const [tx, ty, tw, tsize] = SEQ.toprow;
+  const toprow = px(box(el("div", "abs toprow", chrome), tx, ty, tw), tsize);
+  logo(toprow, Math.round(tsize * 1.3));
   counter = el("span", "dim", toprow);
-  pageLine = px(box(el("div", "abs mini-prompt", chrome), 48, 112, 984), 32);
-  pageLine.style.webkitLineClamp = "2";
+  const [lx, ly, lw, lsize, lines] = SEQ.line;
+  pageLine = px(box(el("div", "abs mini-prompt", chrome), lx, ly, lw), lsize);
+  pageLine.style.webkitLineClamp = String(lines);
   const [cx, cy, side] = CARD;
+  const [ix, iy, iw] = SEQ.info;
   slots.forEach((run) => {
     const card = keep(box(el("div", "card", document.body), cx, cy, side, side));
     card.style.borderRadius = `${Math.round(side * 0.05)}px`;
@@ -197,12 +285,17 @@ if (!TPL.together) {
     el("div", "ring", card);
     let badge = null;
     if (TPL.badges) {
-      badge = keep(px(box(el("div", "num", document.body), cx - 34, cy - 34, 130, 130), 58));
+      badge = keep(px(box(el("div", "num", document.body), cx - SEQ.badge * 0.28, cy - SEQ.badge * 0.28, SEQ.badge, SEQ.badge), SEQ.badge * 0.52));
       badge.textContent = run.label;
     }
-    const info = plan.labels ? caption(document.body, run, 90, 1200, 900, { vendor: 36, name: [124, 64], effort: 36, stats: 54 }, plan.metrics) : null;
+    let sticker = null;
+    if (run.sticker) {
+      sticker = keep(px(el("div", "sticker", document.body, run.sticker), SEQ.sticker));
+      box(sticker, cx + side - sticker.offsetWidth + SEQ.sticker * 0.5, cy - SEQ.sticker * 0.9);
+    }
+    const info = plan.labels ? caption(document.body, run, ix, iy, iw, SEQ.sizes, plan.metrics) : null;
     if (info) keep(...info.nodes);
-    seqEls.push({ card, img, badge, info });
+    seqEls.push({ card, img, badge, sticker, info });
   });
 }
 
@@ -221,7 +314,12 @@ function drawSlot(t, d, i) {
     const u = prog(t, T.enter * 0.55, 0.4);
     pose(els.badge, { o: outCubic(prog(t, T.enter * 0.55, 0.2)), s: outBack(u) * (1 - exit * 0.5), r: lerp(-30, 0, outCubic(u)), y: -exit * H * 0.55 });
   }
-  if (els.info) drawCaption(els.info, run, t, outCubic(prog(t, d - T.exit - 0.05, T.exit)), T);
+  const textOut = outCubic(prog(t, d - T.exit - 0.05, T.exit));
+  if (els.sticker) {
+    const u = prog(t, T.sticker, 0.4);
+    pose(els.sticker, { o: outCubic(prog(t, T.sticker, 0.2)) * (1 - textOut), s: lerp(1.9, 1, outBack(u)), r: lerp(-22, -6, outCubic(u)) + Math.sin(t * 5) * 1.5, y: -exit * H * 0.55 });
+  }
+  if (els.info) drawCaption(els.info, run, t, textOut, T);
   pose(chrome, { o: 1 });
   bars.forEach((bar, k) => { bar.style.transform = `scaleX(${k < i ? 1 : k > i ? 0 : prog(t, 0, d)})`; });
   counter.textContent = `${i + 1} / ${N}`;
@@ -239,8 +337,9 @@ frames((f) => {
   tiles.forEach((tile) => { tile.tile.style.clipPath = ""; });
   const behind = seg.type === "slot" ? slots[seg.slot] : null;
   glow(bg, f / FPS, behind ? behind.hue : ACCENT_HUE, behind ? CARD[0] + CARD[2] / 2 : W / 2, behind ? CARD[1] + CARD[2] / 2 : H * 0.45, plan.size);
-  if (seg.type === "card") drawCard(cardEls.get(Math.max(0, k)), t, d, k <= 0);
-  else if (seg.type === "slots") drawTogether(t, d);
+  if (sceneEls.has(k)) sceneEls.get(k).draw(t, d, f, T);
+  else if (seg.type === "card") drawCard(cardEls.get(Math.max(0, k)), t, d, k <= 0);
+  else if (seg.type === "slots") drawTogether(t, d, seg.spot);
   else drawSlot(t, d, seg.slot);
 });
 await ready();

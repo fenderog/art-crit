@@ -156,3 +156,17 @@
   .st-intro h1 { font-size: 30px; }
   .st-settings { max-width: none; }
 }
+
+/* the Hook and Finale cards in the preview: a sketch of `art-crit video`'s opening and closing */
+.st-scene-preview { position: relative; flex: 1 1 0; min-height: 0; overflow: hidden; border-radius: 8px; background: radial-gradient(70% 50% at 50% 45%, rgba(122, 92, 255, 0.35), transparent 75%), #0c0b14; color: #fff; display: flex; flex-direction: column; justify-content: center; gap: 10px; padding: 14px; }
+.st-scene-thumbs { display: grid; grid-template-columns: repeat(auto-fit, minmax(48px, 1fr)); gap: 6px; }
+.st-scene-thumbs span { position: relative; aspect-ratio: 1; border-radius: 6px; overflow: hidden; background: #2b2a3d; }
+.st-scene-thumbs img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.st-scene-thumbs b { position: absolute; left: 4px; top: 4px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: #fff; color: #0b0b10; font-size: 11px; line-height: 18px; text-align: center; }
+.st-scene-thumbs.is-wall { position: absolute; inset: -30%; grid-template-columns: repeat(6, 1fr); align-content: center; transform: rotate(-11deg); opacity: 0.35; }
+.st-scene-text { position: relative; display: flex; flex-direction: column; gap: 4px; }
+.st-scene-head { font-size: 22px; font-weight: 900; letter-spacing: -0.03em; line-height: 1.05; }
+.st-yellow { color: #ffe14d; font-weight: 800; }
+.st-scene-bubble { margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: rgba(22, 21, 31, 0.9); border: 1px solid rgba(255, 255, 255, 0.14); font-size: 13px; line-height: 1.35; }
+.st-scene-link { position: relative; align-self: center; background: #fff; color: #0b0b10; }
+.st-hint { margin: 0; }

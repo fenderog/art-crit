@@ -19,7 +19,9 @@ what the page offers, `studio.check_spec` what a spec may hold, and `studio.time
 page asks for (`POST api/studio/plan`) instead of computing its own, so the preview and the render can't drift apart. The
 render reuses video.py's recorder and frame-by-frame renderer with a second scene (`scene/studio.js`) that shares its
 helpers with the layouts' scene (`scene/motion.js`): cards in the mockup's four looks, and the runs in the template's
-layout, animated like the existing videos. The music styles are synthesized like the beat (ADR-0033). The compare page's
+layout, animated like the existing videos. The music styles are synthesized like the beat (ADR-0033). To make studio videos look like `art-crit video`'s,
+its opening and closing are cards too (Hook, Finale) drawn by the same code (`scene/parts.js`), its three layouts are
+templates (Reveal, Grid, Wide), and a new studio starts as a Reveal between a Hook and a Finale. The compare page's
 panel is replaced by a link that opens the studio with the compared runs in its slots; `POST api/video` now takes a studio
 spec only, and the CLI keeps the three layouts.
 
