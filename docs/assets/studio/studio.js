@@ -4,7 +4,7 @@
 // and the render never disagree. Run data and card text only ever reach the page through textContent.
 
 import { el, getJSON } from "../dom.js";
-import { EFFORTS, isFailed, localFeature, modelParts, prettyModelName, runDir, vendorName, vendorOf } from "../runs.js";
+import { EFFORTS, effortIndex, isFailed, localFeature, modelParts, prettyModelName, runDir, vendorName, vendorOf, vendorOptions } from "../runs.js";
 
 const main = document.getElementById("main");
 const STORE = "art-crit:studio";
@@ -676,12 +676,11 @@ function drawPicker() {
   pageSel.addEventListener("change", () => { f.page = pageSel.value; drawPicker(); });
   const vendors = [...new Set(all.map((r) => r.vendor))].sort();
   const efforts = EFFORTS.filter((e) => all.some((r) => r.effort === e));
-  const LIMIT = 120;
   dialog.replaceChildren(
     el("div", { class: "st-dialog-head" }, [
       el("div", { class: "st-grow" }, [
         h("h2", null, `Choose a result for "${labels()[ui.picker]}"`),
-        h("span", "st-muted", `${shown.length} results match${shown.length > LIMIT ? ` · showing the first ${LIMIT}` : ""}`),
+        h("span", "st-muted", `${shown.length} results match`),
       ]),
       current ? button("st-btn", "Empty this slot", () => setSlot(ui.picker, null)) : null,
       button("st-icon", "×", () => dialog.close(), { "aria-label": "Close" }),
@@ -692,24 +691,49 @@ function drawPicker() {
       el("div", { class: "st-row" }, [h("span", "st-muted", "Vendor"), ...pills(f.vendors, vendors, (v) => v)]),
       el("div", { class: "st-row" }, [h("span", "st-muted", "Effort"), ...pills(f.efforts, efforts, (e) => e)]),
     ]),
-    el("div", { class: "st-results" }, shown.slice(0, LIMIT).map((r) => {
-      const on = current && current.page === r.ref.page && current.run === r.ref.run;
-      return el("button", {
-        class: `st-result${on ? " is-on" : ""}`,
-        attrs: { type: "button", "aria-label": `Use ${r.model} ${r.effort} (${C.types[r.type].label}) from ${r.pageTitle}` },
-        on: { click: () => setSlot(ui.picker, r.ref) },
-      }, [
-        el("span", { class: "st-result-pic" }, [
-          r.thumb ? el("img", { attrs: { src: r.thumb, alt: "", loading: "lazy" } }) : null,
-          h("span", "st-result-type", `${C.types[r.type].label}${r.clip ? ` · 0:${String(Math.round(r.clip)).padStart(2, "0")}` : ""}`),
-        ]),
-        el("span", { class: "st-result-text" }, [
-          el("span", { class: "st-strong" }, [`${r.model} `, h("span", "st-accent", r.effort)]),
-          h("span", "st-muted st-small", `${r.vendor} · ${r.pageTitle}`),
-        ]),
+    el("div", { class: "st-results" }, byModel(shown).map((g) => {
+      const vo = vendorOptions(g.model);
+      return el("section", { class: "st-group", attrs: vo.attrs, style: vo.style }, [
+        el("h3", { class: "st-group-head" }, [h("span", "st-dot"), h("span", "st-group-vendor", g.vendor), h("span", "st-group-sep", " – "), g.name,
+          h("span", "st-muted st-group-count", `${g.items.length} ${g.items.length === 1 ? "run" : "runs"}`)]),
+        el("div", { class: "st-group-row" }, g.items.map((r) => resultCard(r, current))),
       ]);
     })),
   );
+}
+
+// The picker's runs grouped like the page's lanes: one row per model, vendors and models by name, each row by prompt
+// and then effort (low to high).
+function byModel(entries) {
+  const groups = new Map();
+  for (const r of entries) {
+    if (!groups.has(r.run.model)) {
+      const { name, via } = modelParts(r.run.model);
+      groups.set(r.run.model, { model: r.run.model, vendor: r.vendor, name: prettyModelName(name) + (via ? ` via ${via}` : ""), items: [] });
+    }
+    groups.get(r.run.model).items.push(r);
+  }
+  const list = [...groups.values()].sort((a, b) => a.vendor.localeCompare(b.vendor) || a.name.localeCompare(b.name));
+  for (const g of list) g.items.sort((a, b) => a.pageTitle.localeCompare(b.pageTitle) || effortIndex(a.effort) - effortIndex(b.effort));
+  return list;
+}
+
+function resultCard(r, current) {
+  const on = current && current.page === r.ref.page && current.run === r.ref.run;
+  return el("button", {
+    class: `st-result${on ? " is-on" : ""}`,
+    attrs: { type: "button", "aria-label": `Use ${r.model} ${r.effort} (${C.types[r.type].label}) from ${r.pageTitle}` },
+    on: { click: () => setSlot(ui.picker, r.ref) },
+  }, [
+    el("span", { class: "st-result-pic" }, [
+      r.thumb ? el("img", { attrs: { src: r.thumb, alt: "", loading: "lazy" } }) : null,
+      h("span", "st-result-type", `${C.types[r.type].label}${r.clip ? ` · 0:${String(Math.round(r.clip)).padStart(2, "0")}` : ""}`),
+    ]),
+    el("span", { class: "st-result-text" }, [
+      h("span", "st-strong st-accent-effort", r.effort),
+      h("span", "st-muted st-small", r.pageTitle),
+    ]),
+  ]);
 }
 dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); }); // a click on the backdrop
 
