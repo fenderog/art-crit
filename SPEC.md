@@ -613,7 +613,7 @@ files and the site's compare link for those runs, to paste into the post. Needs 
 - **Layouts** (`-l`, repeatable, default all three), each `hook` → runs → `finale`: `reveal` 1080x1920, each run in turn
   (`-d` seconds each); `grid` 1080x1920, every run at once in numbered tiles that land one after another, then a spotlight
   that steps through them; `wide` 1920x1080, like `reveal` with the caption in a panel beside the picture.
-  H.264, 30 fps, AAC sound (`video_sound.py`: a 120 bpm beat with a whoosh on each cut, pops and ticks on what lands and
+  H.264, 30 fps, AAC sound (`video_sound.py`: a 120 bpm beat with a soft tock on each cut, pops and ticks on what lands and
   counts, a ding for the pick; `--no-sound` / `"sound": false` = a silent track, which platforms still expect).
 - **The motion** (`scene/scene.js`, timings in `video.TIMING`): the `hook` (3 s; its first frame is already the cover) shows a
   tilted, drifting wall of every run's clip, the site's logo (`assets/logo.svg`, in its dark-mode colours: the scene is
@@ -672,7 +672,8 @@ slots in order. Same requirements and output rules as `art-crit video`; files go
   per segment, sized by length, click to jump or edit a card), "Add a card", the card editor (heading, subtitle, link,
   look, length, earlier/later, delete, done); the settings panel and Render; then "Your renders" (state, the video and a
   download). The result picker is a modal dialog listing every run that didn't fail, filtered by prompt, type, vendor and
-  effort (the first 120 shown).
+  effort, grouped like the page's lanes: one row per model ("Vendor – Model", vendors and models by name), its runs by
+  prompt and then effort.
 - **Local API** (`art-crit serve` only, like `api/rank`: loopback `Host`, same-origin, JSON; reads carry no CORS headers):
   `GET api/studio` → `studio.catalog()` (templates, looks, cards, choices, limits); `POST api/studio/plan` with a spec (empty
   slots allowed) → `{segments: [{type: card|slots|slot, start, secs, card?, slot?}], total, slots: [{type, secs}|null],

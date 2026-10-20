@@ -89,7 +89,7 @@ def test_the_sound_cues_follow_the_segments():
         {"type": "card", "start": 0, "frames": 60, "card": {"link": "x"}},
         {"type": "slot", "start": 60, "frames": 60, "slot": 0}, {"type": "slot", "start": 120, "frames": 60, "slot": 1}]}
     cues = studio.cues(plan)
-    assert sum(k == "whoosh" for _, k in cues) == 2 and sum(k == "pop" for _, k in cues) == 4
+    assert sum(k == "cut" for _, k in cues) == 2 and sum(k == "pop" for _, k in cues) == 4
     assert any(k == "tick" for _, k in cues) and all(at < 6 for at, _ in cues)
 
 

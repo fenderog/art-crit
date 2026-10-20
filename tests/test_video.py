@@ -99,7 +99,7 @@ def test_the_timeline_and_the_sound_cues_line_up(tmp_path):
     for plan in (reveal, grid):
         cues = video.cues(plan)
         assert all(0 <= at < plan["frames"] / video.FPS for at, _ in cues)
-        assert sum(kind == "whoosh" for _, kind in cues) == len(plan["segments"]) - 1  # one per cut
+        assert sum(kind == "cut" for _, kind in cues) == len(plan["segments"]) - 1  # one per cut
         assert ("ding" in {kind for _, kind in cues})  # the owner's pick
     wav = tmp_path / "s.wav"
     video_sound.soundtrack(video.cues(reveal), 3.5, wav)

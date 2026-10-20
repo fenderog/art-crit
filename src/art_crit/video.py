@@ -345,7 +345,7 @@ def cues(plan):
     for seg in plan["segments"]:
         at = seg["start"] / FPS
         if at:
-            out.append((at - 0.14, "whoosh"))
+            out.append((at, "cut"))
         if seg["type"] == "hook":
             out += [(0, "hit"), (t["bubble"], "pop")]
             out += [(t["type_from"] + k * 0.075, "tick") for k in range(int(t["type_s"] / 0.075))]

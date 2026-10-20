@@ -283,7 +283,8 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   `Date`, or frames come out different on a slower machine. `pose()` sets `visibility` on each node it poses, and a
   `visibility: visible` child shows through a hidden parent, so a container must be posed too (only opacity hides children):
   The finale's headline was missing until its container was. Change a beat in `video.TIMING`, not as a literal in scene.js, so
-  the sound cues stay on it. The renderer Chrome runs without the SwiftShader flags (about 5x faster per frame); the game
+  the sound cues stay on it. The cut sound (`video_sound.sound("cut")`) was a noise whoosh, which the owner found harsh, and a
+  softer whoosh was still too much: keep sounds on cuts short, tonal and quieter than the kick. The renderer Chrome runs without the SwiftShader flags (about 5x faster per frame); the game
   recorder keeps them. Iterate on the look by rendering from cached clips and looking at frames (`ffmpeg -ss T -frames:v 1`).
   `pose()` also overwrites `filter`, so an element with its own CSS filter (the logo inverted on a light studio card) sits
   inside a posed wrapper. In studio.css, base rules for form controls use `:where()`: a plain `.st button` outranked the

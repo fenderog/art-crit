@@ -1,5 +1,5 @@
 """The sound of `art-crit video` and the video studio: a music bed in one of a few styles (upbeat = a quiet
-four-on-the-floor beat, lo-fi = a slow beat under jazzy chords, cinematic = a low drone with booms) plus a whoosh on
+four-on-the-floor beat, lo-fi = a slow beat under jazzy chords, cinematic = a low drone with booms) plus a soft tock on
 every cut, pops when things land and ticks while text types or numbers count, synthesized here with the standard
 library into a WAV (no samples, nothing licensed). `video.cues` / `studio.cues` say when each effect plays; ADR-0033."""
 
@@ -11,7 +11,7 @@ from functools import cache
 
 RATE = 44100
 BEAT_S = 0.5  # 120 bpm; the timeline's cuts fall on beats
-GAIN = {"kick": 0.5, "hat": 0.09, "whoosh": 0.42, "pop": 0.3, "tick": 0.1, "hit": 0.75, "ding": 0.3,
+GAIN = {"kick": 0.5, "hat": 0.09, "cut": 0.16, "pop": 0.3, "tick": 0.1, "hit": 0.75, "ding": 0.3,
         "softkick": 0.42, "snare": 0.16, "boom": 0.5}
 LOFI_BEAT_S = 0.73  # 82 bpm
 # Am7, Dm7, G7, Cmaj7 (Hz), one bar each
@@ -48,15 +48,15 @@ def sound(kind):
         n = int(0.05 * RATE)
         x = _noise(n + 1, 1)
         return tuple((x[k + 1] - x[k]) * 0.5 * e for k, e in enumerate(_env(n, 95)))
-    if kind == "whoosh":  # noise through a low-pass whose cutoff rises and falls
-        n = int(0.42 * RATE)
-        y, out = 0.0, []
-        for k, x in enumerate(_noise(n, 2)):
-            u = k / n
-            cutoff = 250 + 5200 * math.sin(math.pi * u) ** 2
-            y += (1 - math.exp(-2 * math.pi * cutoff / RATE)) * (x - y)
-            out.append(y * math.sin(math.pi * u) ** 1.5 * 2.2)
-        return tuple(out)
+    if kind == "cut":  # a soft wooden tock: a muted mallet note (A4, a faint overtone), eased in so it doesn't click
+        n = int(0.12 * RATE)
+        out = []
+        for k in range(n):
+            t = k / RATE
+            attack = min(1, k / (0.003 * RATE))
+            out.append(attack * (math.sin(2 * math.pi * 440 * t) * math.exp(-45 * t) + 0.25 * math.sin(2 * math.pi * 1320 * t) * math.exp(-90 * t)))
+        peak = max(map(abs, out))
+        return tuple(s / peak for s in out)
     if kind == "pop":
         n = int(0.11 * RATE)
         return tuple(s * e for s, e in zip(_sweep(n, 320, 980, 60), _env(n, 38)))

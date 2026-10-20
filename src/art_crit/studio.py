@@ -233,7 +233,7 @@ def cues(plan):
     for seg in plan["segments"]:
         at = seg["start"] / video.FPS
         if at:
-            out.append((at - 0.14, "whoosh"))
+            out.append((at, "cut"))
         if seg["type"] == "card":
             out.append((at + 0.2, "pop"))
             if seg["card"]["link"]:
