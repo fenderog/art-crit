@@ -81,3 +81,21 @@ body {
 .cta-ask .logo { display: inline-block; margin-top: 0.1em; }
 .url-pill { display: inline-flex; align-items: center; gap: 0.5em; padding: 0.5em 1em; border-radius: 999px; background: #fff; color: #0b0b10; font-weight: 800; white-space: nowrap; }
 .url-pill i { width: 0.55em; height: 0.55em; border-radius: 50%; background: #7a5cff; }
+
+/* the video studio's scene (studio.js) */
+.st-card { overflow: hidden; }
+.st-card-body { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.6em; padding: 0 8%; text-align: center; }
+.st-heading { font-weight: 900; letter-spacing: -0.04em; line-height: 1.04; max-width: 100%; }
+.st-sub { font-weight: 600; line-height: 1.4; max-width: 78%; opacity: 0.85; white-space: pre-line; overflow-wrap: anywhere; }
+.st-chip { margin-top: 0.4em; padding: 0.5em 1.1em; border-radius: 999px; font-weight: 800; white-space: nowrap; }
+.logo.on-light { filter: invert(1) hue-rotate(180deg); }
+.st-label { position: absolute; left: 0; right: 0; bottom: 0; padding: 16% 5% 4.5%; background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.85)); }
+.st-label.right { text-align: right; }
+.st-label b { display: block; font-weight: 850; letter-spacing: -0.02em; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-label b span { font-weight: 650; color: rgba(246, 245, 251, 0.72); }
+.st-metrics { display: block; margin-top: 0.25em; font-weight: 700; color: rgba(246, 245, 251, 0.75); font-variant-numeric: tabular-nums; }
+.st-divider { position: absolute; background: #fff; box-shadow: 0 0 24px rgba(0, 0, 0, 0.55); }
+.st-divider i { position: absolute; top: 50%; left: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: #fff; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45); }
+.st-divider i::before { content: "‹ ›"; position: absolute; inset: 0; display: grid; place-items: center; font: 900 30px/1 -apple-system, sans-serif; color: #111018; }
+.st-title { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 0 8%; text-align: center; text-shadow: 0 8px 40px rgba(0, 0, 0, 0.7);
+  background: linear-gradient(180deg, transparent 22%, rgba(7, 7, 11, 0.72) 40%, rgba(7, 7, 11, 0.72) 60%, transparent 78%); }

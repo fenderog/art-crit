@@ -1,5 +1,5 @@
 import { el, getJSON, showMessage } from "../dom.js";
-import { modelParts, vendorOf, vendorName, vendorMark, runDir, isFailed, coverOf, EFFORTS, byRankThenModel, prettyModelName, effortPill } from "../runs.js";
+import { modelParts, vendorOf, vendorName, vendorMark, runDir, isFailed, coverOf, EFFORTS, byRankThenModel, prettyModelName, effortPill, localFeature } from "../runs.js";
 import { kindUi } from "../output.js";
 import { plural } from "./common.js";
 import { setupRequestButton } from "./request.js";
@@ -64,6 +64,12 @@ function tile(p) {
 
 // "Request a prompt" at the right end of the top bar: it becomes a GitHub issue (request.js, ADR-0030).
 setupRequestButton(document.querySelector(".site-header"));
+// local only (`art-crit serve`): the run monitor and the video studio (ADR-0027, ADR-0034)
+localFeature("video").then((on) => {
+  if (on) document.querySelector(".site-header").append(
+    el("a", { class: "monitor-crumb", attrs: { href: "monitor.html" }, text: "Runs (local)" }),
+    el("a", { class: "monitor-crumb", attrs: { href: "studio.html" }, text: "Video studio (local)" }));
+});
 
 if (pages.length) {
   main.replaceChildren(

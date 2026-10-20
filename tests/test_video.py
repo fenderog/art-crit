@@ -1,20 +1,16 @@
 """art-crit video: the layouts' geometry, the request checks, real videos made from a fixture site (ffmpeg + Chrome, no
-model), recording a game, and the local-only API (`POST api/video`, polling, fetching a file)."""
+model) and recording a game. The local API (which renders the video studio's videos) is tested in test_studio.py."""
 
 import json
 import shutil
 import subprocess
-import time
 import wave
-import urllib.error
-import urllib.request
 from pathlib import Path
 
 import pytest
 
 from art_crit import video, video_sound
 from art_crit.cli import main
-from art_crit.serve import serve_in_thread
 from art_crit.site import rebuild
 from art_crit.util import CritError
 from test_web_kind import in_thread
@@ -192,68 +188,3 @@ def test_the_cli_prints_the_files_and_the_link_for_the_post(site, tmp_path, caps
     assert rc == 0 and out.count(".mp4") == 1 and (tmp_path / "v").is_dir()
     assert f"link for the post: https://fenderog.com/art-crit/compare.html?p=art&r={HIGH}%2C{OTHER}" in out
     assert main(["video", "art", HIGH, "--root", str(site)]) == 1  # one run isn't a comparison
-
-
-# --- the local API -------------------------------------------------------------------------------------------------
-
-def call(base, path, body=None, headers=None):
-    request = urllib.request.Request(base + path, method="POST" if body is not None else "GET", headers={"Content-Type": "application/json", **(headers or {})},
-                                     data=None if body is None else json.dumps(body).encode())
-    try:
-        with urllib.request.urlopen(request) as res:
-            return res.status, res.read(), res.headers
-    except urllib.error.HTTPError as e:
-        return e.code, e.read(), e.headers
-
-
-@needs_tools
-def test_the_api_makes_a_video_in_the_background_and_serves_only_its_files(site):
-    server = serve_in_thread(site / "docs")
-    base = f"http://127.0.0.1:{server.server_address[1]}/"
-    try:
-        assert json.loads(call(base, "api/local")[1])["video"] is True
-        for body, error in [({"runs": [HIGH]}, "compares 2 to 12"), ({"runs": "x"}, "expected runs"), ({"runs": [HIGH, OTHER], "seconds": "6"}, "whole number"),
-                            ({"runs": [HIGH, OTHER], "sound": "yes"}, "true or false")]:
-            status, out, _ = call(base, "api/video?p=art", body)
-            assert status == 400 and error in json.loads(out)["error"]
-        assert call(base, "api/video?p=../art", {"runs": [HIGH, OTHER]})[0] == 400
-
-        status, out, _ = call(base, "api/video?p=art", {"runs": [HIGH, OTHER], "layouts": ["wide"], "seconds": 2})
-        assert status == 200
-        job = json.loads(out)["job"]
-        assert call(base, "api/video?p=art", {"runs": [HIGH, OTHER]})[0] == 400  # one at a time
-        for _ in range(240):
-            state = json.loads(call(base, f"api/video?job={job}")[1])
-            if state["state"] != "running":
-                break
-            time.sleep(0.5)
-        assert state["state"] == "done" and len(state["files"]) == 1 and state["link"].endswith(f"&r={HIGH}%2C{OTHER}")
-        status, data, headers = call(base, f"api/video/file?job={job}&name={state['files'][0]}")
-        assert status == 200 and headers["Content-Type"] == "video/mp4" and b"ftyp" in data[:32]
-        assert "Access-Control-Allow-Origin" not in headers  # another website can't read it
-        for name in ("../../docs/index.html", "page.json", ""):
-            assert call(base, f"api/video/file?job={job}&name={name}")[0] == 404
-        assert (site / "videos/art" / state["files"][0]).is_file()  # outside docs/: never published
-        assert call(base, "api/video?job=nope")[0] == 404
-    finally:
-        server.shutdown()
-        server.server_close()
-
-
-def test_the_api_refuses_other_hosts_and_other_sites(site):
-    server = serve_in_thread(site / "docs")
-    port = server.server_address[1]
-    base = f"http://127.0.0.1:{port}/"
-    try:
-        evil = {"Host": f"evil.example:{port}", "Origin": f"http://evil.example:{port}"}
-        assert call(base, "api/video?p=art", {"runs": [HIGH, OTHER]}, evil)[0] == 403
-        assert call(base, "api/video?job=x", None, {"Host": f"evil.example:{port}"})[0] == 403
-        assert call(base, "api/video?p=art", {"runs": [HIGH, OTHER]}, {"Origin": "https://evil.example"})[0] == 403
-        req = urllib.request.Request(base + "api/video?p=art", method="POST", data=b"{}", headers={"Content-Type": "text/plain"})
-        with pytest.raises(urllib.error.HTTPError) as e:
-            urllib.request.urlopen(req)
-        assert e.value.code == 415
-        assert not (site / "videos").exists()
-    finally:
-        server.shutdown()
-        server.server_close()

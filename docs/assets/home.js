@@ -59,6 +59,7 @@ async function setupMonitorLink() {
   } catch {
     return;
   }
-  document.querySelector(".site-header").append(el("a", { class: "monitor-crumb", attrs: { href: "monitor.html" }, text: "Runs (local)" }));
+  document.querySelector(".site-header").append(el("a", { class: "monitor-crumb", attrs: { href: "monitor.html" }, text: "Runs (local)" }),
+    el("a", { class: "monitor-crumb", attrs: { href: "studio.html" }, text: "Video studio (local)" }));
 }
 setupMonitorLink();

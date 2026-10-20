@@ -87,7 +87,8 @@ if (page) {
         el("button", { class: "v2-link-btn", text: "View final prompt", attrs: { type: "button" }, on: { click: () => dialog.open() } }),
       ]),
       winners.length ? el("div", { class: "v2-wins" }, winners) : null,
-      (await localFeature("video")) ? (await import("./video.js")).videoPanel(slug, runs.map((r) => r.id)) : null,
+      // local only: the video studio, opened with these runs in its slots (studio.html, ADR-0034)
+      (await localFeature("video")) ? el("p", { class: "v2-studio" }, [el("a", { class: "v2-pill", text: "Make a video of these runs in the video studio", attrs: { href: `studio.html?p=${encodeURIComponent(slug)}&r=${runs.map((r) => encodeURIComponent(r.id)).join(",")}` } })]) : null,
       el("div", { class: "v2-cols" }, runs.map(col)),
       el("p", { class: "v2-cmp-note", text: "Green marks the best value in each row among the selected runs. Bars are scaled to the largest value." }),
     );

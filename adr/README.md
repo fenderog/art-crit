@@ -58,5 +58,6 @@ Copy `template.md` to `NNNN-short-title.md` using the next number, and add it to
 | [0029](0029-thumbnails-cache-headers-and-module-preload.md) | Import-time thumbnails, cache headers for run files, module preloads | Accepted |
 | [0030](0030-lanes-design-and-prompt-requests-as-issues.md) | The lanes design for home, page and compare; prompt requests become GitHub issues | Accepted |
 | [0031](0031-retry-is-a-cli-command-over-run-page.md) | Retry is a CLI command that reuses `run --page` and replaces a failed run once its retry works | Accepted |
-| [0032](0032-social-videos-are-local.md) | Social videos are made locally with ffmpeg and headless Chrome, from the CLI or the local compare page | Accepted (cards: superseded by [0033](0033-videos-are-rendered-frame-by-frame.md)) |
+| [0032](0032-social-videos-are-local.md) | Social videos are made locally with ffmpeg and headless Chrome, from the CLI or the local compare page | Accepted (cards: superseded by [0033](0033-videos-are-rendered-frame-by-frame.md); panel: by [0034](0034-video-studio-is-a-local-page.md)) |
 | [0033](0033-videos-are-rendered-frame-by-frame.md) | Social videos are drawn frame by frame by an animated page in Chrome, with a synthesized sound track | Accepted |
+| [0034](0034-video-studio-is-a-local-page.md) | The video studio is a local page that designs a video and renders it with the frame-by-frame scene | Accepted |

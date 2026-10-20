@@ -8,9 +8,12 @@ prompt-request controls when served by `art-crit serve`):
   PUT api/cover?p=<slug>        body {"thumb": {"run", "path"|null}} and/or {"page": {"run", "image"?}|null}
     -> your pick of a run's main thumbnail and/or the page's home-page picture, in data/<slug>/covers.json (overrides
     only: with none set the viewer's default picks apply), then rebuilds.
-  POST api/video?p=<slug>       body {"runs": [ids], "layouts"?: [...], "seconds"?: n, "sound"?: bool}  -> {"job": id}: makes the compare page's
-    social-media videos in the background (video.py, SPEC.md "Social videos"); one job at a time.
-  GET api/video?job=<id>        -> {"state", "step", "files", "link", "error"} (loopback only, no CORS headers)
+  GET api/studio                -> the video studio's choices (studio.catalog(): templates, looks, cards...)
+  POST api/studio/plan          body = a studio spec (may have empty slots) -> its timeline, for the page's preview
+  POST api/video                body {"studio": spec} -> {"job": id}: renders the video studio's video in the background
+    (studio.py, SPEC.md "Video studio"); one job at a time.
+  GET api/video?job=<id>        -> {"state", "step", "files", "error", "title", ...} (loopback only, no CORS headers)
+  GET api/video/jobs            -> {"jobs": [...]}: this server's renders, newest first (same rules)
   GET api/video/file?job=<id>&name=<file>   -> one of that job's finished videos (a name from "files", nothing else)
   GET api/requests              -> {"requests": [...], "sets": [names from art-crit.toml [sets]]}
   PUT api/requests              body {"add": {"prompt", "kind", "title"?, "note"?, "set"?}} or {"remove": "<id>"}
@@ -37,7 +40,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
-from . import site, video
+from . import site, studio, video
 from .config import Config
 from .harness import HARNESSES
 from .runner import STOP_FILE
@@ -410,38 +413,31 @@ def stop_run(docs_root, batch, run_id):
     return None
 
 
-VIDEO_JOBS = {}  # job id -> {"state", "step", "files", "dir", "link", "error"}; the viewer polls it
+VIDEO_JOBS = {}  # job id -> {"state", "step", "files", "dir", "error", "title", ...}; the studio page polls it
 VIDEO_LOCK = threading.Lock()
 
 
-def start_video(root, slug, body):
-    """Check the request, then make the videos in a background thread. Returns (job id, None) or (None, error)."""
-    if not SLUG_RE.match(slug or ""):
-        return None, "bad page slug"
-    if not isinstance(body, dict) or not isinstance(body.get("runs"), list) or not isinstance(body.get("layouts", []), list):
-        return None, "expected runs (a list) and optionally layouts (a list) and seconds"
-    seconds, sound = body.get("seconds", video.SECONDS), body.get("sound", True)
-    runs, layouts = [str(r) for r in body["runs"]], [str(l) for l in body.get("layouts", [])]
+def start_video(root, body):
+    """Check a studio spec, then render it in a background thread. Returns (job id, None) or (None, error)."""
+    if not isinstance(body, dict) or not isinstance(body.get("studio"), dict):
+        return None, "expected {studio: spec}"
     try:
-        if not isinstance(seconds, int) or isinstance(seconds, bool):
-            raise CritError("seconds must be a whole number")
-        if not isinstance(sound, bool):
-            raise CritError("sound must be true or false")
-        video.check_request(root, slug, runs, layouts, seconds)
+        spec, runs = studio.check_spec(root, body["studio"])
+        video.check_tools()
     except CritError as e:
         return None, str(e)
     with VIDEO_LOCK:
         if any(j["state"] == "running" for j in VIDEO_JOBS.values()):
             return None, "a video is already being made; wait for it to finish"
         job_id = secrets.token_hex(8)
-        job = VIDEO_JOBS[job_id] = {"state": "running", "step": "starting", "files": [], "dir": None, "error": None,
-                                    "link": video.compare_url(slug, runs)}
+        job = VIDEO_JOBS[job_id] = {"job": job_id, "state": "running", "step": "starting", "files": [], "dir": None,
+                                    "error": None, "started": time.time(), **studio.describe(spec),
+                                    "length": studio.timeline(spec, runs)[1]}
 
     def work():
         try:
-            files = video.make_videos(root, slug, runs, layouts or None, seconds,
-                                      say=lambda step: job.update(step=step), sound=sound)
-            job.update(state="done", step="done", files=[f.name for f in files], dir=str(files[0].parent))
+            out = studio.make_studio_video(root, spec, say=lambda step: job.update(step=step))
+            job.update(state="done", step="done", files=[out.name], dir=str(out.parent))
         except Exception as e:  # CritError, or whatever Chrome/ffmpeg raised: show it, never kill the server
             job.update(state="failed", error=str(e) or type(e).__name__)
 
@@ -452,6 +448,18 @@ def start_video(root, slug, body):
 def video_status(job_id):
     job = VIDEO_JOBS.get(job_id)
     return {k: v for k, v in job.items() if k != "dir"} if job else None
+
+
+def video_jobs():
+    return [video_status(j) for j in sorted(VIDEO_JOBS, key=lambda j: -VIDEO_JOBS[j]["started"])]
+
+
+def studio_plan(root, spec):
+    """The preview's timeline (studio.preview), or an error."""
+    try:
+        return studio.preview(root, spec), None
+    except CritError as e:
+        return None, str(e)
 
 
 class _Handler(http.server.SimpleHTTPRequestHandler):
@@ -512,6 +520,10 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
             return self._json(200, {"rank": True, "cover": True, "requests": True, "runs": True, "video": True})
         if path.endswith("/api/video/file"):
             return self._video_file(parse_qs(urlsplit(self.path).query))
+        if path.endswith("/api/video/jobs"):
+            return self._local_json(200, {"jobs": video_jobs()})
+        if path.endswith("/api/studio"):
+            return self._local_json(200, studio.catalog())
         if path.endswith("/api/video"):
             status = video_status(parse_qs(urlsplit(self.path).query).get("job", [None])[0])
             return self._local_json(404, {"error": "no such job"}) if status is None else self._local_json(200, status)
@@ -563,13 +575,18 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
 
     def do_POST(self):
         url = urlsplit(self.path)
-        if not url.path.endswith(("/api/stop", "/api/video")):
+        if not url.path.endswith(("/api/stop", "/api/video", "/api/studio/plan")):
             return self._json(404, {"error": "not found"})
         body = self._write_body()
         if body is None:
             return
+        root = Path(self.directory).parent
+        if url.path.endswith("/api/studio/plan"):
+            self._local_only = True  # a read of local data in a POST's clothing: no CORS headers either
+            plan, error = studio_plan(root, body)
+            return self._json(400, {"error": error}) if error else self._json(200, plan)
         if url.path.endswith("/api/video"):
-            job, error = start_video(Path(self.directory).parent, parse_qs(url.query).get("p", [None])[0], body)
+            job, error = start_video(root, body)
             return self._json(400, {"error": error}) if error else self._json(200, {"job": job})
         if not isinstance(body, dict):
             return self._json(400, {"error": "expected an object"})

@@ -37,8 +37,11 @@ src/art_crit/          CLI, standard library only (argparse, json, subprocess, t
   retry.py          `art-crit retry`: failed runs of a page -> one `run --page` batch, then drop the ones that now work (ADR-0031)
   video.py          `art-crit video`: social-media videos of runs (ffmpeg + headless Chrome), local only (ADR-0032): source
                     clips -> JPEG frames -> a plan (timeline, `TIMING`, tiles, stickers) per layout -> frames drawn in Chrome
-                    piped into ffmpeg (ADR-0033); scene/ = the animated page that draws them (imports docs' runs.js);
-                    video_sound.py = the synthesized beat + sound effects, cued from the same plan
+                    piped into ffmpeg (ADR-0033); scene/ = the animated pages that draw them (scene.js = the layouts,
+                    studio.js = the studio's templates and cards, motion.js = what both share; imports docs' runs.js);
+                    video_sound.py = the synthesized music styles + sound effects, cued from the same plan
+  studio.py         the video studio (ADR-0034): `catalog()` (templates, looks, cards), `check_spec`, `timeline` (shared by
+                    the page's preview through api/studio/plan and the render), `make_studio_video`
   importer.py       run directory (or a batch of them) -> docs/data/<page>/runs/<id>/ (clean, secret scan, then move)
   clean.py          session cleaning, path rewrites, secret scan/redact
   site.py           rebuild page.json (with runs) / pages.json (+ each run's rank from ranking.json), rm, list, engine GC
@@ -67,6 +70,7 @@ docs/               the site: vanilla JS ES modules, no viewer build step, no fr
                     lanes/request.js = "Request a prompt" -> Worker api/request (a GitHub issue), else GitHub's prefilled form
   classic/          the previous index/page/compare (table, grid, rank editing, local requests), <base href="../">
   run.html play.html monitor.html, assets/*.js, assets/style.css
+  studio.html       the video studio, local only (assets/studio/studio.js + studio.css; ADR-0034)
   _headers          Cloudflare Pages cache policy: run dirs a day, vendor + engines immutable (ADR-0029)
   assets/dom.js fmt.js runs.js output.js   shared helpers: DOM + fetch, formatting, run/rank/vendor helpers, and
                     output.js, which holds all sandbox-critical code (sandboxedGame, mediaElement, renderOutput, KIND_UI);
@@ -107,7 +111,8 @@ uv run art-crit models --harness muse-code     # muse models + levels (a table i
 uv run art-crit models --harness codex         # codex models + levels (live from `codex debug models`)
 uv run art-crit run --dry-run "prompt" -m claude-code:opus:high -m openai-codex/gpt-6-sol:high   # mixed harnesses
 uv run art-crit retry --dry-run <slug> [run-id]          # run a page's failed runs again (costs money without -n); replaces each one that now works
-uv run art-crit video <slug> <run-id> <run-id> -d 3 -o tmp/vid     # social videos (ffmpeg + Chrome, no model); also the compare page's local panel
+uv run art-crit video <slug> <run-id> <run-id> -d 3 -o tmp/vid     # social videos (ffmpeg + Chrome, no model)
+                                        # /studio.html under `art-crit serve` = the video studio (design and render one video)
 uv run art-crit import <run-dir|batch-dir> --page <slug>   # publish runs written by `art-crit run`
 uv run art-crit run --no-publish "prompt" -m MODEL:LEVEL   # import locally only; run publishes each run by default (ADR-0019)
 uv run art-crit publish -m "msg"         # git add docs && commit && push (Pages deploys in ~1 min)
@@ -174,10 +179,13 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   loosen either, add CORS headers to the API, or add another write path. Only GitHub ids are stored (never tokens), and votes are not in git.
   `tallies` is kept only by the triggers in `cloudflare/schema.sql`: never write it from the Worker. Apply the schema to D1
   *before* deploying a Worker that needs it (an older Worker runs on a newer schema, not the reverse).
-- **Social videos stay local** (ADR-0032): `art-crit video` and `POST/GET api/video` write only under `<root>/videos/` (outside `docs/`,
+- **Social videos stay local** (ADR-0032, ADR-0034): `art-crit video`, the video studio and `POST/GET api/video`, `GET api/studio`,
+  `POST api/studio/plan` write only under `<root>/videos/` (outside `docs/`,
   git-ignored), the API follows the `api/rank` write checks and its GETs the monitor's (loopback `Host`, no CORS headers), and a
   file is served only by a name its job listed. Games are recorded through `play.html` (the sandbox), model-made SVGs only
-  through an `<img>`, and the video scene puts every string from a run or prompt in with `textContent` (it has a strict CSP).
+  through an `<img>`, and the video scenes (and studio.html) put every string from a run, a prompt or a card in with
+  `textContent` (they have strict CSPs). The studio's rules live in studio.py: the page asks for the timeline rather than
+  computing its own, so preview and render can't disagree.
 - **Per-run MCP config** (ADR-0025): a kind's MCP servers reach the agent through flags or files in the run's own
   dirs (`--mcp-config`, `-c mcp_servers.*`, `work/.pi/mcp.json` + `--approve`, `work/.grok/config.toml`), never `~/.pi`,
   `~/.claude`, `~/.codex` or `~/.grok`. The one exception, with the user's consent: agy and muse read MCP servers only
@@ -277,6 +285,9 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   The finale's headline was missing until its container was. Change a beat in `video.TIMING`, not as a literal in scene.js, so
   the sound cues stay on it. The renderer Chrome runs without the SwiftShader flags (about 5x faster per frame); the game
   recorder keeps them. Iterate on the look by rendering from cached clips and looking at frames (`ffmpeg -ss T -frames:v 1`).
+  `pose()` also overwrites `filter`, so an element with its own CSS filter (the logo inverted on a light studio card) sits
+  inside a posed wrapper. In studio.css, base rules for form controls use `:where()`: a plain `.st button` outranked the
+  class colours and turned the white text on dark slots black.
 - **`replaceChildren()`/`append()` print `null` as text**; `el()` skips null children, so pass optional nodes
   through `el()` or `.filter(Boolean)`.
 - **Tools recorded per run:** `Harness.tools(mcp)` (+ `BUILTIN_TOOLS` where the command names them) feeds `run.json.tools.allowed`;

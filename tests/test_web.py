@@ -1132,7 +1132,7 @@ def test_the_owners_page_cover_starts_the_home_slideshow(bench_served, page):
     assert_no_errors(page)
 
 
-def test_the_compare_page_makes_social_videos_only_on_the_local_server(bench_served, site, page):
+def test_the_video_studio_makes_a_video_only_on_the_local_server(bench_served, site, page):
     import json
 
     from art_crit.site import rebuild
@@ -1146,25 +1146,46 @@ def test_the_compare_page_makes_social_videos_only_on_the_local_server(bench_ser
     rebuild(docs.parent)
     ids = f"{ART_HIGH_ID},{other.name}"
 
-    page.goto(f"{site}compare.html?p=art&r=model-x-low-20260102-000000,{ART_HIGH_ID}")  # the published site (no local API): no video maker
+    # the published site (no local API): no link to the studio, and the studio says it runs locally
+    page.goto(f"{site}compare.html?p=art&r=model-x-low-20260102-000000,{ART_HIGH_ID}")
     page.wait_for_selector(".v2-col")
-    assert page.locator(".v2-video").count() == 0
+    assert page.locator(".v2-studio").count() == 0
+    page.goto(f"{site}studio.html")
+    page.wait_for_selector("text=runs on your own machine")
 
+    # art-crit serve: the compare page opens the studio with its runs in the slots
     page.goto(f"{base}compare.html?p=art&r={ids}")
-    page.wait_for_selector(".v2-video")
-    assert page.locator(".v2-video-opt input[value]:checked").count() == 3  # every format by default
-    sound = page.locator(".v2-video-opt", has_text="Sound").locator("input")
-    assert sound.is_checked()
-    sound.uncheck()
-    page.locator(".v2-video-opt", has_text="Vertical · one at a time").locator("input").uncheck()
-    page.locator(".v2-video-opt", has_text="Vertical · all at once").locator("input").uncheck()
-    page.get_by_role("button", name="Make videos").click()
-    page.wait_for_selector(".v2-video-item video", timeout=120000)
-    assert page.locator(".v2-video-item").count() == 1
-    assert "-wide.mp4" in page.locator(".v2-video-item a[download]").get_attribute("download")
-    assert page.locator(".v2-video-results a[target=_blank]").get_attribute("href").endswith(f"&r={ART_HIGH_ID}%2C{other.name}")
-    assert page.locator(".v2-video .cover-status").inner_text().startswith("Done")
-    assert len(list((docs.parent / "videos/art").glob("*-wide.mp4"))) == 1
+    page.locator(".v2-studio a").click()
+    page.wait_for_selector(".st-slot.is-filled")
+    assert "Head to head" in page.locator('.st-template[aria-pressed="true"]').inner_text()
+    assert page.locator(".st-slot.is-filled").count() == 2
+    page.wait_for_selector(".st-seg")  # the timeline comes from api/studio/plan
+    assert page.locator(".st-seg").all_inner_texts()[0].startswith("Title:")
+
+    # a new card: its heading shows in the preview as it is typed, and it joins the timeline
+    page.get_by_role("button", name="+ Question").click()
+    page.locator(".st-editor input[type=text]").fill("Robots or not?")
+    assert page.locator(".st-card-heading").inner_text() == "Robots or not?"
+    page.get_by_role("button", name="Done").click()
+    page.wait_for_function("() => [...document.querySelectorAll('.st-seg-name')].some((n) => n.textContent === 'Question: Robots or not?')")
+
+    # the picker lists runs of every page; Empty this slot leaves the render waiting for it
+    page.get_by_role("button", name="Slot Right:").click()
+    page.get_by_role("button", name="Empty this slot").click()
+    assert page.locator(".st-render").is_disabled() and "1 left" in page.locator(".st-settings").inner_text()
+    page.get_by_role("button", name="Slot Right:").click()
+    page.locator('.st-result[aria-label^="Use Model Y"]').first.click()
+
+    page.locator(".st-settings select").first.select_option("2")  # seconds per still
+    page.locator(".st-settings select").nth(2).select_option("none")  # music
+    page.get_by_role("button", name="Render video").click()
+    # this render is listed first, under its title card's heading (other tests' renders may be in this process's job list)
+    row = page.locator(".st-render-row").first
+    expect(row).to_contain_text("Which model built it best?")
+    expect(row.locator(".st-state")).to_have_text("Done", timeout=180000)
+    assert row.locator("video").count() == 1
+    assert row.locator("a[download]").get_attribute("download").endswith("-duel.mp4")
+    assert len(list((docs.parent / "videos/studio").glob("*-duel.mp4"))) == 1
     assert_no_errors(page)
 
 
@@ -1627,8 +1648,8 @@ def test_monitor_lists_a_running_run_with_live_metrics(monitor_site, page):
 def test_monitor_link_appears_on_the_local_home_page(monitor_site, page):
     page.goto(monitor_site + "classic/index.html")
     page.wait_for_selector(".card")
-    link = page.locator(".site-header .monitor-crumb")
-    expect(link).to_have_text("Runs (local)")
+    expect(page.locator(".site-header .monitor-crumb", has_text="Video studio (local)")).to_have_attribute("href", "studio.html")
+    link = page.locator(".site-header .monitor-crumb", has_text="Runs (local)")
     link.click()
     page.wait_for_selector(".monitor-run")
     assert_no_errors(page)

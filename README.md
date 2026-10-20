@@ -282,10 +282,16 @@ FASTEST / CHEAPEST / PRICIEST / SLOWEST sticker where one stands out), then "Pla
 numbered grid of everyone (your #1 rank, if you ranked them, gets a crown). A synthesized beat and sound effects follow
 the cuts (`--no-sound` for a silent track, to add a platform sound instead). Games and 3D models are recorded playing and
 turning, SVGs and images get a slow zoom, and a run's own video plays. Pick layouts with `-l reveal|grid|wide` (default
-all three) and the seconds per run with `-d` (default 4). On the compare page, `art-crit serve` shows a
-"Make social videos" panel that does the same with checkboxes, a preview and downloads. Files go to `videos/<page>/`
+all three) and the seconds per run with `-d` (default 4). Files go to `videos/<page>/`
 (git-ignored, never published), and the command prints the site's compare link for the post. Needs ffmpeg and
 Playwright with Chrome (`uv tool install --editable '.[verify]'`).
+
+**Video studio** (`art-crit serve`, then `http://127.0.0.1:8000/studio.html`, also linked from the home page and from each
+compare page with its runs filled in): design one video in the browser. Pick a template (Head to head, Line-up, Wipe,
+Effort ladder, Countdown, Grid montage), fill its slots with runs from any prompt, add title, question, section, vote or
+credits cards in four looks, choose music (upbeat, lo-fi, cinematic or none) and whether to show labels, time and cost,
+preview the timing, then Render. Renders appear under the settings with a preview and a download; the files go to
+`videos/studio/`.
 
 ## Other commands
 

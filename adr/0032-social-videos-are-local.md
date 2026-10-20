@@ -1,6 +1,6 @@
 # 0032. Social videos are made locally with ffmpeg and headless Chrome, from the CLI or the local compare page
 
-- Status: Accepted; how the frames are drawn is superseded by [0033](0033-videos-are-rendered-frame-by-frame.md)
+- Status: Accepted; how the frames are drawn is superseded by [0033](0033-videos-are-rendered-frame-by-frame.md), the compare page's panel by the video studio ([0034](0034-video-studio-is-a-local-page.md))
 - Date: 2026-10-17
 
 ## Context

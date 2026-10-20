@@ -44,7 +44,7 @@ def ffmpeg(*args):
 def join(parts, out):
     """Concatenate clips that were encoded alike without re-encoding them."""
     listing = Path(parts[0]).with_name(f"{Path(out).stem}-parts.txt")
-    listing.write_text("".join(f"file '{p}'\n" for p in parts))
+    listing.write_text("".join(f"file '{Path(p).resolve()}'\n" for p in parts))
     ffmpeg("-f", "concat", "-safe", "0", "-i", listing, "-c:v", "copy", out)
 
 
@@ -389,13 +389,12 @@ def extract_frames(source, out_dir):
     return len(list((out_dir / "f").glob("*.jpg")))
 
 
-def render_layout(studio, plan, work, out, sound, say):
-    """Draw every frame of the plan in Chrome and pipe the screenshots, with the sound track, into ffmpeg."""
+def render_layout(studio, plan, work, out, wav, say, scene="scene.html"):
+    """Draw every frame of the plan with a scene page (scene.html, or studio.html) in Chrome and pipe the screenshots,
+    with the sound track `wav` (None = a silent one), into ffmpeg."""
     layout, total = plan["layout"], plan["frames"]
     (Path(work) / f"plan-{layout}.json").write_text(json.dumps(plan))
-    if sound:
-        wav = Path(work) / f"{layout}.wav"
-        video_sound.soundtrack(cues(plan), total / FPS, wav)
+    if wav:
         audio = ["-i", wav]
     else:  # platforms expect an audio track: a silent one
         audio = ["-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo"]
@@ -405,7 +404,7 @@ def render_layout(studio, plan, work, out, sound, say):
     page.on("pageerror", lambda e: errors.append(str(e)))
     encoder = None
     try:
-        page.goto(f"{studio.scene}/scene.html?plan=plan-{layout}.json")
+        page.goto(f"{studio.scene}/{scene}?plan=plan-{layout}.json")
         try:
             page.wait_for_function("() => window.sceneReady === true", timeout=30000)
         except Exception:
@@ -463,10 +462,14 @@ def check_request(root, slug, run_ids, layouts, seconds):
             raise CritError(f"unknown layout {layout!r} (expected one of: {', '.join(LAYOUTS)})")
     if not 2 <= seconds <= 20:
         raise CritError("seconds per run must be between 2 and 20")
+    check_tools()
+    return page, runs, layouts
+
+
+def check_tools():
     for tool in ("ffmpeg", "ffprobe"):
         if not shutil.which(tool):
             raise CritError(f"videos need {tool} on PATH")
-    return page, runs, layouts
 
 
 def make_videos(root, slug, run_ids, layouts=None, seconds=SECONDS, out_dir=None, say=print, sound=True):
@@ -488,6 +491,11 @@ def make_videos(root, slug, run_ids, layouts=None, seconds=SECONDS, out_dir=None
         for layout in layouts:
             say(f"rendering {layout} ({LAYOUT_NAMES[layout]})")
             out = out_dir / f"{stamp}-{slug}-{layout}.mp4"
-            render_layout(chrome, scene_plan(layout, page, runs, clips, seconds), work, out, sound, say)
+            plan = scene_plan(layout, page, runs, clips, seconds)
+            wav = None
+            if sound:
+                wav = Path(work) / f"{layout}.wav"
+                video_sound.soundtrack(cues(plan), plan["frames"] / FPS, wav)
+            render_layout(chrome, plan, work, out, wav, say)
             files.append(out)
     return files

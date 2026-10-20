@@ -365,7 +365,7 @@ def _closure(entry, pattern):
     return seen - {entry}
 
 
-@pytest.mark.parametrize("html", ["index.html", "page.html", "compare.html", "run.html", "play.html", "monitor.html"])
+@pytest.mark.parametrize("html", ["index.html", "page.html", "compare.html", "run.html", "play.html", "monitor.html", "studio.html"])
 def test_html_preloads_exactly_the_modules_its_script_imports(html):
     """Each page's <link rel=modulepreload> list is the static import closure of its entry module (so the whole graph
     loads in one round trip, ADR-0029) plus, where listed, modules it always imports dynamically. The three.js bundle is

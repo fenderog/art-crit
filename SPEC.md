@@ -225,8 +225,8 @@ art-crit retry <slug> [<run_id>...] [-y/--yes] [-n/--dry-run] [-j N] [-T/--timeo
 art-crit video <slug> <run_id>... [-l/--layout reveal|grid|wide]... [-d/--seconds N] [--no-sound] [-o/--out DIR]   # social-media videos of 2-12 runs (see Social videos)
 art-crit rebuild                   # regenerate page.json + pages.json from runs/*/run.json; delete engines no run references
 art-crit serve [-p/--port 8000]    # serve docs/ locally: Access-Control-Allow-Origin: *, .wasm as application/wasm, NO COOP/COEP headers
-                                #   plus the local-only ranking, prompt-request and run-monitor APIs (see Ranking,
-                                #   Prompt requests, Run monitor); accept queue 64 for concurrent ES modules
+                                #   plus the local-only ranking, prompt-request, run-monitor and video-studio APIs (see
+                                #   Ranking, Prompt requests, Run monitor, Video studio); accept queue 64 for concurrent ES modules
 art-crit publish [-m MSG]          # git add docs && git commit && git push (Cloudflare Pages builds main)
 art-crit run ...                   # run agents locally, then import (see "Running benchmarks")
 art-crit models [SEARCH] [-H/--harness pi|claude-code|agy|grok-build|muse-code|codex]   # models the harness can run; with SEARCH also their effort levels
@@ -563,7 +563,7 @@ nothing. `--dry-run` prints the batch plan and changes nothing. A retry costs mo
 The page owner ranks runs in the browser; there is no CLI command for it. Only `art-crit serve` can save a ranking
 (GitHub Pages is static), so the published site shows rankings read-only.
 
-- `art-crit serve` answers `GET api/local` → `{"rank": true, "cover": true, "requests": true, "runs": true, "video": true}` and `PUT api/rank?p=<slug>` with body
+- `art-crit serve` answers `GET api/local` → `{"rank": true, "cover": true, "requests": true, "runs": true, "video": true}` (`video` = the video studio) and `PUT api/rank?p=<slug>` with body
   `{"ranks": {"<run id>": <int>|null, ...}}`. It validates the slug (`[a-z0-9][a-z0-9-]*`, page must exist), that every
   id is a run of the page, and that each rank is a whole number from 1 to the number of runs (ties allowed; `null`
   = unranked), writes `data/<slug>/ranking.json`, then rebuilds. Errors are `400 {"error": ...}`.
@@ -604,8 +604,8 @@ must be a run of the page, `path` and `image` must be an image file inside that 
 
 ## Social videos
 
-`art-crit video <slug> <run_id>...` (and the local compare page's **Make social videos** panel) makes MP4s of 2 to 12 runs of
-a page, one per layout, for posting. They are made on this machine and never published: the default folder is
+`art-crit video <slug> <run_id>...` makes MP4s of 2 to 12 runs of a page, one per layout, for posting (the
+**Video studio** below makes one video of your own design, from the browser). They are made on this machine and never published: the default folder is
 `<root>/videos/<slug>/` (git-ignored, outside `docs/`), named `<UTC stamp>-<slug>-<layout>.mp4`. The command prints the
 files and the site's compare link for those runs, to paste into the post. Needs ffmpeg + ffprobe and Playwright with Chrome
 (`.[verify]`); failed runs can't be included.
@@ -635,14 +635,52 @@ files and the site's compare link for those runs, to paste into the post. Needs 
   into ffmpeg with the sound. The scene, its `plan-<layout>.json` and the frames are served from the job's temp folder, with
   `assets/` linked to `docs/assets/`; the scene has a strict CSP and puts every string from a run or prompt in with
   `textContent`. Model-made SVGs are only drawn through an `<img>` in Chrome (ADR-0004).
-- **Local API** (`art-crit serve` only; ADR-0032): `POST api/video?p=<slug>` with `{"runs": [ids], "layouts"?: [...], "seconds"?: n, "sound"?: bool}`
-  checks the request (400 with the reason) and starts a background job, one at a time → `{"job": id}`;
-  `GET api/video?job=<id>` → `{state: running|done|failed, step, files, link, error}`; `GET api/video/file?job=<id>&name=<file>`
-  serves one of that job's `files` (nothing else). Same loopback / same-origin / JSON checks as `api/rank`; the two GETs
-  also need a loopback `Host` and carry no CORS headers, so another website can't read or start anything.
-- The panel (`assets/lanes/video.js`, loaded by the lanes compare page only when `api/local` says `video`) has a checkbox per
-  layout, a Sound checkbox and a button; it polls the job, previews each video and links the download and the compare link. The classic compare
-  page has no panel.
+- The scene's helpers (easing, posing, frames, the logo, a run's caption, the glow) are `scene/motion.js`, shared with the
+  video studio's scene.
+
+## Video studio
+
+`docs/studio.html` (`assets/studio/studio.js` + `studio.css`; ADR-0034) makes one video of your own design: a template, its
+slots filled with runs from any page, text cards between them, and settings. It only works under `art-crit serve` (it asks
+`api/local` for `video`; elsewhere it says it runs locally), and the lanes home (and the classic one) link to it there. The
+lanes compare page links "Make a video of these runs in the video studio" to `studio.html?p=<slug>&r=<ids>`, which picks a
+template for that many runs (2 → Head to head, 3–4 → Line-up, 5 → Countdown, 6+ → Grid montage, the first six) and fills its
+slots in order. Same requirements and output rules as `art-crit video`; files go to `<root>/videos/studio/<UTC stamp>-<template>.mp4`.
+
+- **Templates** (`studio.TEMPLATES`): `duel` Head to head (16:9, Left / Right, all at once), `lineup` Line-up (16:9, 3 or 4,
+  numbered, all at once), `wipe` (16:9, Model A / Model B in one square; the divider sweeps from A to B, then settles at
+  the spec's `wipe` %), `ladder` Effort ladder (9:16, low / medium / high / max, one after another), `countdown` (9:16, #5 to
+  #1, one after another), `montage` Grid montage (1:1, 6 numbered tiles; after they land they dim and the first title card's
+  heading comes up over them). One-after-another templates draw each run like `art-crit video`'s `reveal` (card, badge,
+  caption with the effort meter, counting numbers when "time and cost" is on, a progress bar and the run's page title).
+- **Cards** (`studio.CARDS`): Title, Question, Section, Vote (with a link chip) and Credits, each with a heading (≤ 90), an
+  optional subtitle (≤ 280; a vote card also a link ≤ 60), a look (`studio.LOOKS`: Dark, Purple, Peach, Light) and 2, 3 or 5
+  seconds; at most 12. A card's `at` is how many result blocks play before it (all-at-once templates have one block), so a
+  large `at` means the end. Rendered: the look's colour opens as a circle, the heading's words rise in, the subtitle and the
+  link chip follow; the video's opening card is complete on its first frame (the cover). Light looks invert the logo's ink.
+- **Settings**: seconds for each still (2, 3, 5), what happens when moving results differ in length (`together`: each stops
+  on its last frame; `stretch`: each is slowed to fill the block; `loop`), music (`none` = a silent track, `upbeat`,
+  `lofi`, `cinematic`; sound effects come with the music), labels (model + effort on each result) and time and cost.
+- **Lengths** (`studio.clip_seconds`): a still plays the still length; a video its own (2 to 10 s); a 3D model 6 s; a game
+  or web page 8 s (each recorded for that long). An all-at-once block lasts as long as its longest result.
+- **The spec** (`studio.check_spec`): `{template, count?, slots: [{page, run}|null], cards: [{id, type, heading, sub, link,
+  look, secs, at}], still, sync, music, labels, metrics, wipe}`. A render needs every slot filled with a run that didn't
+  fail; the same run may fill two slots (recorded once). The page keeps the spec in `localStorage` between visits.
+- **The page** (the design's "Video studio" artboard): 1 · template cards with a small diagram, format, slot count and how
+  they play; 2 · a preview of the frame (the runs' thumbnails in the template's layout, or the card at the playhead, or the
+  card being edited) with back/play/forward, a scrubber and speed, the wipe position for the wipe; the timeline (a block
+  per segment, sized by length, click to jump or edit a card), "Add a card", the card editor (heading, subtitle, link,
+  look, length, earlier/later, delete, done); the settings panel and Render; then "Your renders" (state, the video and a
+  download). The result picker is a modal dialog listing every run that didn't fail, filtered by prompt, type, vendor and
+  effort (the first 120 shown).
+- **Local API** (`art-crit serve` only, like `api/rank`: loopback `Host`, same-origin, JSON; reads carry no CORS headers):
+  `GET api/studio` → `studio.catalog()` (templates, looks, cards, choices, limits); `POST api/studio/plan` with a spec (empty
+  slots allowed) → `{segments: [{type: card|slots|slot, start, secs, card?, slot?}], total, slots: [{type, secs}|null],
+  labels}` (the preview's timeline, the same `studio.timeline` the render uses); `POST api/video` with `{"studio": spec}`
+  checks it (400 with the reason) and starts a background render, one at a time → `{"job": id}`; `GET api/video?job=<id>`
+  → `{job, state: running|done|failed, step, files, error, title, template, format, slots, length, started}`;
+  `GET api/video/jobs` → `{jobs: [...]}`, newest first; `GET api/video/file?job=<id>&name=<file>` serves one of that job's
+  `files` (nothing else).
 
 ## Prompt requests
 
