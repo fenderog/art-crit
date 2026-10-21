@@ -7,7 +7,10 @@ Make it in Blender, working in the current directory.
   default one (a cube, a camera and a light).
 - There is no window to screenshot. To check your work, render it to an image file and look at the image
   (render_thumbnail_to_path, render_viewport_to_path, or a render of the scene camera to a file).
-  Keep renders quick: a single tool call may take at most 5 minutes.
+  Keep renders quick: a single tool call may take at most 5 minutes. Save what you look at as .jpg rather
+  than .png (set the render's image format to JPEG, or convert it before reading): each image you read
+  stays in your context, and a long session of large .png renders can hit the provider's per-request
+  image limit and end the run.
 - Build it in Blender itself; don't write the model or the images any other way.
 - Save the finished result in ./output/ (only what is in ./output/ is published):
   - the model or scene as one .glb file (glTF binary), shown on the site in an interactive 3D viewer:

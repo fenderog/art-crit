@@ -12,5 +12,9 @@ Build this as an interactive web page in the current directory.
   cookies or other storage (they throw there).
 - Check that it packages: `esbuild main.js --bundle --format=esm --outfile=/dev/null` must succeed.
   Don't build or package the page yourself; that happens afterwards.
+- To look at the page yourself, serve it locally and screenshot it in headless Chrome (Chrome is
+  installed, and a driver such as puppeteer-core or playwright can be npm-installed here). Save every
+  screenshot you look at as a .jpg file, never .png: each image you read stays in your context, and a
+  long session of large .png files can hit the provider's per-request image limit and end the run.
 - Only create or edit files inside the current directory.
 - Finish with a short summary of what you built.
