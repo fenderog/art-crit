@@ -8,11 +8,51 @@ import { effortPill, modelParts, runUrl } from "./runs.js";
 import { renderTranscript } from "./transcript.js";
 
 const POLL_MS = 2000;
+// The panes are rebuilt on every poll while a batch runs. Carrying the reading position across a refresh is what
+// keeps the page still: without it the transcript jumps back to the top (and its controls, and your scroll in the
+// window) every 2 seconds.
+const SCROLLERS = [".monitor-batches", ".monitor-brief", ".monitor-transcript"];
+const AT_BOTTOM = 8; // px: a pane this close to its end stays at the end as it grows
 const main = document.getElementById("main");
 const LOCAL = ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
 let batches = [];
 let selected = null; // {batch, run}: which batch is open and which of its runs is shown
 let timer = null;
+
+// Where the page is scrolled and which <details> are open, per pane. The DOM is rebuilt from the poll's data, so
+// the new nodes start at the top with everything folded.
+function viewState(root) {
+  return {
+    x: window.scrollX,
+    y: window.scrollY,
+    scroll: SCROLLERS.map((sel) => [...root.querySelectorAll(sel)].map((n) =>
+      [n.scrollTop, n.scrollLeft, n.scrollHeight - n.clientHeight - n.scrollTop <= AT_BOTTOM])),
+    open: [...root.querySelectorAll("details")].map((d) => d.open),
+  };
+}
+
+function restoreView(root, state) {
+  SCROLLERS.forEach((sel, i) => {
+    [...root.querySelectorAll(sel)].forEach((node, j) => {
+      const [top, left, atBottom] = state.scroll[i]?.[j] || [0, 0, false];
+      node.scrollTop = atBottom ? node.scrollHeight : top;
+      node.scrollLeft = left;
+    });
+  });
+  [...root.querySelectorAll("details")].forEach((d, i) => { d.open = Boolean(state.open[i]); });
+  if (window.scrollX !== state.x || window.scrollY !== state.y) window.scrollTo(state.x, state.y);
+}
+
+// Replace `root`'s children. `state` is viewState(root) taken before the new nodes were built (null when the user
+// picked another run: a fresh view starts at the top). It has to be taken that early because building the new
+// detail moves the cached transcript node out of the old tree, which resets its scroll offset and briefly shrinks
+// the document under the window's own scroll. el() skips nulls; replaceChildren() would print them.
+function show(root, nodes, state) {
+  root.replaceChildren(...nodes.filter(Boolean));
+  if (state) restoreView(root, state);
+}
+
+const capture = (root, keep) => (keep ? viewState(root) : null);
 
 // Shown when this isn't `art-crit serve` on this machine (the published site, or a plain file server).
 function localOnlyNote(text) {
@@ -47,8 +87,8 @@ async function refresh() {
     ? `${batches.length} batch${batches.length === 1 ? "" : "es"} in ${data.dir}`
     : "no [run].dir in art-crit.toml";
   if (!batches.some((b) => selected && b.batch === selected.batch)) selected = batches.length ? { batch: batches[0].batch, run: null } : null;
-  drawBatches();
-  await drawDetail();
+  drawBatches(true);
+  await drawDetail(true);
   schedule();
 }
 
@@ -60,16 +100,17 @@ function schedule() {
   if (busy && document.visibilityState === "visible") timer = setTimeout(refresh, POLL_MS);
 }
 
-function drawBatches() {
+function drawBatches(keep = false) {
   const root = document.getElementById("batches");
-  if (!batches.length) return root.replaceChildren(el("p", { class: "muted", text: "No batches yet." }));
-  root.replaceChildren(...batches.map((b) => el("section", { class: "monitor-batch" }, [
+  const state = capture(root, keep);
+  if (!batches.length) return show(root, [el("p", { class: "muted", text: "No batches yet." })], state);
+  show(root, batches.map((b) => el("section", { class: "monitor-batch" }, [
     el("button", { class: "monitor-batch-head", attrs: { type: "button" }, on: { click: () => pick(b.batch, null) } }, [
       el("span", { class: "monitor-batch-title", text: b.title || b.prompt || b.batch }),
       el("span", { class: "muted", text: [b.page, b.kind, fmtDate(b.created)].filter(Boolean).join(" · ") }),
     ]),
     el("ul", { class: "monitor-runs" }, b.runs.map((r) => el("li", {}, [runButton(b, r)]))),
-  ])));
+  ])), state);
 }
 
 function pick(batch, run) {
@@ -87,21 +128,23 @@ function runButton(b, row) {
   ]);
 }
 
-async function drawDetail() {
+async function drawDetail(keep = false) {
   const root = document.getElementById("detail");
-  if (!selected) return root.replaceChildren(el("p", { class: "muted", text: "Pick a batch or a run." }));
+  if (!selected) return show(root, [el("p", { class: "muted", text: "Pick a batch or a run." })], capture(root, keep));
   const batch = batches.find((b) => b.batch === selected.batch);
   if (!selected.run) {
-    return root.replaceChildren(el("h2", { text: batch.title || batch.prompt || batch.batch }),
-      el("p", { class: "monitor-prompt", text: batch.prompt }), el("p", { class: "muted", text: `${batch.runs.length} runs · created ${fmtDate(batch.created)}` }));
+    return show(root, [el("h2", { text: batch.title || batch.prompt || batch.batch }),
+      el("p", { class: "monitor-prompt", text: batch.prompt }),
+      el("p", { class: "muted", text: `${batch.runs.length} runs · created ${fmtDate(batch.created)}` })], capture(root, keep));
   }
   let d;
   try {
     d = await getJSON(`api/run?b=${encodeURIComponent(selected.batch)}&r=${encodeURIComponent(selected.run)}`);
   } catch (err) {
-    return root.replaceChildren(el("p", { class: "form-error", text: err.message }));
+    return show(root, [el("p", { class: "form-error", text: err.message })], capture(root, keep));
   }
-  root.replaceChildren(...detail(d).filter(Boolean)); // el() skips nulls, replaceChildren() prints them
+  const state = capture(root, keep); // before detail(d) builds, which moves the cached transcript node
+  show(root, detail(d), state);
 }
 
 function tile(label, value) {
@@ -147,10 +190,44 @@ function fileList(title, files) {
   ]);
 }
 
+// Re-rendering the transcript re-parses every message's Markdown and throws away its own state (the filter, show
+// thinking, open blocks): keep the node until the session file actually changes, and carry the toolbar over when it
+// does. `renderTranscript` builds the toolbar into the box, so it belongs to the reader, not to the poll.
+let transcriptCache = null; // {key, node}
+
+function transcriptKey(d) {
+  const last = d.transcript[d.transcript.length - 1];
+  const tail = last ? JSON.stringify(last.message ?? last) : "";
+  return `${selected.batch}|${selected.run}|${d.live}|${d.transcript.length}|${last?.timestamp ?? ""}|${tail.length}`;
+}
+
+function toolbarState(box) {
+  const list = box?.querySelector(".transcript");
+  return list ? { filter: list.dataset.filter || "all", thinking: list.dataset.showThinking === "true" } : null;
+}
+
+// A chip's own click handler is the business logic for both, so replay the reader's choices through it.
+function applyToolbar(box, ui) {
+  if (!ui) return;
+  if (ui.filter !== "all") box.querySelector(`[data-filter-btn="${ui.filter}"]`)?.click();
+  const thinking = [...box.querySelectorAll(".transcript-toolbar .chip:not([data-filter-btn])")].pop();
+  if (ui.thinking && thinking && !thinking.disabled) thinking.click();
+}
+
 function transcriptSection(d) {
-  const box = el("div", { class: "monitor-transcript" });
-  if (d.transcript.length) renderTranscript(box, d.transcript);
-  else box.append(el("p", { class: "muted", text: "No session file yet (muse writes one when the agent exits)." }));
+  const key = transcriptKey(d);
+  let box = transcriptCache?.key === key ? transcriptCache.node : null;
+  if (!box) {
+    const ui = toolbarState(transcriptCache?.node);
+    box = el("div", { class: "monitor-transcript" });
+    if (d.transcript.length) {
+      renderTranscript(box, d.transcript);
+      applyToolbar(box, ui);
+    } else {
+      box.append(el("p", { class: "muted", text: "No session file yet (muse writes one when the agent exits)." }));
+    }
+    transcriptCache = { key, node: box };
+  }
   return el("section", { class: "monitor-block" }, [
     el("h3", {}, [el("span", { text: "Transcript" }), d.live ? el("span", { class: "monitor-live", text: "live" }) : null]),
     el("p", { class: "muted", text: d.live
