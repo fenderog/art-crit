@@ -1603,8 +1603,8 @@ LIVE_ID = "gpt-6-sol-low-20260101-000000"
 
 
 @pytest.fixture
-def monitor_site(tmp_path):
-    """The site as `art-crit serve` serves it (local API included) plus a batch with a running run."""
+def monitor_setup(tmp_path):
+    """The site as `art-crit serve` serves it (local API included) plus a batch with a running run: (url, batch)."""
     from art_crit.serve import serve_in_thread
     root = tmp_path / "site"
     docs = root / "docs"
@@ -1619,14 +1619,26 @@ def monitor_site(tmp_path):
     batch = runs / "2026-01-01-000000-demo"
     (batch / LIVE_ID / "harness").mkdir(parents=True)
     line = {"type": "message", "message": {"role": "assistant", "content": [{"type": "text", "text": "looking at it"}], "usage": {"input": 100, "output": 20, "cost": {"total": 0.002}}}}
-    (batch / LIVE_ID / "harness" / "s.jsonl").write_text(json.dumps(line) + "\n")
+    # More turns than fit in the transcript pane, so a test can scroll it, and each with a tool call so the
+    # "Tool calls" filter still shows them. No `usage`, so the live token count the other tests assert (120)
+    # stays what the first line says.
+    filler = [{"type": "message", "message": {"role": "assistant", "content": [
+        {"type": "text", "text": f"step {i}: " + "tracing the wave and the wing shape " * 6},
+        {"type": "toolCall", "id": f"call-{i}", "name": "bash", "arguments": {"command": f"echo {i}"}}]}}
+        for i in range(40)]
+    (batch / LIVE_ID / "harness" / "s.jsonl").write_text("\n".join(json.dumps(e) for e in [line, *filler]) + "\n")
     row = {"id": LIVE_ID, "harness": "pi", "model": "openai/gpt-6-sol", "model_arg": "gpt-6-sol", "level": "low", "state": "running"}
     meta = {"prompt": "a demo prompt", "kind": "godot", "page": "demo", "brief": "BRIEF", "runs": [row]}
     (batch / "batch.json").write_text(json.dumps(meta))
     server = serve_in_thread(docs, 0)
-    yield f"http://127.0.0.1:{server.server_address[1]}/"
+    yield f"http://127.0.0.1:{server.server_address[1]}/", batch
     server.shutdown()
     server.server_close()
+
+
+@pytest.fixture
+def monitor_site(monitor_setup):
+    return monitor_setup[0]
 
 
 def test_monitor_is_local_only_on_the_static_site(site, page):
@@ -1651,6 +1663,71 @@ def test_monitor_lists_a_running_run_with_live_metrics(monitor_site, page):
     expect(page.locator(".stat-tiles")).to_contain_text("120")
     expect(page.locator(".monitor-transcript")).to_contain_text("looking at it")
     expect(page.locator("#detail h2")).to_contain_text("gpt-6-sol")
+    assert_no_errors(page)
+
+
+def test_monitor_poll_keeps_the_reading_position(monitor_site, page):
+    """The page re-renders every 2s while a batch runs. The transcript used to jump back to the top and lose its
+    filter and folded blocks on each poll (the todo's "continuous refresh reverts where I'm scrolling")."""
+    page.goto(monitor_site + "monitor.html")
+    page.locator(".monitor-run").click()
+    expect(page.locator(".monitor-transcript")).to_contain_text("looking at it")
+    page.evaluate("""() => {
+      window.__renders = 0;
+      new MutationObserver((ms) => { window.__renders += ms.length; })
+        .observe(document.getElementById("detail"), { childList: true });
+    }""")
+    page.locator(".transcript-toolbar [data-filter-btn='tools']").click()
+    page.evaluate("() => { document.querySelector('.monitor-block details').open = true; }")
+    data = page.evaluate("""() => {
+      const box = document.querySelector('.monitor-transcript');
+      box.scrollTop = 250;
+      window.scrollTo(0, 150);
+      return { renders: window.__renders, scrollable: box.scrollHeight > box.clientHeight };
+    }""")
+    assert data["scrollable"], "the transcript has to overflow its pane for this test to mean anything"
+
+    page.wait_for_function("(n) => window.__renders > n", arg=data["renders"], timeout=15000)
+
+    after = page.evaluate("""() => ({
+      scroll: document.querySelector('.monitor-transcript').scrollTop,
+      y: window.scrollY,
+      filter: document.querySelector('.transcript').dataset.filter,
+      chip: document.querySelector(".transcript-toolbar [data-filter-btn='tools']").classList.contains('chip-active'),
+      open: document.querySelector('.monitor-block details').open,
+    })""")
+    assert after["scroll"] == 250, after
+    assert after["y"] == 150, after
+    assert after["filter"] == "tools" and after["chip"], after
+    assert after["open"], after
+    assert_no_errors(page)
+
+
+def test_monitor_transcript_keeps_its_filter_as_it_grows(monitor_setup, page):
+    """A running session's transcript is rebuilt whenever it grows; the reader's filter is not part of the data."""
+    url, batch = monitor_setup
+    session = batch / LIVE_ID / "harness" / "s.jsonl"
+    page.goto(url + "monitor.html")
+    page.locator(".monitor-run").click()
+    expect(page.locator(".monitor-transcript")).to_contain_text("looking at it")
+    page.evaluate("""() => {
+      window.__renders = 0;
+      new MutationObserver((ms) => { window.__renders += ms.length; })
+        .observe(document.getElementById("detail"), { childList: true });
+    }""")
+    page.locator(".transcript-toolbar [data-filter-btn='tools']").click()
+
+    extra = {"type": "message", "message": {"role": "assistant", "content": [
+        {"type": "text", "text": "a later step"}, {"type": "toolCall", "id": "call-late", "name": "bash", "arguments": {"command": "ls"}}]}}
+    with session.open("a") as f:
+        f.write(json.dumps(extra) + "\n")
+
+    expect(page.locator(".monitor-transcript")).to_contain_text("a later step", timeout=15000)
+    after = page.evaluate("""() => ({
+      filter: document.querySelector('.transcript').dataset.filter,
+      chip: document.querySelector(".transcript-toolbar [data-filter-btn='tools']").classList.contains('chip-active'),
+    })""")
+    assert after == {"filter": "tools", "chip": True}, after
     assert_no_errors(page)
 
 

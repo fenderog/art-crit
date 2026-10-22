@@ -173,7 +173,10 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   `Host` and are answered *without* `Access-Control-Allow-Origin` (never add it back for those two), the Stop button
   writes only `<run>/harness/stop`, and `runner.wait_agent` — in the process that owns the agent — is what kills its
   process group. The monitor's transcripts drop image blocks and clip long strings (`MONITOR_CLIP`, `MONITOR_ENTRIES`):
-  a live pi session keeps a base64 copy of every image the agent read.
+  a live pi session keeps a base64 copy of every image the agent read. It polls every 2s and rebuilds its panes, so it
+  carries the reader's view itself (`show()`/`viewState()` in monitor.js: scroll, open `<details>`, and the transcript's
+  node with its filter until the session grows): capture the state *before* building the new nodes, because building
+  moves the cached transcript node out of the old tree and that zeroes its scroll and briefly shrinks the document.
 - **Rankings are only written by `art-crit serve` on the user's machine** (`PUT api/rank`, which refuses cross-site
   writes and any non-loopback `Host`, against DNS rebinding); the Worker answers 404 for it. (ADR-0010)
 - **Community votes and prompt-request issues are the only things the published site writes**, through the Worker's

@@ -38,6 +38,13 @@ the timeout, so Ctrl-C, the timeout and the Stop button all kill the group in th
   never kill an unrelated process.
 - **A `run --follow`/terminal UI only**: no transcript for images, no file lists, and it needs the terminal that
   started the batch; the browser view works from any machine the server is bound to (localhost, in practice).
+
+## Consequences
+
+- The poll rebuilds the panes, so `monitor.js` carries the view across a refresh itself: scroll offsets and open
+  `<details>` in `show()`, and the transcript's own DOM (with its filter and show-thinking) until the session file
+  changes. Without that the page jumped back to the top every two seconds and the transcript's controls reset.
+- A polled view is not a live terminal: a run that never writes a session (muse, until it exits) shows 0 until it does.
 - **Publishing the monitor into `docs/`**: it would put batch state, prompts and transcripts into the repo and the
   public site, and `run --publish` stages all of `docs/`.
 - **Serving the batch directory over HTTP**: `serve` only serves `docs/`; exposing `~/dev/art-crit-runs/` would publish
