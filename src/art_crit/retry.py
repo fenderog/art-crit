@@ -3,6 +3,7 @@ references) and replace each failed run that now has a good one."""
 
 import shutil
 import sys
+from pathlib import Path
 
 from .config import RunRequest
 from .harness import split_model_route
@@ -49,7 +50,8 @@ def _replace_fixed(root, slug, targets, publish):
         if publish:
             from .cli import cmd_publish  # cli imports this module
 
-            cmd_publish(root, f"art-crit retry: {slug} (replaced {len(replaced)} failed run{'s' if len(replaced) != 1 else ''})")
+            cmd_publish(root, f"art-crit retry: {slug} (replaced {len(replaced)} failed run{'s' if len(replaced) != 1 else ''})",
+                        [Path("docs/data") / slug, Path("docs/data/pages.json")])
     return [t["id"] for t in targets if t["id"] not in replaced]
 
 

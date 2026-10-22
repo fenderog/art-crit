@@ -900,6 +900,27 @@ def test_run_publishes_each_run_as_it_finishes_by_default(run_root, git_repo, ca
     assert not status.stdout.strip(), "every published file is committed"
 
 
+def test_run_publish_does_not_sweep_up_unrelated_changes(run_root, git_repo, capsys):
+    """Each run's commit holds that run's files and nothing else: a change staged in the working copy (here
+    src/, which publish never stages) or a pending edit under docs/ stays out of the publish commit."""
+    git_repo(run_root)
+    (run_root / "src").mkdir(exist_ok=True)
+    (run_root / "src" / "unrelated.py").write_text("x = 1\n")
+    subprocess.run(["git", "-C", str(run_root), "add", "src/unrelated.py"], check=True)
+    (run_root / "docs" / "assets").mkdir(parents=True, exist_ok=True)
+    (run_root / "docs" / "assets" / "viewer.js").write_text("// pending tweak\n")
+
+    assert main(["run", "--yes", "a clean publish", "-m", "openai-codex/gpt-6-sol:low..high",
+                 "--root", str(run_root)]) == 0
+
+    changed = subprocess.run(["git", "-C", str(run_root), "show", "--name-only", "--format=", "HEAD"],
+                             check=True, capture_output=True, text=True).stdout.split()
+    assert changed and all(p.startswith("docs/data/a-clean-publish/") or p == "docs/data/pages.json" for p in changed), changed
+    status = subprocess.run(["git", "-C", str(run_root), "status", "--porcelain"],
+                            check=True, capture_output=True, text=True).stdout
+    assert "src/unrelated.py" in status and "docs/assets/" in status
+
+
 def test_run_no_publish_imports_only(run_root, capsys):
     """--no-publish imports the batch at the end and leaves the push to `art-crit publish`, so nothing is
     committed on its own."""

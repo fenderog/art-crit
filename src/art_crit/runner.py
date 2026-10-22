@@ -586,8 +586,8 @@ class Publisher:
 
         with self.lock:
             try:
-                cmd_import(self.config, self.batch_dir / run_id, page=self.slug, title=self.title)
-                cmd_publish(self.config.root, f"art-crit run: {self.slug} ({run_id})")
+                paths = cmd_import(self.config, self.batch_dir / run_id, page=self.slug, title=self.title)
+                cmd_publish(self.config.root, f"art-crit run: {self.slug} ({run_id})", paths)
             except CritError as e:
                 self.errors[run_id] = str(e)
                 print(f"note: {run_id} not published: {e}", file=sys.stderr)
@@ -796,12 +796,12 @@ def cmd_run(config, request, *, yes=False, dry_run=False, resume=None, verify=Tr
 
 
 def _import_and_publish(config, batch_dir, slug, title, publish):
-    cmd_import(config, batch_dir, page=slug, title=title)
+    paths = cmd_import(config, batch_dir, page=slug, title=title)
     print(f"imported into page {slug!r}. Preview with: art-crit serve")
     if publish:
         from .cli import cmd_publish
 
-        return cmd_publish(config.root, f"art-crit run: {slug}")
+        return cmd_publish(config.root, f"art-crit run: {slug}", paths)
     print("publish with: art-crit publish")
     return 0
 

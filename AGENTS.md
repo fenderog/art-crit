@@ -116,7 +116,7 @@ uv run art-crit video <slug> <run-id> <run-id> -d 3 -o tmp/vid     # social vide
                                         # /studio.html under `art-crit serve` = the video studio (design and render one video)
 uv run art-crit import <run-dir|batch-dir> --page <slug>   # publish runs written by `art-crit run`
 uv run art-crit run --no-publish "prompt" -m MODEL:LEVEL   # import locally only; run publishes each run by default (ADR-0019)
-uv run art-crit publish -m "msg"         # git add docs && commit && push (Pages deploys in ~1 min)
+uv run art-crit publish -m "msg"         # commit + push docs/ only (Pages deploys in ~1 min); a run publishes just its own files
 python3 cloudflare/prepare.py          # validate the Pages upload (<25 MiB per asset) locally
 node --test tests/js/votes.test.mjs    # the votes API alone (needs node:sqlite, Node 22.13+)
 cf pages deployments list --project-name art-crit   # Git-triggered deployment status
@@ -147,7 +147,8 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   Markdown uses `markdown.js` (loaded through the transcript), never `innerHTML`; dynamic styles use CSSOM properties
   because all five viewer documents enforce a same-origin CSP. (ADR-0015)
 - **Hosting:** Git pushes to `main` trigger the Git-linked Cloudflare Pages project; `art-crit publish` still commits
-  and pushes `docs/`. Only `/art-crit` and `/art-crit/*` route to the Worker, which strips the path and streams
+  and pushes `docs/`. Publishing commits only the paths it publishes (`git commit -- <paths>`): a run's commit holds
+  that run's files, so a pending edit or something staged elsewhere in the working copy never rides along. Only `/art-crit` and `/art-crit/*` route to the Worker, which strips the path and streams
   compressed Godot WASM from Pages. `docs/` remains the local source of truth. (ADR-0021)
 - **Viewer data:** `page.json.runs` includes ranks; per-run `run.json` remains the source of truth. `rebuild` removes
   legacy `results.json`. All four page views use `loadPage()` for a single page-data request. (ADR-0016)

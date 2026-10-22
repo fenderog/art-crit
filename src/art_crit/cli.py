@@ -98,15 +98,25 @@ def build_parser():
     return parser
 
 
-def cmd_publish(root, message):
+def cmd_publish(root, message, paths=None):
+    """Commit and push `paths` and nothing else (default: all of `docs/`). A commit with a pathspec takes those
+    paths as they are in the working tree and leaves the rest of the index alone, so publishing a run never
+    sweeps up other files: neither unrelated edits under `docs/` nor anything the working copy had staged."""
+
     def git(*args):
         return subprocess.run(["git", *args], cwd=root, capture_output=True, text=True)
 
-    add = git("add", "docs")
+    # A path that is gone (a removed run) is covered by its parent directory, which the caller passes instead.
+    paths = [str(Path(p).relative_to(root)) if Path(p).is_absolute() and Path(p).is_relative_to(root) else str(p)
+             for p in (paths or [])]
+    paths = [p for p in paths if (root / p).exists()] or ["docs"]
+    add = git("add", "-A", "--", *paths)
     if add.returncode != 0:
         raise CritError(f"git add failed: {add.stderr.strip()}")
-    commit = git("commit", "-m", message or "art-crit publish")
-    if commit.returncode != 0 and "nothing to commit" not in (commit.stdout + commit.stderr):
+    commit = git("commit", "-m", message or "art-crit publish", "--", *paths)
+    # With a pathspec, git says "no changes added to commit" (not "nothing to commit") when those paths are clean.
+    quiet = ("nothing to commit", "no changes added to commit", "nothing added to commit")
+    if commit.returncode != 0 and not any(q in commit.stdout + commit.stderr for q in quiet):
         raise CritError(f"git commit failed: {commit.stderr.strip()}")
     push = git("push")
     if push.returncode != 0:
@@ -121,7 +131,7 @@ def main(argv=None):
     try:
         config = Config.load(root)
         if args.command == "import":
-            return cmd_import(
+            cmd_import(
                 config,
                 args.run_dir,
                 page=args.page,
@@ -130,6 +140,7 @@ def main(argv=None):
                 allow_threads=args.allow_threads,
                 dry_run=args.dry_run,
             )
+            return 0
         if args.command == "list":
             return cmd_list(root)
         if args.command == "rm":

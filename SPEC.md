@@ -171,7 +171,9 @@ page's published copies, so adding runs can't silently leave the model with no i
 ```
 `art-crit import` takes one run directory or a batch directory and publishes each run: cleans and secret-scans, copies
 `run.json` (adding `thumb`, `output`'s kind fields, `session` and `source`), `harness/conversation.json` as
-`session/conversation.json`, `work/` as `source/` and the kind's `output/`, then rebuilds. The page slug is the run's
+`session/conversation.json`, `work/` as `source/` and the kind's `output/`, then rebuilds. It returns the paths it wrote
+(`data/<slug>/`, its run directories, `data/pages.json`, any new `engines/<sha12>/`), which is what `art-crit run`
+hands to `cmd_publish`: a run's commit holds that run's files, not whatever else the working copy has staged or edited. The page slug is the run's
 `page` (`--page` overrides it); the title = the slug with dashes turned into spaces and the first letter capitalized.
 The page's prompt is the batch directory's `prompt.md`. Effort-run folders (`fe-model-effort-fanout/1`) are no longer read.
 
@@ -227,7 +229,7 @@ art-crit rebuild                   # regenerate page.json + pages.json from runs
 art-crit serve [-p/--port 8000]    # serve docs/ locally: Access-Control-Allow-Origin: *, .wasm as application/wasm, NO COOP/COEP headers
                                 #   plus the local-only ranking, prompt-request, run-monitor and video-studio APIs (see
                                 #   Ranking, Prompt requests, Run monitor, Video studio); accept queue 64 for concurrent ES modules
-art-crit publish [-m MSG]          # git add docs && git commit && git push (Cloudflare Pages builds main)
+art-crit publish [-m MSG]          # git add + git commit -- docs (only those paths) && git push (Cloudflare Pages builds main)
 art-crit run ...                   # run agents locally, then import (see "Running benchmarks")
 art-crit models [SEARCH] [-H/--harness pi|claude-code|agy|grok-build|muse-code|codex]   # models the harness can run; with SEARCH also their effort levels
 ```

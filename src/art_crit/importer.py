@@ -192,6 +192,8 @@ def run_dirs_of(path):
 
 
 def cmd_import(config, path, page=None, title=None, redact=False, allow_threads=False, dry_run=False):
+    """Publish the runs under `path` into docs/. Returns the paths it wrote (relative to the root, for
+    `cmd_publish`), so a caller that pushes can commit just this import and not the rest of the working copy."""
     path = Path(path).resolve()
     if not path.is_dir():
         raise CritError(f"not a directory: {path}")
@@ -219,6 +221,7 @@ def cmd_import(config, path, page=None, title=None, redact=False, allow_threads=
     with tempfile.TemporaryDirectory() as tmp:
         tmp_root = Path(tmp)
         results = []
+        written = []  # what this import touches, relative to the root (see the docstring)
         known_engines = set()
         for src in sources:
             r = stage_run(src, slug, tmp_root, docs_root, rewrites, redact, allow_threads, known_engines)
@@ -245,7 +248,7 @@ def cmd_import(config, path, page=None, title=None, redact=False, allow_threads=
             )
 
         if dry_run:
-            return 0
+            return []
 
         final = next((p for r in results if (p := final_prompt(r.run_dir))), None)
 
@@ -275,11 +278,13 @@ def cmd_import(config, path, page=None, title=None, redact=False, allow_threads=
                     engine_dir.mkdir(parents=True)
                     for name, content in r.engine_files.items():
                         (engine_dir / name).write_bytes(content)
+                    written.append(engine_dir)
             target = docs_root / "data" / slug / "runs" / r.run_id
             if target.is_dir():
                 shutil.rmtree(target)
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.move(str(r.run_dir), str(target))
+            written.append(target)
 
         page_json = json.loads(page_path.read_text()) if page_path.is_file() else {"slug": slug}
         page_json["kind"] = kind
@@ -291,5 +296,10 @@ def cmd_import(config, path, page=None, title=None, redact=False, allow_threads=
             page_json["final_prompt"] = final
         page_path.write_text(json.dumps(page_json, indent=2) + "\n")
 
+        # page.json and any references/ copies, plus rebuild's pages.json: the run directories above are the rest.
+        written.append(page_path)
+        if refs_src.is_dir():
+            written.append(docs_root / "data" / slug / "references")
+        written.append(docs_root / "data" / "pages.json")
         site.rebuild(config.root)
-    return 0
+    return [p.relative_to(config.root) for p in written]

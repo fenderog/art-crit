@@ -314,3 +314,50 @@ def test_big_transcript_image_without_ffmpeg_keeps_only_its_record(monkeypatch):
     block = {"type": "image", "mimeType": "image/png", "data": base64.b64encode(b"x" * 100_000).decode()}
     assert shrink_images([block]) == 1
     assert block == {"type": "image", "mimeType": "image/jpeg", "sourceMimeType": "image/png", "bytes": 100_000}
+
+
+# --- what a publish commits (only the run's own files) ---------------------------------------
+
+
+def _git(root, *args):
+    import subprocess
+
+    return subprocess.run(["git", "-C", str(root), *args], check=True, capture_output=True, text=True).stdout
+
+
+def test_publish_commits_only_the_paths_it_is_given(bench_root, batch_dir, git_repo):
+    """A publish with pathspecs leaves the rest of the working copy alone: publishing a run must not sweep
+    up unrelated files, however they got there (staged by hand, or a pending viewer edit)."""
+    from art_crit.cli import cmd_publish
+    from art_crit.config import Config
+    from art_crit.importer import cmd_import
+
+    git_repo(bench_root)
+    written = cmd_import(Config.load(bench_root), batch_dir)  # what `art-crit run` publishes
+    # a decoy staged outside docs/, and a pending docs edit from nobody's run
+    (bench_root / "src").mkdir()
+    (bench_root / "src" / "unrelated.py").write_text("x = 1\n")
+    _git(bench_root, "add", "src/unrelated.py")
+    (bench_root / "docs" / "assets").mkdir()
+    (bench_root / "docs" / "assets" / "viewer.js").write_text("// tweak\n")
+
+    cmd_publish(bench_root, "art-crit run: voxel-horse (r1)", written)
+
+    committed = _git(bench_root, "show", "--name-only", "--format=", "HEAD").split()
+    assert committed and all(p.startswith(("docs/data/", "docs/engines/")) for p in committed), committed
+    assert "docs/data/voxel-horse/page.json" in committed
+    assert "src/unrelated.py" not in committed and "docs/assets/viewer.js" not in committed
+    status = _git(bench_root, "status", "--porcelain")
+    assert "src/unrelated.py" in status and "docs/assets/" in status
+
+
+def test_import_returns_the_paths_it_wrote(bench_root, batch_dir):
+    """`art-crit run` publishes each run through these, so the import has to report what it touched."""
+    from art_crit.importer import cmd_import
+    from art_crit.config import Config
+
+    written = {str(p) for p in cmd_import(Config.load(bench_root), batch_dir)}
+    assert "docs/data/voxel-horse/page.json" in written and "docs/data/pages.json" in written
+    assert "docs/engines/6d75082047da" in written  # the engine this page stored
+    run = "docs/data/voxel-horse/runs/gpt-6-sol-high-20260926-001158"
+    assert run in written

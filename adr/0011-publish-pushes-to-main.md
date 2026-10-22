@@ -1,6 +1,8 @@
 # 0011. `art-crit publish` pushes to `main`, no PR flow
 
 - Status: Accepted
+- Amendment: a publish commits only the paths it publishes (all of `docs/` for `art-crit publish`, the run's own
+  files for `art-crit run`/`retry`), never the whole index.
 - Recorded: 2026-09-28 (written after the fact from SPEC.md, DESIGN.md and AGENTS.md)
 
 ## Context
@@ -12,6 +14,9 @@ as a review step for the owner.
 ## Decision
 
 - `art-crit publish [-m MSG]` commits `docs/` and pushes straight to `main`, using the owner's existing git auth.
+  `git commit` takes a pathspec with those paths, so a pending edit elsewhere in the working copy (or anything
+  already staged) is never swept into a publish commit; `art-crit run` passes the files its import wrote, so its
+  commit holds that run and nothing else.
 - `art-crit run --publish` does the same after importing.
 - There is no pull-request mode and no CI check for now.
 
