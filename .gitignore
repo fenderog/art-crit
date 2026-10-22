@@ -7,7 +7,11 @@ __pycache__/
 /cloudflare-dist/
 /.cloudflare/
 /.wrangler/
-.claude/worktrees/
+# local editor/tool state, exports and notes: never published (the repo is public)
+/.claude/
+/.ori/
+/art-crit-*.zip
+/todo.md
 /requests.json
 /references/
 /ideas.md
