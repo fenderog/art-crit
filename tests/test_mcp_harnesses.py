@@ -1,6 +1,6 @@
-"""MCP servers for agy, muse and grok-build: the stdio proxy that agy's and muse's permanent global entries point at,
-the installer of those entries (a temp copy of the global configs, see conftest), the per-run Grok config, and the
-MCP calls in their converted transcripts. No real harness or model runs here."""
+"""MCP servers for agy, muse, grok-build and ori: the stdio proxy that agy's and muse's permanent global entries point
+at, the installer of those entries (a temp copy of the global configs, see conftest), the per-run Grok and Ori configs,
+and the MCP calls in their converted transcripts. No real harness or model runs here."""
 
 import io
 import json
@@ -12,8 +12,8 @@ from pathlib import Path
 import pytest
 
 from art_crit import mcp_proxy
-from art_crit.harness import (Agy, GrokBuild, MuseCode, _muse_tool_call, convert_agy_stream, install_proxy_entries,
-                              proxy_path)
+from art_crit.harness import (Agy, GrokBuild, MuseCode, Ori, _muse_tool_call, convert_agy_stream,
+                              install_proxy_entries, proxy_path)
 from art_crit.util import CritError
 
 SPEC = {"blender": {"command": "uvx", "args": ["--from", "src", "blender-mcp"], "env": {"BLENDER_MCP_PORT": "4242"},
@@ -128,8 +128,19 @@ def test_grok_gets_a_project_config_in_work_through_the_proxy(tmp_path):
     assert json.loads((tmp_path / "harness" / "art-crit-mcp.json").read_text()) == SPEC  # hidden tools: the proxy drops them
 
 
+def test_ori_gets_a_workspace_config_in_work(tmp_path):
+    (tmp_path / "harness").mkdir()
+    cmd = Ori().command("deepseek/deepseek-v4.1-flash", "low", "brief", tmp_path / "harness", mcp=SPEC)
+    assert cmd[-2:] == ["-p", "brief"] and cmd[1:4] == ["code", "--harness", "ori"]
+    servers = json.loads((tmp_path / "work" / ".ori" / "mcp.json").read_text())["mcpServers"]
+    # `type` is required there, and Ori has no per-server tool filter, so `hidden`/`tools` aren't passed on
+    assert servers == {"blender": {"type": "stdio", "command": "uvx", "args": ["--from", "src", "blender-mcp"],
+                                  "env": {"BLENDER_MCP_PORT": "4242"}}}
+    assert Ori().tools(SPEC)["mcp"] == {"blender": {"allowed": ["execute_blender_code", "search_api_docs"], "hidden": []}}
+
+
 def test_harnesses_without_servers_write_nothing(tmp_path):
-    for h in (Agy(), MuseCode(), GrokBuild()):
+    for h in (Agy(), MuseCode(), GrokBuild(), Ori()):
         h.command("m", "low", "brief", tmp_path / "harness")
     assert not Agy.MCP_CONFIG.exists() and not MuseCode.MCP_CONFIG.exists() and not (tmp_path / "work").exists()
 

@@ -181,6 +181,47 @@ def test_pick_models_query_refines_and_empty_goes_back_to_the_full_list(fake_har
     assert "  no model matches 'zzz'" in echoed
 
 
+def _large_table(count, prefix="model"):
+    return {f"test/{prefix}-{i:02d}": ["low", "high"] for i in range(1, count + 1)}
+
+
+def test_pick_models_searches_a_large_catalog_without_listing_it_first(fake_harnesses):
+    fake_harnesses["pi"] = FakeHarness("pi", _large_table(25))
+    ask, _ = scripted("1", "1", "model-07", "1", "")
+    echoed = []
+    assert pick_models(fake_harnesses, ask=ask, echo=echoed.append) == ["pi:test/model-07:all"]
+    assert any("pi models: 25 (too many to list" in line for line in echoed)
+    assert " 1. test/model-01" not in echoed  # the catalog was not dumped ahead of the prompt
+    assert " 1. test/model-07" in echoed  # the search listed its match, renumbered from 1
+    assert any("search first" in line for line in echoed)  # the bare '1' before any search was refused
+
+
+def test_pick_models_caps_a_broad_search_and_says_how_many_more(fake_harnesses):
+    fake_harnesses["pi"] = FakeHarness("pi", _large_table(30, "match"))
+    ask, _ = scripted("1", "match", "1", "")
+    echoed = []
+    assert pick_models(fake_harnesses, ask=ask, echo=echoed.append) == ["pi:test/match-01:all"]
+    assert "20. test/match-20" in echoed and "21. test/match-21" not in echoed
+    assert any("10 more match" in line for line in echoed)
+
+
+def test_pick_models_empty_after_a_large_search_goes_back_to_searching(fake_harnesses):
+    fake_harnesses["pi"] = FakeHarness("pi", _large_table(25))
+    ask, asked = scripted("1", "model-07", "", "")
+    echoed = []
+    assert pick_models(fake_harnesses, ask=ask, echo=echoed.append) == []
+    assert not any("test/model-25" in line for line in echoed)  # clearing never dumps the catalog
+    assert asked.count("models [none]: ") == 3
+
+
+def test_pick_models_list_shows_a_large_catalog_on_purpose(fake_harnesses):
+    fake_harnesses["pi"] = FakeHarness("pi", _large_table(25))
+    ask, _ = scripted("1", "list", "25", "")
+    echoed = []
+    assert pick_models(fake_harnesses, ask=ask, echo=echoed.append) == ["pi:test/model-25:all"]
+    assert "25. test/model-25" in echoed
+
+
 def test_pick_models_out_of_range_number_is_an_error_and_is_reasked(fake_harnesses):
     ask, _ = scripted("1", "9", "1", "")
     echoed = []

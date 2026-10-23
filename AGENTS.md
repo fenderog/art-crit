@@ -48,12 +48,14 @@ src/art_crit/          CLI, standard library only (argparse, json, subprocess, t
   site.py           rebuild page.json (with runs) / pages.json (+ each run's rank from ranking.json), rm, list, engine GC
   serve.py          `art-crit serve` (GitHub-Pages-like) + the local-only APIs: PUT api/rank, GET/PUT api/requests
                     and the run monitor (GET api/runs, GET api/run, POST api/stop; see Run monitor, ADR-0027)
-  harness.py        Harness interface + Pi, ClaudeCode, Agy, GrokBuild, MuseCode, Codex (streams -> pi-format session) + metrics parsers
+  harness.py        Harness interface + Pi, ClaudeCode, Agy, GrokBuild, MuseCode, Codex, Ori (streams -> pi-format session)
+                    + metrics parsers
   runner.py         `art-crit run`: plan -> run agents in parallel -> collect -> kind step (finalize + verify) -> import;
                     `RunDir` = <batch>/<run id>/{run.json,work/,harness/,output/}; `wait_agent` waits for the running
                     agent, a timeout and `harness/stop` (the local monitor's Stop button) all kill its process group
   picker.py         no -m/--set (or -i/--pick): the interactive harness -> models -> levels menu; models are picked
-                    by number or an fzf-style fuzzy search (`fuzzy_score`/`fuzzy_matches`); the picks become ordinary
+                    by number or an fzf-style fuzzy search (`fuzzy_score`/`fuzzy_matches`); a catalog over LIST_LIMIT
+                    (20) is not printed up front — search first, `list` only on purpose; the picks become ordinary
                     -m specs, so planning validates them like a hand-typed spec
   pi_ext/           art-crit-shipped pi extensions loaded with explicit `-e` (work under `-ne`):
                     `openrouter_routing.ts`, loaded for every OpenRouter run: logs the serving upstream + real
@@ -110,6 +112,7 @@ uv run art-crit models --harness agy           # live agy models (effort is part
 uv run art-crit models --harness grok-build    # live grok models, effort menu from harness.py
 uv run art-crit models --harness muse-code     # muse models + levels (a table in harness.py)
 uv run art-crit models --harness codex         # codex models + levels (live from `codex debug models`)
+uv run art-crit models --harness ori deepseek  # OpenRouter's catalog (fetched live: art-crit's only network read)
 uv run art-crit run --dry-run "prompt" -m claude-code:opus:high -m openai-codex/gpt-6-sol:high   # mixed harnesses
 uv run art-crit retry --dry-run <slug> [run-id]          # run a page's failed runs again (costs money without -n); replaces each one that now works
 uv run art-crit video <slug> <run-id> <run-id> -d 3 -o tmp/vid     # social videos (ffmpeg + Chrome, no model)
@@ -192,7 +195,8 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   `textContent` (they have strict CSPs). The studio's rules live in studio.py: the page asks for the timeline rather than
   computing its own, so preview and render can't disagree.
 - **Per-run MCP config** (ADR-0025): a kind's MCP servers reach the agent through flags or files in the run's own
-  dirs (`--mcp-config`, `-c mcp_servers.*`, `work/.pi/mcp.json` + `--approve`, `work/.grok/config.toml`), never `~/.pi`,
+  dirs (`--mcp-config`, `-c mcp_servers.*`, `work/.pi/mcp.json` + `--approve`, `work/.grok/config.toml`,
+  `work/.ori/mcp.json`), never `~/.pi`,
   `~/.claude`, `~/.codex` or `~/.grok`. The one exception, with the user's consent: agy and muse read MCP servers only
   globally, so `~/.gemini/config/mcp_config.json` and `~/.config/muse/settings.json` each hold a permanent
   `art-crit-blender` entry running `~/.cache/art-crit/mcp_proxy.py`, which is inert (no tools) outside a run. Tests point
@@ -266,6 +270,17 @@ cf pages deployments list --project-name art-crit   # Git-triggered deployment s
   and no model id, so converted entries have neither. Effort goes via `-c model_reasoning_effort="LEVEL"`
   (there's no `--reasoning-effort` flag); cost is unreported (0). `codex model-profile show <anything>`
   echoes any name back, so it proves nothing about whether a model exists.
+- **Ori (`ori code --output jsonl`):** OpenRouter's own CLI, run with `--harness ori` pinned, so a run is always Ori's
+  runtime agent and not whatever harness the user's config defaults to. There's no `ori models` command: the model
+  list is OpenRouter's public catalog, which `harness.fetch_json` fetches (the only network read in art-crit, cached per
+  instance; tests monkeypatch it, `no_network` in conftest fails any other attempt). Levels come from each model's
+  `supported_parameters`: `reasoning_effort` → the whole ladder, otherwise `off` only. The JSONL stream wraps every
+  event twice (`{kind: "event", event: {type: "runtime.event", event: <agent event>}}`), so `ori_runtime_events`
+  unwraps it; prose and reasoning arrive as deltas (joined) and the cost is OpenRouter's own. `ori mcp list` is the
+  cheap way to check a run's `.ori/mcp.json` (each server needs `type: "stdio"`; the user's `~/.ori/mcp.json` and
+  `./mcp.json` always merge in, and there is no per-server tool filter). Ori also mirrors its runtime log to stderr
+  (harmless: the run's error comes from its own `result`/`tool.failed` message, which `run_agent` now prefers over
+  the last stderr line). It records sessions in its own workspace (`~/.ori/global/.ori/...`), which art-crit never reads.
 - **Model ids and levels of Claude Code aren't listed by any command:** the table lives in `ClaudeCode.MODELS`/
   `ALIASES` (harness.py), mirroring the CLI's own alias map; update it when models change. Levels are per model: the CLI
   silently clamps what a model doesn't take, and the recorded `thinking_level` is the *requested* one, so only list

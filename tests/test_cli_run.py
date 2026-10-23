@@ -15,7 +15,9 @@ import pytest
 
 from art_crit.cli import main
 from art_crit.config import Config, RunRequest
-from art_crit.harness import Codex, GrokBuild, MuseCode, Pi, agy_metrics, codex_metrics, convert_agy_stream, convert_claude_stream, convert_codex_stream, convert_muse_export, muse_metrics
+from art_crit.harness import (Codex, GrokBuild, MuseCode, Ori, Pi, agy_metrics, codex_metrics, convert_agy_stream,
+                              convert_claude_stream, convert_codex_stream, convert_muse_export, convert_ori_stream,
+                              muse_metrics)
 from art_crit.runner import assign_run_ids, expand_levels, parse_duration, plan_runs
 from art_crit.util import CritError
 
@@ -1374,6 +1376,124 @@ def test_codex_command_and_model_listing(tmp_path, capsys):
     out = capsys.readouterr().out
     assert "gpt-6-sol: low, medium, high, xhigh, max" in out  # `ultra` dropped: not in LEVEL_ORDER
     assert "gpt-hidden" not in out
+
+
+# --- Ori harness -----------------------------------------------------------------------------------
+
+ORI_ROWS = [
+    {"id": "deepseek/deepseek-v4.1-flash", "supported_parameters": ["tools", "reasoning", "reasoning_effort"],
+     "architecture": {"output_modalities": ["text"]}},
+    {"id": "nvidia/nemotron-3.5-super-vl:free", "supported_parameters": ["tools", "reasoning"],
+     "architecture": {"output_modalities": ["text"]}},
+    {"id": "someone/painter", "supported_parameters": [],
+     "architecture": {"output_modalities": ["image"]}},
+]
+
+
+@pytest.fixture
+def ori_catalog(monkeypatch):
+    """Ori's model rows as OpenRouter publishes them, without the network (see conftest)."""
+    monkeypatch.setattr(Ori, "openrouter_catalog", lambda self: ORI_ROWS)
+
+
+@pytest.fixture
+def fake_ori_on_path(fake_pi_on_path, monkeypatch):
+    """The fake `ori` (tests/fixtures/fake_pi/ori, on PATH through the autouse fixture above), with no knobs set."""
+    monkeypatch.delenv("FAKE_ORI_ERROR", raising=False)
+    monkeypatch.delenv("FAKE_ORI_ARGV", raising=False)
+
+
+def test_ori_models_and_levels_come_from_openrouter(ori_catalog):
+    assert Ori().models() == ["deepseek/deepseek-v4.1-flash", "nvidia/nemotron-3.5-super-vl:free"]  # no image models
+    assert Ori().levels("deepseek/deepseek-v4.1-flash") == ["off", "minimal", "low", "medium", "high", "xhigh", "max"]
+    assert Ori().levels("nvidia/nemotron-3.5-super-vl:free") == ["off"]  # no reasoning_effort: `off` only, like pi
+    assert plan_for(["ori:deepseek/deepseek-v4.1-flash:high"]) == [("ori", "deepseek/deepseek-v4.1-flash", "high")]
+    assert plan_for(["ori:deepseek/deepseek-v4.1-flash:off"]) == [("ori", "deepseek/deepseek-v4.1-flash", "off")]
+    with pytest.raises(CritError, match="xhigh not supported"):
+        plan_for(["ori:nvidia/nemotron-3.5-super-vl:free:xhigh"])
+    with pytest.raises(CritError, match="unknown model 'someone/painter'"):
+        plan_for(["ori:someone/painter:low"])
+
+
+def test_ori_unreadable_catalog_is_a_clear_error():
+    with pytest.raises(CritError, match="cannot read OpenRouter's model list.*no network in tests"):
+        Ori().models()  # the real fetch; conftest fails every urlopen
+
+
+def test_ori_version_reads_its_json_envelope(fake_ori_on_path):
+    assert Ori().version() == "9.9.9-fake"  # piped, ori answers {"data": {"version": ...}}
+
+
+def test_ori_runs_and_publishes_transcript(run_root, tmp_path, monkeypatch, ori_catalog, fake_ori_on_path):
+    argv_path = tmp_path / "argv.json"
+    monkeypatch.setenv("FAKE_ORI_ARGV", str(argv_path))
+    assert main(["run", "--yes", "--kind", "media", "draw a circle", "-m", "ori:deepseek/deepseek-v4.1-flash:high",
+                 "--root", str(run_root)]) == 0
+    [run] = json.loads((run_root / "docs/data/draw-a-circle/page.json").read_text())["runs"]
+    assert run["harness"]["name"] == "ori" and run["harness"]["version"] == "9.9.9-fake"
+    assert run["model"] == "deepseek/deepseek-v4.1-flash"  # the OpenRouter slug: the site groups it by vendor
+    assert run["state"] == "complete" and run["output"]["ok"] is True and "-ori-" in run["id"]
+    # OpenRouter's own numbers: input excludes the cached tokens, and its cost is what it charged
+    assert run["metrics"]["tokens_total"] == 60 and run["metrics"]["tokens_cache_read"] == 100
+    assert run["metrics"]["turns"] == 1 and run["metrics"]["tool_calls"] == 1
+    assert run["metrics"]["cost_usd"] == 0.005
+    argv = json.loads(argv_path.read_text())
+    assert argv[:3] == ["code", "--harness", "ori"] and argv[argv.index("--output") + 1] == "jsonl"
+    assert argv[argv.index("--model") + 1] == "deepseek/deepseek-v4.1-flash"
+    assert argv[argv.index("--reasoning-effort") + 1] == "high"
+    assert argv[argv.index("--approvals") + 1] == "self-drive"
+    run_dir = run_root / "docs/data/draw-a-circle/runs" / run["id"]
+    assert not (run_dir / "session/events.jsonl").exists()  # the raw stream is never published
+    msgs = [e["message"] for e in json.loads((run_dir / "session/conversation.json").read_text()) if e["type"] == "message"]
+    assert [m["role"] for m in msgs] == ["user", "assistant", "toolResult", "assistant"]
+    assert msgs[1]["content"] == [{"type": "thinking", "thinking": "Plan the files."},
+                                  {"type": "toolCall", "id": "call_1", "name": "shell", "arguments": {"command": "ls"}}]
+    assert msgs[1]["stopReason"] == "toolUse"
+    assert msgs[2]["toolCallId"] == "call_1" and msgs[2]["isError"] is False
+    assert msgs[2]["durationMs"] == 26 and msgs[2]["content"][0]["text"] == "output/circle.svg"
+    assert msgs[3]["content"] == [{"type": "text", "text": "Done: built it."}]  # deltas joined
+    assert msgs[3]["usage"]["input"] == 30 and msgs[3]["usage"]["cacheRead"] == 100
+
+
+def test_ori_failed_turn_fails_the_run(run_root, monkeypatch, ori_catalog, fake_ori_on_path):
+    monkeypatch.setenv("FAKE_ORI_ERROR", "1")
+    assert main(["run", "--yes", "--kind", "media", "broken circle", "-m", "ori:deepseek/deepseek-v4.1-flash:low",
+                 "--root", str(run_root)]) == 0
+    [run] = json.loads((run_root / "docs/data/broken-circle/page.json").read_text())["runs"]
+    assert run["state"] == "failed" and run["error"] == "The turn was cancelled."  # ori's own message, not its log
+    transcript = json.loads((run_root / "docs/data/broken-circle/runs" / run["id"] / "session/conversation.json").read_text())
+    results = [e["message"] for e in transcript if (e.get("message") or {}).get("role") == "toolResult"]
+    assert results[0]["isError"] is True and results[0]["content"][0]["text"] == "no such file"
+    last = [e["message"] for e in transcript if e["type"] == "message"][-1]
+    assert last["stopReason"] == "error" and last["content"][0]["text"] == "The turn was cancelled."
+
+
+def test_ori_stream_without_a_settled_turn_fails_instead_of_publishing_success(tmp_path):
+    (tmp_path / "events.jsonl").write_text(json.dumps({"kind": "event", "event": {"type": "runtime.event", "event": {
+        "type": "turn.started", "payload": {"prompt": "p"}}}}) + "\n")
+    metrics = Ori().metrics(tmp_path, "low")
+    assert metrics["ended_in_error"] and "no final result" in metrics["error_message"]
+    entries = convert_ori_stream([{"kind": "event", "event": {"type": "runtime.event", "event": {
+        "type": "turn.started", "payload": {}}}}], "brief", "low")
+    assert [e["type"] for e in entries] == ["session", "model_change", "thinking_level_change", "message"]
+
+
+def test_ori_result_error_without_a_turn_is_reported(tmp_path):
+    lines = [{"kind": "event", "event": {"type": "audit.event", "audit": {}}},
+             {"kind": "result", "ok": False, "sessionId": "s",
+              "error": {"message": "The requested model ID does not exist.", "code": "ORI_MODEL_UNKNOWN"}}]
+    (tmp_path / "events.jsonl").write_text("".join(json.dumps(line) + "\n" for line in lines))
+    metrics = Ori().metrics(tmp_path, "low")
+    assert metrics["ended_in_error"] and metrics["error_message"] == "The requested model ID does not exist."
+    entries = convert_ori_stream(lines, "brief", "low")
+    assert entries[-1]["message"]["stopReason"] == "error"
+
+
+def test_ori_command_and_model_listing(tmp_path, capsys, ori_catalog):
+    cmd = Ori().command("deepseek/deepseek-v4.1-flash", "off", "brief", tmp_path)
+    assert cmd[-2:] == ["-p", "brief"] and cmd[cmd.index("--reasoning-effort") + 1] == "none"  # art-crit's off
+    assert main(["models", "--harness", "ori", "deepseek"]) == 0
+    assert capsys.readouterr().out == "deepseek/deepseek-v4.1-flash: off, minimal, low, medium, high, xhigh, max\n"
 
 
 # --- Claude Code harness ---------------------------------------------------------------------------

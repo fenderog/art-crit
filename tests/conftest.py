@@ -26,6 +26,16 @@ def no_muse_catalog(monkeypatch, tmp_path_factory):
 
 
 @pytest.fixture(autouse=True)
+def no_network(monkeypatch):
+    """No test reaches the network (Ori's model list comes from OpenRouter's public API): a test that needs
+    models installs its own rows with the `ori_catalog` fixture in test_cli_run."""
+    def offline(*args, **kwargs):
+        raise OSError("no network in tests")
+
+    monkeypatch.setattr("art_crit.harness.fetch_json", offline)
+
+
+@pytest.fixture(autouse=True)
 def no_global_mcp_config(monkeypatch, tmp_path):
     """agy and muse get MCP servers through entries in the user's global config: tests write a temp copy, never the
     real ~/.gemini or ~/.config/muse, and the proxy goes to a temp cache."""

@@ -406,7 +406,8 @@ def run_agent(harness, run, rd, batch, version, timeout_s, progress, live, live_
     elif outcome == "stopped":  # the monitor asked to stop: killed above, so the exit code is meaningless
         state, error = "failed", "stopped from the local monitor"
     elif exit_code != 0:
-        state, error = "failed", last_line(stderr_path) or f"harness exited {exit_code}"
+        # What the agent itself reported beats its last stderr line (Ori logs its runtime there).
+        state, error = "failed", (metrics or {}).get("error_message") or last_line(stderr_path) or f"harness exited {exit_code}"
     elif session_path is None:
         state, error = "failed", "no session file written"
     elif metrics["ended_in_error"]:

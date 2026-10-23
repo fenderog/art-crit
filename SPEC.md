@@ -231,7 +231,7 @@ art-crit serve [-p/--port 8000]    # serve docs/ locally: Access-Control-Allow-O
                                 #   Ranking, Prompt requests, Run monitor, Video studio); accept queue 64 for concurrent ES modules
 art-crit publish [-m MSG]          # git add + git commit -- docs (only those paths) && git push (Cloudflare Pages builds main)
 art-crit run ...                   # run agents locally, then import (see "Running benchmarks")
-art-crit models [SEARCH] [-H/--harness pi|claude-code|agy|grok-build|muse-code|codex]   # models the harness can run; with SEARCH also their effort levels
+art-crit models [SEARCH] [-H/--harness pi|claude-code|agy|grok-build|muse-code|codex|ori]   # models the harness can run; with SEARCH also their effort levels
 ```
 Every long option has a single-dash short form (shown as `-p/--page`); the short forms are listed with each command.
 - `import` is idempotent. Re-importing the same directory replaces runs with the same id.
@@ -291,7 +291,10 @@ harness's models, then a levels prompt per picked model (default `all`, acceptin
 model list, numbers, ranges or `all` select from the listing shown; any other text is an **fzf-style fuzzy search**
 (letters and digits in order, separators ignored, so `claudeop55` and `g6sol` match; hits that start a word and runs
 of consecutive hits rank higher) that re-lists just its matches, renumbered, and an empty answer brings the full list
-back (or picks nothing while it is shown). The picks become ordinary harness-prefixed `-m` specs, so planning
+back (or picks nothing while it is shown). A catalog of more than 20 models is not listed before the first answer:
+the prompt asks for a search, every listing shows at most 20 matches (with the number of further matches named),
+and `list` lists the whole catalog on purpose; clearing a search on such a catalog returns to that search prompt
+rather than printing it. The picks become ordinary harness-prefixed `-m` specs, so planning
 validates them exactly like a hand-typed spec. A harness whose model list can't be read, and a model whose levels
 can't be, are reported and skipped; a selection and a levels spec are re-asked until they parse. On a non-tty (e.g. a
 script), no `-m`/`--set` is the usual error.
@@ -429,17 +432,17 @@ class Kind:
 Over assistant messages: `turns` = count; `tool_calls` = number of `toolCall` content blocks; `tokens_input/output/
 reasoning/cache_read` = sums of `usage.<field>`; `tokens_total = input + output`; `cost_usd` = sum of
 `usage.cost.total`. `duration_ms` = wall clock of the harness process. `state = failed` when the process exits non-zero, there is no
-session file, or the last assistant message has `stopReason: "error"`; `error` = its `errorMessage` or the last
-non-empty stderr line (the first 200 characters).
+session file, or the last assistant message has `stopReason: "error"`; `error` = what the agent itself reported
+(`metrics.error_message`, e.g. Ori's failure message) or, failing that, the last non-empty stderr line (the first 200 characters).
 
 ### Harness interface (`src/art_crit/harness.py`)
-Harnesses: `pi` (the default), `claude-code`, `agy` (Antigravity CLI), `grok-build`, `muse-code` and `codex`. A `-m` spec picks one with a prefix: `HARNESS:MODEL[:LEVELS]`
+Harnesses: `pi` (the default), `claude-code`, `agy` (Antigravity CLI), `grok-build`, `muse-code`, `codex` and `ori` (OpenRouter's Ori CLI). A `-m` spec picks one with a prefix: `HARNESS:MODEL[:LEVELS]`
 (no prefix, or `pi:`, = pi), in `-m`, `--set` entries and set files alike, so one batch can mix harnesses. Each run
 records its harness; batch.json has `harnesses: {name: version}`. The run ids of non-pi harnesses put the harness tag after
 the model (`claude-opus-5-5-cc-high-20260928-154152`), so one model under two harnesses never collides.
 ```python
 class Harness:           # one per agent program
-    name: str; tag: str                                 # tag: "" for pi, "cc"/"agy"/"gb"/"mc"/"cx" for the others
+    name: str; tag: str                                 # tag: "" for pi, "cc"/"agy"/"gb"/"mc"/"cx"/"ori" for the others
     def version(self) -> str | None
     def models(self) -> list[str]
     def resolve(self, model) -> str                     # alias -> id (identity by default)
@@ -447,7 +450,7 @@ class Harness:           # one per agent program
     def display_model(self, model) -> str               # the model name recorded for the run
     def split_spec(self, rest) -> (str, list | None)    # "MODEL@UPSTREAMS:LEVELS" -> ("MODEL:LEVELS", upstreams)
     def pinned(self, model, upstreams) -> str           # the model argument ("model@a,b"); only pi accepts upstreams
-    supports_mcp: bool                                  # pi, claude-code, codex
+    supports_mcp: bool                                  # pi, claude-code, codex, grok-build, ori
     def command(self, model, level, brief, session_dir, mcp=None) -> list[str]  # mcp: the kind's servers for this run only
     def env(self, model=None, harness_dir=None) -> dict | None  # the agent's environment (None = inherit)
     def session_file(self, session_dir) -> Path | None  # the raw session in harness/ (never published)
@@ -477,7 +480,11 @@ Outside an art-crit run there is no such file and the proxy is an MCP server wit
 see nothing. grok-build writes `work/.grok/config.toml` (a project config, never published as source) whose server
 runs the same proxy (Grok has no field that hides tools) and runs grok with `GROK_FOLDER_TRUST=0` (project servers
 start only in a trusted folder, and `--trust` would record every run dir in `~/.grok/trusted_folders.toml`). Grok's
-models reach MCP tools only through its `search_tool`/`use_tool` meta-tools. Transcripts name every MCP call
+models reach MCP tools only through its `search_tool`/`use_tool` meta-tools. ori gets the run's servers in
+`work/.ori/mcp.json` (a workspace config it merges for the run; each server needs `type: "stdio"`), and it has no
+per-server tool filter, so nothing is hidden there and `tools.mcp.<server>.hidden` is recorded empty. Ori also merges the
+user's own `~/.ori/mcp.json` and `./mcp.json`, which art-crit can't turn off: run it with isolated Ori configuration for
+strict comparisons. Transcripts name every MCP call
 `mcp__<server>__<tool>` (agy's `call_mcp_tool` and muse's `mcp__art_crit_<server>__<tool>` are converted). The planning
 check still refuses a harness without `supports_mcp` for a kind that needs MCP.
 Every `openrouter/` run adds `-e src/art_crit/pi_ext/openrouter_routing.ts` (explicit `-e` paths still load under
@@ -525,6 +532,26 @@ Grok Build (`grok`): models are intersected with `grok models`; effort menus for
 Muse Code (`muse`): models and levels come from the catalog `muse` caches in `~/.local/share/muse/model-catalog/*.json` (`rows[].model_id` with `reasoning_effort_variants[].tier`, hidden `-contributor` rows included, image models skipped), refreshed only when the Muse TUI fetches it; the `MuseCode.MODELS` table is the fallback without a cache. The recorded model is `meta/<id>`. Command: `bash -c` running `muse exec --json --session-id ID --model M --reasoning-effort L --disable-approval --disable-sandbox --disable-web-tools --disable-reminders --no-foreign-personal-context -- BRIEF`, then `muse export --session ID --out harness/export.json` whatever `exec`'s exit code was (exec's own `--json` stdout, `events.jsonl`, carries no tool calls or usage). `export.json` is the session: its `events` are records whose `runtime.session` payloads of `kind: run` hold `reasoning_committed`, `assistant_message_committed`, `assistant_tool_calls_committed` (`tool_calls[{call_id, name, args}]`), `tool_result_batch_committed`, `model_completed` (`usage`) and `terminal` events; only runs with a `top_level_turn.run_origin` fact count. Conversion: one assistant message per model call (thinking, text, toolCalls, usage); `bash`/`write_file`/`edit_file`/`read_file` become pi's `bash`/`write`/`edit`/`read`; tool durations are exact (the `tool_batch.effect` start and end per call); timestamps from the records' `recorded_at` (µs). Metrics: turns = `model_completed` events, tokens summed over their usage with `input` = `input_tokens` - cache read/write (Muse's include them), reasoning = `reasoning_tokens`; `cost_usd` for models with published [Meta Model API prices](https://dev.meta.ai/docs/pricing-rate-limits) is `(input + cacheWrite) * input_rate + cacheRead * cached_rate + output * output_rate`, divided by 1M (reasoning is already in output). It is marked `metrics.cost_estimated: true`: API-equivalent, **not** actual subscription spend. Supported: Wonder 1.0 Standard ($4/$0.20/$20 per million uncached/cached/output), Spark 1.2/1.3 Standard ($1.25/$0.15/$4.25) and Spark 1.2/1.3 Contributor ($0.10/$0.002/$0.20). Muse Wonder Full and Wonder Contributor have no published API rate: they use Wonder Standard's rate as a **proxy**, marked `metrics.cost_estimate_proxy: "meta/muse-wonder-1.0"` (≈ in the viewer). Unknown models remain 0 (**unknown**, not free). The rates are pinned in `MuseCode.API_PRICES` and require updating when Meta changes pricing. Re-importing a legacy Muse run with `harness/export.json` calculates its estimate without modifying the archived batch run.json. Failed = no `terminal` event or one that is not `completed` (error = its `reason`).
 
 Codex (`codex`): version = second word of `codex --version` (`codex-cli X`). Models and levels come from `codex debug models` (`models[].slug` with `supported_reasoning_levels[].effort`, `visibility: list` rows only; `ultra` is dropped because it isn't in LEVEL_ORDER), cached per harness instance; runs are recorded as `openai/<slug>`. Command = `codex exec --json --ephemeral --ignore-user-config --ignore-rules --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox -m ID -c model_reasoning_effort="LEVEL" BRIEF`: one direct agent, no approvals or sandbox (like the other harnesses), no user config or execpolicy rules, and nothing persisted to `~/.codex/sessions`. The stdout JSONL stream is the session. Conversion to pi's format: only `item.completed` items count (`item.started`/`item.updated` are the same item in flight); `reasoning` -> thinking, `agent_message` -> text, each tool item (`command_execution` -> pi's `bash` with the command, `file_change`, `mcp_tool_call`, `collab_tool_call`, `web_search`) becomes one assistant `toolCall` plus its `toolResult` (`command_execution`'s output is `aggregated_output`, failed when its status isn't `completed` or its exit code is non-zero); a `turn.completed` flushes the pending assistant message with that turn's usage. The stream carries no timestamps and no model id, so entries have neither. Metrics: turns = `turn.started` count (at least the completed ones), tool calls = completed tool items, tokens summed over `turn.completed` usage with `input` = `input_tokens` - cached - cache-write (Codex's includes cached ones), reasoning = `reasoning_output_tokens`; cost is not reported (0 = **unreported**, not free); failed = a `turn.failed`/`error` event or no completed turn (error = its message).
+
+Ori (`ori`): OpenRouter's Ori CLI, running its own runtime agent (`ori code`, pinned with `--harness ori` so the
+user's default harness can't change what a run is). Models are OpenRouter's, fetched live from its public catalog
+(`https://openrouter.ai/api/v1/models`, no credential; `fetch_json` is the one place art-crit reads the network) and
+cached per harness instance: every model that outputs text, image/video models skipped. Levels are
+`off, minimal, low, medium, high, xhigh, max` for a model advertising `reasoning_effort`, and `off` alone otherwise
+(like a non-reasoning model under pi), with art-crit's `off` passed as Ori's `--reasoning-effort none`. Runs are
+recorded as the bare OpenRouter slug (`deepseek/deepseek-v4.1-flash`), which is what the viewer groups by vendor.
+Command = `ori code --harness ori --output jsonl --approvals self-drive --model ID --reasoning-effort LEVEL -p BRIEF`
+(the default approvals mode, spelled out; no sandbox or approval prompts, like the other harnesses). The stdout JSONL
+stream is the session: each line is `{kind: "event", event}` whose event is a `runtime.event` wrapping the agent's own
+event (`audit.event` lines aren't part of the session), and the last line is `{kind: "result", ok, sessionId, error}`.
+Conversion to pi's format: `reasoning.delta`/`assistant.text.delta` deltas join into one assistant message per flush,
+`tool.started` becomes a `toolCall` block, its `tool.succeeded`/`tool.failed` one `toolResult` message (with the
+event's own `durationMs` when present, else computed from the timestamps), a failed turn or session a final assistant
+message with `stopReason: "error"`. Metrics: turns = settled turns, tool calls = `tool.started` events, tokens and cost
+from the turn results' usage (`inputTokens` excludes the cache read/write ones, `cost_usd` is the usage's `costUsd`, OpenRouter's
+own charge — reasoning tokens aren't reported, so 0); failed = a failed turn/session, a result line with `ok: false`,
+or no turn that ever settled (error = its `failure.message`, else the result's `error.message`). Ori also records each
+session in its own workspace (`~/.ori/...`), which art-crit doesn't read.
 
 Future harnesses and a VM runner plug in here and at "start one agent" in `runner.py`; a container executor mounts one run directory.
 

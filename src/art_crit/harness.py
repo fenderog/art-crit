@@ -1,5 +1,5 @@
-"""The agent-program interface (`art-crit run` drives one of these): Pi, ClaudeCode, Agy, GrokBuild, MuseCode and Codex. Also the
-pure session parsers: metrics + state (see SPEC.md "Metrics" and "Harness interface").
+"""The agent-program interface (`art-crit run` drives one of these): Pi, ClaudeCode, Agy, GrokBuild, MuseCode, Codex
+and Ori. Also the pure session parsers: metrics + state (see SPEC.md "Metrics" and "Harness interface").
 
 Every harness hands the runner the same things: a command line, a session in pi's format
 (`session_entries`, published as conversation.json, which the viewer renders) and metrics.
@@ -12,6 +12,7 @@ import os
 import re
 import subprocess
 import threading
+import urllib.request
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -1434,7 +1435,260 @@ def convert_codex_stream(events, brief, level):
     return entries
 
 
-HARNESSES = {"pi": Pi, "claude-code": ClaudeCode, "agy": Agy, "grok-build": GrokBuild, "muse-code": MuseCode, "codex": Codex}
+def fetch_json(url, timeout=30):
+    """GET `url` and parse its JSON body: the one place art-crit reads the network, Ori's model catalog
+    (tests replace it, so no test ever reaches out)."""
+    with urllib.request.urlopen(url, timeout=timeout) as response:
+        return json.load(response)
+
+
+class Ori(Harness):
+    """OpenRouter's Ori CLI (`ori code -p ... --output jsonl`): Ori's own runtime agent, one headless turn.
+    The stdout JSONL stream is the session; the models are OpenRouter's (their public catalog, which is
+    what Ori runs), and each turn reports OpenRouter's own usage, cost included."""
+
+    name = "ori"
+    supports_mcp = True  # work/.ori/mcp.json, which Ori merges for this run only (see write_ori_mcp_config)
+    tag = "ori"
+    # OpenRouter's public model list (no credential needed): the same catalog Ori resolves `--model` against.
+    CATALOG_URL = "https://openrouter.ai/api/v1/models"
+    # Ori takes these; a model advertising `reasoning_effort` takes all of them, and `off` is Ori's "none".
+    MODEL_LEVELS = [level for level in LEVEL_ORDER if level != "off"]
+
+    def __init__(self, binary="ori"):
+        self.binary = binary
+        self._catalog = None
+
+    def version(self):
+        try:
+            r = subprocess.run([self.binary, "--version"], capture_output=True, text=True, timeout=30)
+        except (OSError, subprocess.TimeoutExpired) as e:
+            raise CritError(f"cannot run {self.binary} --version: {e}")
+        if r.returncode != 0:
+            raise CritError(f"{self.binary} --version failed: {r.stderr.strip()}")
+        text = r.stdout.strip()
+        try:  # piped, ori answers a JSON envelope; on a terminal it prints "ori 0.16.0-alpha+... Run ..."
+            return str((json.loads(text).get("data") or {}).get("version") or text.split()[1])
+        except (ValueError, IndexError, AttributeError):
+            parts = text.split()
+            return parts[1] if len(parts) > 1 and parts[0] == "ori" else text
+
+    def openrouter_catalog(self):
+        """OpenRouter's model rows, live (tests install their own: see `fetch_json`)."""
+        try:
+            return (fetch_json(self.CATALOG_URL) or {}).get("data") or []
+        except (OSError, ValueError, AttributeError) as e:
+            raise CritError(f"cannot read OpenRouter's model list ({self.CATALOG_URL}): {e}")
+
+    def catalog(self):
+        """{model id: effort levels in LEVEL_ORDER} over the text-output models of OpenRouter's catalog
+        (image/video models can't drive an agent). A model that advertises `reasoning_effort` gets the
+        whole ladder; one without it gets `off` only, like a non-reasoning model under pi. Cached per
+        instance: planning asks often."""
+        if self._catalog is None:
+            found = {}
+            for row in self.openrouter_catalog():
+                params = set(row.get("supported_parameters") or [])
+                outputs = (row.get("architecture") or {}).get("output_modalities") or []
+                if row.get("id") and "text" in outputs:
+                    found[row["id"]] = ["off", *self.MODEL_LEVELS] if "reasoning_effort" in params else ["off"]
+            self._catalog = found
+        return self._catalog
+
+    def models(self):
+        return list(self.catalog())
+
+    def levels(self, model):
+        return self.catalog()[model]
+
+    def tools(self, mcp=None):
+        """Ori takes MCP servers without a per-tool filter, so nothing is hidden: say so rather than
+        recording the `hidden` names the harness can't enforce."""
+        tools = super().tools(mcp)
+        for server in tools["mcp"].values():
+            server["hidden"] = []
+        return tools
+
+    def command(self, model, level, brief, session_dir, mcp=None):
+        # --harness ori pins Ori's own runtime (the CLI's default harness is the user's to change), and
+        # self-drive approves commands without asking, like the other harnesses run.
+        if mcp:
+            write_ori_mcp_config(Path(session_dir).parent / "work" / ".ori" / "mcp.json", mcp)  # Ori merges ./.ori/mcp.json
+        return [self.binary, "code", "--harness", "ori", "--output", "jsonl", "--approvals", "self-drive",
+                "--model", model, "--reasoning-effort", "none" if level == "off" else level, "-p", brief]
+
+    def session_file(self, session_dir):
+        path = Path(session_dir) / "events.jsonl"
+        return path if path.is_file() else None
+
+    def session_entries(self, session_dir, brief, level):
+        path = self.session_file(session_dir)
+        return convert_ori_stream(read_jsonl(path), brief, level) if path else None
+
+    def metrics(self, session_dir, level=None):
+        path = self.session_file(session_dir)
+        return ori_metrics(read_jsonl(path), level) if path else None
+
+
+def write_ori_mcp_config(path, mcp):
+    """A run's MCP servers as the `mcpServers` JSON Ori reads from a workspace's .ori/mcp.json: unlike pi's
+    and Claude Code's, each server needs `type: "stdio"`. Ori also holds no per-server tool filter."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    servers = {name: {"type": "stdio", "command": spec["command"], "args": list(spec.get("args", ())),
+                      **({"env": dict(spec["env"])} if spec.get("env") else {})}
+               for name, spec in (mcp or {}).items()}
+    path.write_text(json.dumps({"mcpServers": servers}, indent=2) + "\n")
+    return path
+
+
+def ori_runtime_events(lines):
+    """The agent events of an `ori code --output jsonl` stream. Each line is {kind, event}; a runtime event's
+    `event` is a `runtime.event` wrapping the agent's own event, and audit events aren't part of the session.
+    A line that already holds an agent event (`{type, payload}`) is accepted as it is."""
+    events = []
+    for line in lines:
+        event = line.get("event") if isinstance(line, dict) else None
+        if not isinstance(event, dict):
+            continue
+        if event.get("type") == "runtime.event":
+            event = event.get("event")
+        if isinstance(event, dict) and isinstance(event.get("type"), str):
+            events.append(event)
+    return events
+
+
+def ori_result(lines):
+    """The stream's closing `{kind: "result", ok, sessionId, error}` line, which Ori exits non-zero on."""
+    return next((line for line in lines if isinstance(line, dict) and line.get("kind") == "result"), None)
+
+
+def _ori_payload(event):
+    payload = event.get("payload")
+    return payload if isinstance(payload, dict) else {}
+
+
+def _ori_usage(u):
+    """OpenRouter's usage (its input tokens include the cached ones; pi's `input` doesn't)."""
+    cache_read = u.get("cacheReadTokens") or 0
+    cache_write = u.get("cacheCreationTokens") or 0
+    usage = {"input": max(0, (u.get("inputTokens") or 0) - cache_read - cache_write),
+             "output": u.get("outputTokens") or 0, "cacheRead": cache_read, "cacheWrite": cache_write}
+    usage["totalTokens"] = sum(usage.values())
+    return usage
+
+
+def ori_metrics(lines, level=None):
+    """Metrics from an ori jsonl stream (parse_session()'s shape): tokens and cost come from the turn
+    results, which carry OpenRouter's own numbers (cost is what it charged, like a pi OpenRouter run), and
+    ori reports no reasoning tokens. Failed = a failed turn or session, a result line that says so, or no
+    turn that ever settled."""
+    events = ori_runtime_events(lines)
+    result = ori_result(lines) or {}
+    terminal = [event for event in events if event.get("type") in ("turn.succeeded", "turn.failed")]
+    usage = [_ori_usage(p.get("usage") or {}) for p in map(_ori_payload, terminal) if p.get("usage")]
+    tokens = {key: sum(u[key] for u in usage) for key in ("input", "output", "cacheRead", "cacheWrite")}
+    tokens["reasoning"] = 0  # ori reports none
+    tokens["total"] = tokens["input"] + tokens["output"]
+    failed = [event for event in events if event.get("type") in ("turn.failed", "session.failed")]
+    error = None
+    if failed:
+        error = (_ori_payload(failed[0]).get("failure") or {}).get("message") or "ori error"
+    elif result.get("ok") is False:
+        error = (result.get("error") or {}).get("message") or "ori error"
+    elif not terminal:
+        error = "no final result from ori"
+    return {
+        "thinking_level": level,
+        "turns": sum(1 for event in terminal if event.get("type") == "turn.succeeded"),
+        "tool_calls": sum(1 for event in events if event.get("type") == "tool.started"),
+        "tokens": tokens,
+        "cost_usd": sum(p.get("usage", {}).get("costUsd") or 0 for p in map(_ori_payload, terminal)),
+        "ended_in_error": bool(error),
+        "error_message": str(error)[:200] if error else None,
+    }
+
+
+def _ori_tool_text(value):
+    """A tool result (or a failed call's result) as text for the transcript."""
+    if isinstance(value, str):
+        return value
+    return "" if value is None else json.dumps(value, ensure_ascii=False)
+
+
+def convert_ori_stream(lines, brief, level):
+    """An `ori code --output jsonl` stream -> pi-format session entries (see SPEC.md "Harness interface").
+    Ori streams prose and reasoning as deltas, so a turn's deltas join into one assistant message; each
+    `tool.started` plus its `tool.succeeded`/`tool.failed` becomes a toolCall block and a toolResult message,
+    and the event timestamps give the tool durations."""
+    events = ori_runtime_events(lines)
+    result = ori_result(lines) or {}
+    entries = [{"type": "session", "cwd": ""}, {"type": "model_change", "provider": "openrouter", "modelId": None},
+               {"type": "thinking_level_change", "thinkingLevel": level},
+               {"type": "message", "message": {"role": "user", "content": [{"type": "text", "text": brief}]}}]
+    blocks, calls, usage, text, thinking = [], [], None, [], []
+    last_at = None
+
+    def push_block():
+        if thinking:
+            blocks.append({"type": "thinking", "thinking": "".join(thinking)})
+            thinking.clear()
+        if text:
+            blocks.append({"type": "text", "text": "".join(text)})
+            text.clear()
+
+    def flush(stop="stop"):
+        nonlocal blocks, calls, usage
+        push_block()
+        if not blocks and not calls:
+            return
+        entries.append({"type": "message", "timestamp": last_at, "message": {
+            "role": "assistant", "content": [*blocks, *calls], "usage": usage or _ori_usage({}),
+            "stopReason": "toolUse" if any(block["type"] == "toolCall" for block in calls) else stop}})
+        blocks, calls, usage = [], [], None
+
+    for event in events:
+        kind, payload, at = event.get("type"), _ori_payload(event), event.get("createdAt")
+        if kind in ("reasoning.delta", "assistant.text.delta", "tool.started"):
+            last_at = at or last_at  # when the assistant said what the next flush records
+        if kind == "reasoning.delta":
+            if text:  # prose before reasoning starts is its own block
+                push_block()
+            thinking.append(str(payload.get("delta") or ""))
+        elif kind == "assistant.text.delta":
+            text.append(str(payload.get("delta") or ""))
+        elif kind == "tool.started":
+            arguments = payload.get("input")
+            calls.append({"type": "toolCall", "id": payload.get("toolCallId"), "name": payload.get("name") or "tool",
+                          "arguments": arguments if isinstance(arguments, dict) else {"input": arguments}})
+        elif kind in ("tool.succeeded", "tool.failed"):
+            call_id = payload.get("toolCallId") or next((call["id"] for call in calls if call["id"]), None)
+            flush()
+            failed = kind == "tool.failed"
+            entries.append({"type": "message", "timestamp": at, "message": {
+                "role": "toolResult", "toolCallId": call_id, "isError": failed,
+                **({"durationMs": payload["durationMs"]} if isinstance(payload.get("durationMs"), (int, float)) else {}),
+                "content": [{"type": "text", "text": _ori_tool_text(payload.get("result")) or (payload.get("code") or "")}]}})
+        elif kind in ("turn.failed", "session.failed"):
+            flush()
+            message = (payload.get("failure") or {}).get("message") or "ori error"
+            entries.append({"type": "message", "timestamp": at, "message": {
+                "role": "assistant", "content": [{"type": "text", "text": str(message)}], "stopReason": "error"}})
+        elif kind == "turn.succeeded":
+            if payload.get("usage"):
+                usage = _ori_usage(payload["usage"])
+            flush()
+    flush()
+    if result.get("ok") is False and not any(
+            (entry.get("message") or {}).get("stopReason") == "error" for entry in entries):
+        message = (result.get("error") or {}).get("message") or "ori error"  # e.g. it never started a turn
+        entries.append({"type": "message", "message": {"role": "assistant", "content": [
+            {"type": "text", "text": str(message)}], "stopReason": "error"}})
+    return entries
+
+
+HARNESSES = {"pi": Pi, "claude-code": ClaudeCode, "agy": Agy, "grok-build": GrokBuild, "muse-code": MuseCode,
+             "codex": Codex, "ori": Ori}
 
 
 def split_harness(spec):

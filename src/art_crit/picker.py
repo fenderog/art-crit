@@ -2,9 +2,10 @@
 
 Plain `input()` prompts, standard library only: a harness menu, then that harness's models (numbers
 select; any other text is an fzf-style fuzzy search that filters the list), then the effort levels of each
-picked model (the same LEVELS syntax as -m, `all` by default). The result is a list of `-m` specs, so it
-goes through exactly the same planning and validation as a spec typed on the command line — including the
-harness prefix, so a `--pick` next to existing specs can't be misread.
+picked model (the same LEVELS syntax as -m, `all` by default). A catalog too long to read in a terminal
+is not listed up front: the prompt asks for a search first, and every listing is capped. The result is a
+list of `-m` specs, so it goes through exactly the same planning and validation as a spec typed on the
+command line — including the harness prefix, so a `--pick` next to existing specs can't be misread.
 
 `ask`/`echo` are injectable so tests drive the prompts without a terminal."""
 
@@ -13,6 +14,10 @@ import subprocess
 
 from .harness import HARNESSES
 from .util import CritError, expand_levels
+
+# How many models one listing shows. More than a screenful is not a list to pick from, it is a scrollback
+# to lose the prompt in — a search (or `list`, on purpose) is how you get further than this.
+LIST_LIMIT = 20
 
 
 def parse_selection(text, count, what):
@@ -136,31 +141,50 @@ def _harness_specs(harness, name, ask, echo):
 def choose_models(ask, echo, name, models):
     """The models prompt for one harness -> the picked models, in pick order. Numbers, ranges or 'all'
     select from the listing currently shown; any other text is a search that re-lists just the fuzzy
-    matches (`fuzzy_matches`), and '' goes back to the full list, or picks nothing while it is shown."""
-    echo(f"\n{name} models  (pick numbers like 1,3-4 or all, or type to search)")
-    listing = models
-    _render_models(echo, listing)
+    matches (`fuzzy_matches`), at most LIST_LIMIT of them. A catalog longer than that is not listed until
+    the user searches, or asks for it with 'list'. '' goes back to the full list (or, when that is the
+    search-first view, just stays there), or picks nothing while a listing is shown."""
+    if len(models) <= LIST_LIMIT:
+        echo(f"\n{name} models  (pick numbers like 1,3-4 or all, or type to search)")
+        listing = models
+        _render_models(echo, listing)
+    else:
+        echo(f"\n{name} models: {len(models)} (too many to list: type a fuzzy search such as 'opus 5', "
+             f"'list' to list them all, or Enter to pick none)")
+        listing = []
     while True:
         text = ask("models [none]: ").strip()
         if not text:
-            if listing is models:
+            if listing is models or not listing:
                 return []
+            listing = models if len(models) <= LIST_LIMIT else []
+            if listing:
+                echo("")
+                _render_models(echo, listing)
+            continue
+        if text.lower() == "list":
             listing = models
             echo("")
             _render_models(echo, listing)
             continue
         if is_selection(text):
+            if not listing:
+                echo(f"  search first (or 'list' to list all {len(models)}, then pick a number)")
+                continue
             try:
                 return [listing[i] for i in parse_selection(text, len(listing), f"{name} models")]
             except CritError as e:
                 echo(f"  {e}")
                 continue
-        listing = fuzzy_matches(text, models)
-        if not listing:
+        matches = fuzzy_matches(text, models)
+        if not matches:
             echo(f"  no model matches {text!r}")
             continue
+        listing = matches[:LIST_LIMIT]
         echo("")
         _render_models(echo, listing)
+        if len(matches) > len(listing):
+            echo(f"  … {len(matches) - len(listing)} more match — type a longer search to narrow these down")
 
 
 def _render_models(echo, models):

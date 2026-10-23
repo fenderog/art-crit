@@ -1,0 +1,90 @@
+#!/usr/bin/env python3
+"""A fake `ori` (OpenRouter's Ori CLI) binary for testing `art-crit run` without calling a real model.
+
+  ori --version                     (the JSON envelope it answers with when piped)
+  ori code --harness ori -p BRIEF --output jsonl --model M --reasoning-effort E --approvals self-drive
+                                    (writes a tiny project, or ./output/ for a media brief, and prints the
+                                     JSONL stream ori emits: {kind: "event"} lines, then a {kind: "result"})
+  ori mcp list                      (the servers the run's work/.ori/mcp.json declares)
+
+Knobs (env vars): FAKE_ORI_ERROR=1 (the turn fails), FAKE_ORI_ARGV=<path> (write argv there).
+Model rows aren't the binary's to give: art-crit reads OpenRouter's catalog (see `ori_catalog` in test_cli_run).
+"""
+import json
+import os
+import sys
+from pathlib import Path
+
+
+def emit(line):
+    print(json.dumps(line))
+    sys.stdout.flush()
+
+
+def runtime(event, n):
+    """One runtime event as the stream wraps it: {kind: "event", event: {type: "runtime.event", event}}."""
+    event = {"eventId": f"run-fake:{n}", "harness": "ori", "runId": "run-fake", "sessionId": "session-fake",
+             "turnId": "turn-fake", "type": event["type"], "payload": event.get("payload") or {},
+             **({"createdAt": event["createdAt"]} if event.get("createdAt") else {})}
+    emit({"kind": "event", "event": {"type": "runtime.event", "event": event}})
+
+
+def main():
+    args = sys.argv[1:]
+    if "--version" in args:
+        print(json.dumps({"ok": True, "command": "version", "data": {"name": "@ori-runtime/cli", "version": "9.9.9-fake"}}))
+        return
+    if args[:2] == ["mcp", "list"]:
+        path = Path(".ori/mcp.json")
+        servers = json.loads(path.read_text())["mcpServers"] if path.is_file() else {}
+        print(json.dumps({"ok": True, "command": "mcp list", "data": {"configPaths": [str(path.resolve())],
+              "servers": [{"outcome": "ok", "server": name} for name in servers]}}))
+        return
+    if args[:1] != ["code"]:
+        print(f"fake ori: unrecognized invocation: {args}", file=sys.stderr)
+        sys.exit(2)
+    if os.environ.get("FAKE_ORI_ARGV"):
+        Path(os.environ["FAKE_ORI_ARGV"]).write_text(json.dumps(args))
+    brief = args[args.index("-p") + 1]
+
+    if "./output/" in brief:
+        Path("output").mkdir(exist_ok=True)
+        Path("output/circle.svg").write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>')
+        written = "output/circle.svg"
+    else:
+        Path("project.godot").write_text("config_version=5\n")
+        Path("scripts").mkdir(exist_ok=True)
+        Path("scripts/main.gd").write_text("extends Node\n")
+        written = "project.godot"
+
+    usage = {"cacheCreationTokens": 0, "cacheReadTokens": 100, "contextTokens": 130, "costUsd": 0.005,
+             "generationIds": ["gen-fake"], "inputTokens": 130, "outputTokens": 30}
+    emit({"kind": "event", "event": {"type": "audit.event", "audit": {"name": "command.received"}}})
+    runtime({"type": "run.started", "createdAt": "2026-10-23T10:00:00.000Z",
+             "payload": {"cwd": os.getcwd(), "model": "fake/ori"}}, 1)
+    runtime({"type": "turn.started", "createdAt": "2026-10-23T10:00:00.100Z", "payload": {"prompt": brief}}, 2)
+    for delta in ("Plan the ", "files."):
+        runtime({"type": "reasoning.delta", "createdAt": "2026-10-23T10:00:01.000Z", "payload": {"delta": delta}}, 3)
+    runtime({"type": "tool.started", "createdAt": "2026-10-23T10:00:02.000Z",
+             "payload": {"input": {"command": "ls"}, "name": "shell", "toolCallId": "call_1"}}, 4)
+    if os.environ.get("FAKE_ORI_ERROR"):
+        runtime({"type": "tool.failed", "createdAt": "2026-10-23T10:00:03.000Z",
+                 "payload": {"code": "TOOL_FAILED", "name": "shell", "result": "no such file", "toolCallId": "call_1"}}, 5)
+        runtime({"type": "turn.failed", "createdAt": "2026-10-23T10:00:04.000Z", "payload": {
+            "failure": {"code": "ORI_TURN_ABORTED", "kind": "cancelled", "message": "The turn was cancelled."}}}, 6)
+        emit({"kind": "result", "ok": False, "sessionId": "session-fake",
+              "error": {"message": "The turn was cancelled.", "code": "ORI_TURN_ABORTED"}})
+        return
+    runtime({"type": "tool.succeeded", "createdAt": "2026-10-23T10:00:03.000Z",
+             "payload": {"durationMs": 26, "name": "shell", "result": written, "toolCallId": "call_1"}}, 5)
+    for delta in ("Done: ", "built it."):
+        runtime({"type": "assistant.text.delta", "createdAt": "2026-10-23T10:00:04.000Z", "payload": {"delta": delta}}, 6)
+    emit({"kind": "event", "event": {"type": "runtime.event", "event": {
+        "type": "item.completed", "payload": {"itemType": "usage", "data": {"usage": usage}}}}})
+    runtime({"type": "turn.succeeded", "createdAt": "2026-10-23T10:00:05.000Z",
+             "payload": {"durationMs": 5000, "usage": usage}}, 7)
+    emit({"kind": "result", "ok": True, "sessionId": "session-fake"})
+
+
+if __name__ == "__main__":
+    main()

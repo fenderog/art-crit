@@ -52,7 +52,9 @@ A few things worth knowing:
   models without one.
 - Leave `-m`/`--set` out (or add `-i/--pick` to select on top of them) and it asks before planning:
   pick a harness, then its models, then the levels for each one. In the model list, numbers select and
-  any other text is a fuzzy search (`claudeop55`, `g6sol`) that filters and renumbers the list.
+  any other text is a fuzzy search (`claudeop55`, `g6sol`) that filters and renumbers the list. A catalog
+  with more than 20 models is not printed up front: search first (listings show at most 20 matches), or
+  type `list` if you really want the whole catalog.
   The picks become ordinary `-m` specs, so the plan and the up-front validation are exactly the same.
 - Models and levels are validated up front, so a typo fails before you spend anything.
   `art-crit models [SEARCH]` shows what's available.
@@ -86,19 +88,21 @@ at low, medium, high, xhigh, or max. Runs are single agents with file and shell 
 no subagents, web access, skills, scheduling, CLAUDE.md, memory, plugins, hooks, or MCP servers.
 It uses your login, and cost is Claude Code's API-price estimate, subscription included.
 
-[Antigravity CLI](https://www.agy.dev/docs/cli/headless/) (`agy`), [Grok Build](https://github.com/xai-org/grok-build) (`grok`), Muse Code (`muse`) and Codex (`codex`) can also run headlessly:
+[Antigravity CLI](https://www.agy.dev/docs/cli/headless/) (`agy`), [Grok Build](https://github.com/xai-org/grok-build) (`grok`), Muse Code (`muse`), Codex (`codex`) and OpenRouter's [Ori](https://openrouter.ai/ori) (`ori`) can also run headlessly:
 
 ```sh
 uv run art-crit models -H agy gemini
 uv run art-crit models -H grok-build grok-4.7
 uv run art-crit models -H muse-code muse-spark
 uv run art-crit models -H codex gpt-6
+uv run art-crit models -H ori deepseek      # OpenRouter's catalog, live
 uv run art-crit run --kind media "draw a circle" -m agy:gemini-3.8-flash:high -m grok-build:grok-4.7:low
 uv run art-crit run --kind media "draw a circle" -m muse-code:muse-spark-1.3-contributor:high
 uv run art-crit run --kind media "draw a circle" -m codex:gpt-6-sol:high
+uv run art-crit run --kind media "draw a circle" -m ori:deepseek/deepseek-v4.1-flash:high
 ```
 
-Agy's model slugs already encode effort: `agy:gemini-3.8-flash:high` selects `gemini-3.8-flash-high`. Agy does not report cost (shown as 0, **unknown**, not free). Grok reports cost when the server supplies it; a missing cost is also shown as 0. Grok disables subagents and web and restricts built-in tools; MCP meta-tools may still load from your configuration. Agy does not offer a safe-mode/tool allowlist, so for strict comparisons run it with an isolated CLI profile. Muse Code runs without approval prompts or sandbox but with web tools and background reminder agents off; for models with published [Meta API rates](https://dev.meta.ai/docs/pricing-rate-limits), cost is an API-equivalent estimate marked `~` (not subscription spend). Muse Wonder Full and Wonder Contributor have no published API rate: their cost uses Wonder Standard's rate as a **proxy**, marked `≈` (not Full's real price). Models with no known rate show 0, meaning unknown, not free. Re-import older Muse run directories to estimate their already-recorded token usage. Its model list is the catalog `muse` caches (open `/model` in `muse` to refresh it), and its transcript appears when the run finishes, so live progress shows 0 until then. Codex runs with approvals and sandbox bypassed and your `~/.codex` config/rules ignored; its model list comes live from `codex debug models` (the `ultra` effort tier isn't offered, it isn't one of art-crit's levels), and it does not report cost (0, **unknown**, not free).
+Agy's model slugs already encode effort: `agy:gemini-3.8-flash:high` selects `gemini-3.8-flash-high`. Agy does not report cost (shown as 0, **unknown**, not free). Grok reports cost when the server supplies it; a missing cost is also shown as 0. Grok disables subagents and web and restricts built-in tools; MCP meta-tools may still load from your configuration. Agy does not offer a safe-mode/tool allowlist, so for strict comparisons run it with an isolated CLI profile. Muse Code runs without approval prompts or sandbox but with web tools and background reminder agents off; for models with published [Meta API rates](https://dev.meta.ai/docs/pricing-rate-limits), cost is an API-equivalent estimate marked `~` (not subscription spend). Muse Wonder Full and Wonder Contributor have no published API rate: their cost uses Wonder Standard's rate as a **proxy**, marked `≈` (not Full's real price). Models with no known rate show 0, meaning unknown, not free. Re-import older Muse run directories to estimate their already-recorded token usage. Its model list is the catalog `muse` caches (open `/model` in `muse` to refresh it), and its transcript appears when the run finishes, so live progress shows 0 until then. Codex runs with approvals and sandbox bypassed and your `~/.codex` config/rules ignored; its model list comes live from `codex debug models` (the `ultra` effort tier isn't offered, it isn't one of art-crit's levels), and it does not report cost (0, **unknown**, not free). Ori runs its own runtime agent against OpenRouter's models: any slug from OpenRouter's catalog (image/video models excepted) at `off`, `minimal`, `low`, `medium`, `high`, `xhigh` or `max` when the model takes a reasoning effort (`off` only otherwise), with OpenRouter's own cost recorded. It also loads your `~/.ori` configuration (MCP servers included), so for strict comparisons run it with isolated Ori configuration.
 
 ### Pinning an OpenRouter provider
 
@@ -389,7 +393,7 @@ You should see `403` (the Worker refusing a request without the site's Origin) a
   install once from the repo root: `uv tool install --editable '.[verify]'`. It stays linked to
   this checkout, so edits apply without reinstalling. Commands act on the current directory (or `--root`).
 - [pi](https://github.com/earendil-works/pi) for default runs; [Claude Code](https://claude.com/claude-code)
-  (`claude`, logged in) for `claude-code:` models; `agy` for `agy:`, `grok` for `grok-build:`, `muse` (logged in) for `muse-code:` models and `codex` (logged in) for `codex:` models.
+  (`claude`, logged in) for `claude-code:` models; `agy` for `agy:`, `grok` for `grok-build:`, `muse` (logged in) for `muse-code:` models, `codex` (logged in) for `codex:` models and `ori` (logged in with `ori login`) for `ori:` models.
 - `godot` on PATH with matching web export templates (games).
 - `ffmpeg` + `ffprobe` on PATH (media).
 - `esbuild` + `npm` on PATH (web): `brew install esbuild node`.
