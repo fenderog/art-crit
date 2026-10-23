@@ -3,7 +3,7 @@
     "slug": "ceate-an-svg-of-an-awkward",
     "title": "Awkward Robot Family",
     "kind": "media",
-    "n_runs": 65,
+    "n_runs": 66,
     "models": [
       "anthropic/claude-haiku-5-5",
       "anthropic/claude-opus-5-5",
@@ -22,7 +22,7 @@
       "openrouter/z-ai/glm-5.3-flashx",
       "xai/grok-4.7"
     ],
-    "updated": "2026-10-23T19:10:56Z",
+    "updated": "2026-10-23T19:11:18Z",
     "thumb": "data/ceate-an-svg-of-an-awkward/runs/kimi-k3.1-pro-ori-xhigh-20261023-120756/media/awkward-robot-family.svg"
   },
   {
