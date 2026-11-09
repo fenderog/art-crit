@@ -949,11 +949,16 @@ class MuseCode(Harness):
     # USD per million tokens (uncached input, cached input, output). Meta Model API:
     # https://dev.meta.ai/docs/pricing-rate-limits (update when published prices change).
     # Full and Wonder Contributor have no API prices. Use Wonder Standard as a *labeled proxy*.
+    # Muse Ember bills per request by its total input (cached included): up to 200K in API_PRICES,
+    # over that at API_PRICES_LONG_CONTEXT, in full.
     API_PRICES = {"muse-wonder-1.0": (4.00, 0.20, 20.00),
                   "muse-spark-1.3": (1.25, 0.15, 4.25),
                   "muse-spark-1.2": (1.25, 0.15, 4.25),
                   "muse-spark-1.3-contributor": (0.10, 0.002, 0.20),
-                  "muse-spark-1.2-contributor": (0.10, 0.002, 0.20)}
+                  "muse-spark-1.2-contributor": (0.10, 0.002, 0.20),
+                  "muse-ember-1.0": (0.10, 0.004, 0.50)}
+    API_PRICES_LONG_CONTEXT = {"muse-ember-1.0": (0.30, 0.012, 1.50)}
+    LONG_CONTEXT_THRESHOLD = 200_000  # Ember input tokens per request (cached included) above which the long rates apply
     PRICE_PROXIES = {"muse-wonder-full-1.0": "muse-wonder-1.0",
                      "muse-wonder-full-1.0-contributor": "muse-wonder-1.0",
                      "muse-wonder-1.0-contributor": "muse-wonder-1.0"}
@@ -961,6 +966,7 @@ class MuseCode(Harness):
               "muse-wonder-1.0-contributor": ["minimal", "low", "medium", "high", "xhigh", "max"],
               "muse-wonder-full-1.0": ["minimal", "low", "medium", "high", "xhigh", "max"],
               "muse-wonder-full-1.0-contributor": ["minimal", "low", "medium", "high", "xhigh", "max"],
+              "muse-ember-1.0": ["minimal", "low", "medium", "high", "xhigh", "max"],
               "muse-spark-1.3": ["minimal", "low", "medium", "high", "xhigh", "max"],
               "muse-spark-1.3-contributor": ["minimal", "low", "medium", "high", "xhigh", "max"],
               "muse-spark-1.2": ["minimal", "low", "medium", "high", "xhigh"]}
@@ -1033,16 +1039,44 @@ class MuseCode(Harness):
         proxy = self.PRICE_PROXIES.get(model_id)
         prices = self.API_PRICES.get(proxy or model_id)
         if prices and metrics.get("turns"):
-            tokens = metrics["tokens"]
-            # Muse's input_tokens includes both cache reads and writes. Writes are billed as
-            # uncached input; reasoning_tokens is already part of output_tokens.
-            uncached = tokens["input"] + tokens["cacheWrite"]
-            metrics["cost_usd"] = round((uncached * prices[0] + tokens["cacheRead"] * prices[1]
-                                         + tokens["output"] * prices[2]) / 1_000_000, 9)
+            cost = self._tiered_cost(harness_dir, model_id, prices) if model_id in self.API_PRICES_LONG_CONTEXT else None
+            if cost is None:
+                tokens = metrics["tokens"]
+                # Muse's input_tokens includes both cache reads and writes. Writes are billed as
+                # uncached input; reasoning_tokens is already part of output_tokens.
+                uncached = tokens["input"] + tokens["cacheWrite"]
+                cost = round((uncached * prices[0] + tokens["cacheRead"] * prices[1]
+                              + tokens["output"] * prices[2]) / 1_000_000, 9)
+            metrics["cost_usd"] = cost
             metrics["cost_estimated"] = True
             if proxy:
                 metrics["cost_estimate_proxy"] = f"meta/{proxy}"
         return metrics
+
+    def _tiered_cost(self, harness_dir, model_id, prices):
+        """A per-request cost for a tiered model (Muse Ember): each `model_completed` event's total
+        input (`input_tokens`, cached included) selects the standard or long-context rates for that
+        whole request. Reads `harness_dir/export.json`; None when it can't (the caller then falls
+        back to the standard rates on the summed tokens)."""
+        if harness_dir is None:
+            return None
+        export_path = Path(harness_dir) / "export.json"
+        if not export_path.is_file():
+            return None
+        calls = [ev for _, ev in _muse_events(_read_muse_export(export_path)) if ev.get("kind") == "model_completed"]
+        if not calls:
+            return None
+        long_prices = self.API_PRICES_LONG_CONTEXT.get(model_id)
+        total = 0.0
+        for ev in calls:
+            raw = ev.get("usage") or {}
+            usage = _muse_usage(raw)
+            uncached = usage["input"] + usage["cacheWrite"]
+            tier = long_prices if (raw.get("input_tokens") or 0) > self.LONG_CONTEXT_THRESHOLD else prices
+            if tier is None:
+                tier = prices
+            total += uncached * tier[0] + usage["cacheRead"] * tier[1] + usage["output"] * tier[2]
+        return round(total / 1_000_000, 9)
 
 
 def _read_muse_export(path):

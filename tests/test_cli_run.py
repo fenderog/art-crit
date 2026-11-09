@@ -1197,6 +1197,8 @@ def test_new_harness_model_listing(capsys):
 def test_muse_code_planning():
     assert plan_for(["muse-code:muse-spark-1.3:low,max"]) == [
         ("muse-code", "muse-spark-1.3", "low"), ("muse-code", "muse-spark-1.3", "max")]
+    assert plan_for(["muse-code:muse-ember-1.0:minimal,max"]) == [
+        ("muse-code", "muse-ember-1.0", "minimal"), ("muse-code", "muse-ember-1.0", "max")]
     with pytest.raises(CritError, match="max not supported"):
         plan_for(["muse-code:muse-spark-1.2:xhigh,max"])
 
@@ -1237,6 +1239,7 @@ def test_muse_code_runs_and_publishes_transcript(run_root, tmp_path, monkeypatch
     ("meta/muse-wonder-full-1.0", (20 * 4 + 60 * .20 + 30 * 20) / 1_000_000),
     ("meta/muse-wonder-full-1.0-contributor", (20 * 4 + 60 * .20 + 30 * 20) / 1_000_000),
     ("meta/muse-wonder-1.0-contributor", (20 * 4 + 60 * .20 + 30 * 20) / 1_000_000),
+    ("meta/muse-ember-1.0", (20 * .10 + 60 * .004 + 30 * .50) / 1_000_000),
     ("meta/unknown", None),
 ])
 def test_muse_api_equivalent_cost(model, expected):
@@ -1252,6 +1255,50 @@ def test_muse_api_equivalent_cost(model, expected):
         else:
             assert "cost_estimate_proxy" not in result
     assert MuseCode().finish(None, model, {"turns": 0, "tokens": metrics["tokens"], "cost_usd": 0})["cost_usd"] == 0
+
+
+def _muse_export_doc(usages):
+    def record(seq, payload_type, payload):
+        return {"kind": "record", "envelope": {"sequence": seq, "stream": {"kind": "session", "id": "s"},
+                "recorded_at": 1_790_000_000_000_000 + seq * 100_000, "record_type": "event",
+                "durability": "durable", "payload_type": payload_type, "payload": payload}}
+
+    def run_event(seq, event):
+        return record(seq, "runtime.session", {"kind": "run", "run_id": "main", "event": event})
+
+    events = [record(1, "runtime.session.metadata", {"kind": "metadata", "record": {"workspace_root": "/tmp"}}),
+              record(2, "runtime.retained_fact", {"kind": "retained_runtime_fact", "run_id": "main",
+                                                 "record": {"payload_type": "top_level_turn.run_origin"}})]
+    events += [run_event(3 + i, {"kind": "model_completed", "usage": usage, "model": "muse-ember-1.0"})
+               for i, usage in enumerate(usages)]
+    events.append(run_event(3 + len(usages), {"kind": "terminal", "terminal": "completed"}))
+    return {"events": events}
+
+
+def test_muse_ember_cost_is_billed_per_request_tier(tmp_path):
+    # One request under 200K (standard rates) and one over (long-context rates, in full).
+    short = {"input_tokens": 1_000, "output_tokens": 500, "cache_read_tokens": 200, "cache_write_tokens": 0}
+    long = {"input_tokens": 250_000, "output_tokens": 1_000, "cache_read_tokens": 50_000, "cache_write_tokens": 10_000}
+    doc = _muse_export_doc([short, long])
+    (tmp_path / "export.json").write_text(json.dumps(doc))
+    result = MuseCode().finish(tmp_path, "meta/muse-ember-1.0", muse_metrics(doc, "high"))
+    expected = (800 * .10 + 200 * .004 + 500 * .50 + 200_000 * .30 + 50_000 * .012 + 1_000 * 1.50) / 1_000_000
+    assert result["cost_usd"] == pytest.approx(expected) and result["cost_estimated"] is True
+
+
+@pytest.mark.parametrize("input_tokens, rate", [(200_000, .10), (200_001, .30)])
+def test_muse_ember_long_context_threshold(tmp_path, input_tokens, rate):
+    doc = _muse_export_doc([{"input_tokens": input_tokens, "output_tokens": 0,
+                             "cache_read_tokens": 0, "cache_write_tokens": 0}])
+    (tmp_path / "export.json").write_text(json.dumps(doc))
+    result = MuseCode().finish(tmp_path, "meta/muse-ember-1.0", muse_metrics(doc, "high"))
+    assert result["cost_usd"] == pytest.approx(input_tokens * rate / 1_000_000)
+
+
+def test_muse_ember_cost_falls_back_without_export(tmp_path):
+    metrics = {"turns": 1, "tokens": {"input": 10, "cacheWrite": 10, "cacheRead": 60, "output": 30}, "cost_usd": 0.0}
+    result = MuseCode().finish(tmp_path, "meta/muse-ember-1.0", metrics)
+    assert result["cost_usd"] == pytest.approx((20 * .10 + 60 * .004 + 30 * .50) / 1_000_000)
 
 
 def test_reimport_prices_an_older_muse_run(run_root):
