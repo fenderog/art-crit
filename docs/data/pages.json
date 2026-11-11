@@ -3,7 +3,7 @@
     "slug": "surfing-pelican",
     "title": "Surfing pelican",
     "kind": "web",
-    "n_runs": 73,
+    "n_runs": 74,
     "models": [
       "anthropic/claude-haiku-5-5",
       "anthropic/claude-opus-5-5",
@@ -26,8 +26,8 @@
       "openrouter/z-ai/glm-5.3-prime",
       "xai/grok-4.7"
     ],
-    "updated": "2026-11-11T00:49:50Z",
-    "thumb": "data/surfing-pelican/runs/muse-ember-1.0-mc-medium-20261110-164616/thumb.jpg"
+    "updated": "2026-11-11T00:50:04Z",
+    "thumb": "data/surfing-pelican/runs/muse-ember-1.0-mc-max-20261110-164616/thumb.jpg"
   },
   {
     "slug": "ceate-an-svg-of-an-awkward",

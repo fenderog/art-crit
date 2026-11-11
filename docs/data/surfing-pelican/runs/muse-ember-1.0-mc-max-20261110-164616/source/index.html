@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>The Surfing Pelican — Animated Three.js Scene</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='20' r='9' fill='%231293a5'/%3E%3Ccircle cx='16' cy='12' r='5' fill='%23ffffff'/%3E%3Cpath d='M20 11h10l-3 3H20z' fill='%23ff7a00'/%3E%3C/svg%3E" />
+    <style>
+      :root {
+        --ink: #16323a;
+        --ink-soft: #3d5a61;
+        --paper: rgba(255, 252, 245, 0.82);
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #0e7c86;
+        font-family: "Avenir Next", "Segoe UI", system-ui, -apple-system, sans-serif;
+      }
+      #scene {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      .caption {
+        position: fixed;
+        top: 22px;
+        left: 24px;
+        max-width: 340px;
+        padding: 16px 20px 14px;
+        background: var(--paper);
+        border: 1px solid rgba(22, 50, 58, 0.12);
+        border-radius: 14px;
+        backdrop-filter: blur(8px);
+        pointer-events: none;
+      }
+      .caption h1 {
+        margin: 0 0 4px;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 30px;
+        line-height: 1.05;
+        font-weight: 700;
+        color: var(--ink);
+        letter-spacing: -0.01em;
+      }
+      .caption p {
+        margin: 0;
+        font-size: 13px;
+        line-height: 1.5;
+        color: var(--ink-soft);
+      }
+      .caption .ride {
+        margin-top: 8px;
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #b3541e;
+        font-weight: 700;
+      }
+      .badge {
+        position: fixed;
+        bottom: 18px;
+        left: 24px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        background: rgba(22, 50, 58, 0.72);
+        color: #fff8ec;
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        pointer-events: none;
+      }
+      @media (max-width: 640px) {
+        .caption { left: 14px; top: 14px; max-width: 260px; padding: 12px 14px; }
+        .caption h1 { font-size: 23px; }
+        .badge { left: 14px; bottom: 14px; }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="scene" aria-label="Animated 3D scene of a pelican surfing on a turquoise ocean"></canvas>
+    <div class="caption">
+      <h1>The Surfing Pelican</h1>
+      <p>An animated Three.js scene. He carves the swell, flaps for balance and checks the horizon — no input needed.</p>
+      <div class="ride">Hang ten · catch the swell</div>
+    </div>
+    <div class="badge">Animated · non-interactive · Three.js</div>
+    <script type="module" src="main.js"></script>
+  </body>
+</html>
