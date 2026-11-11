@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Surfing Pelican — Animated 3D</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #86cfe8;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  #app { position: fixed; inset: 0; }
+  canvas { display: block; width: 100%; height: 100%; }
+  .hud {
+    position: fixed;
+    left: 18px; top: 18px;
+    color: #0a2e3d;
+    pointer-events: none;
+    user-select: none;
+  }
+  .hud h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+  }
+  .hud p {
+    margin: 6px 0 0;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0.82;
+  }
+  .hud .badge {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.78);
+    backdrop-filter: blur(6px);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #0f4a63;
+  }
+  .hint {
+    position: fixed;
+    left: 50%; bottom: 14px;
+    transform: translateX(-50%);
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(10,46,61,0.65);
+    background: rgba(255,255,255,0.55);
+    padding: 5px 10px;
+    border-radius: 999px;
+    pointer-events: none;
+  }
+  @media (max-width: 640px) {
+    .hud h1 { font-size: 22px; }
+    .hud { left: 14px; top: 14px; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="hud">
+  <h1>Surfing Pelican</h1>
+  <p>Peleyo the pelican rides the evening swell</p>
+  <span class="badge">Animated • Non-interactive</span>
+</div>
+<div class="hint">sit back — he surfs, you watch</div>
+<script type="module" src="main.js"></script>
+</body>
+</html>
