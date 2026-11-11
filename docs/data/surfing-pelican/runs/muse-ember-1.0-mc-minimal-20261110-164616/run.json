@@ -1,0 +1,67 @@
+{
+  "id": "muse-ember-1.0-mc-minimal-20261110-164616",
+  "page": "surfing-pelican",
+  "model": "meta/muse-ember-1.0",
+  "effort": "minimal",
+  "kind": "web",
+  "started_at": "2026-11-11T00:46:17Z",
+  "batch": "2026-11-10-164616-surfing-pelican",
+  "harness": {
+    "name": "muse-code",
+    "version": "1.4.14"
+  },
+  "state": "complete",
+  "error": null,
+  "route": null,
+  "tools": {
+    "allowed": {
+      "builtin": null,
+      "mcp": {}
+    },
+    "used": {
+      "bash": 10,
+      "read": 4,
+      "edit": 3,
+      "write": 3,
+      "read_skill": 2,
+      "bash_input": 1
+    }
+  },
+  "metrics": {
+    "duration_ms": 98673,
+    "cost_usd": 0.012534136,
+    "cost_estimated": true,
+    "tool_calls": 23,
+    "turns": 24,
+    "tokens_total": 58426,
+    "tokens_input": 51224,
+    "tokens_output": 7202,
+    "tokens_reasoning": 866,
+    "tokens_cache_read": 952684
+  },
+  "thumb": "thumb.jpg",
+  "output": {
+    "kind": "web",
+    "entry": "game/index.html",
+    "bytes": 584616,
+    "esbuild": "0.28.2",
+    "ok": true,
+    "verified": true,
+    "error": null
+  },
+  "session": {
+    "conversation": "session/conversation.json",
+    "stderr": "session/stderr.txt"
+  },
+  "source": {
+    "root": "source/",
+    "files": [
+      "README.md",
+      "index.html",
+      "main.js",
+      "package-lock.json",
+      "package.json",
+      "shot.jpg"
+    ]
+  }
+}
