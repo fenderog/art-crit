@@ -29,7 +29,7 @@ function newCard(id, type, n) {
 // like `art-crit video`'s reveal: the opening, every run one after another, then the vote
 function defaults() {
   return { tpl: "reveal", counts: {}, slots: {}, cards: [newCard("c1", "hook", 4), newCard("c2", "finale", 4)], nextCard: 3,
-    still: 3, record: C.record_seconds[0], sync: "together", music: "upbeat", labels: true, metrics: true, wipe: 50 };
+    useCards: true, still: 3, record: C.record_seconds[0], sync: "together", music: "upbeat", labels: true, metrics: true, wipe: 50 };
 }
 function load() {
   try {
@@ -53,7 +53,7 @@ function atFor(type, n) {
   return at === "middle" ? Math.floor(n / 2) : at;
 }
 function spec() {
-  return { template: S.tpl, count: slotCount(), slots: picks(), cards: S.cards, still: S.still, record: S.record, sync: S.sync,
+  return { template: S.tpl, count: slotCount(), slots: picks(), cards: S.useCards ? S.cards : [], still: S.still, record: S.record, sync: S.sync,
     music: S.music, labels: S.labels, metrics: S.metrics, wipe: S.wipe };
 }
 
@@ -284,7 +284,7 @@ function hookLines(card) {
   const models = new Set(filled.map((r) => r.model));
   const pages = new Set(filled.map((r) => r.ref.page));
   const prompts = `${pages.size || 1} prompts.`;
-  const auto = models.size === 1 ? [filled[0].model, pages.size === 1 ? `${filled.length} effort levels.` : prompts]
+  const auto = models.size === 1 ? [filled[0].model, pages.size === 1 ? (filled.length > 1 ? `${filled.length} effort levels.` : `${filled[0].effort} effort.`) : prompts]
     : [`${models.size || slotCount()} AI models.`, pages.size <= 1 ? "Same prompt." : prompts];
   return [card.heading || auto[0], card.sub || (card.heading ? "" : auto[1])];
 }
@@ -502,6 +502,7 @@ function drawTimeline() {
 
 function addCard(type) {
   if (S.cards.length >= C.limits.cards) return;
+  S.useCards = true; // a card you add is a card you want played
   const d = C.cards[type];
   const card = newCard(`c${S.nextCard++}`, type, units());
   S.cards = d.at === 0 ? [card, ...S.cards] : [...S.cards, card];
@@ -599,6 +600,7 @@ const syncSel = el("select");
 const musicSel = el("select");
 const labelsBox = el("input", { attrs: { type: "checkbox" } });
 const metricsBox = el("input", { attrs: { type: "checkbox" } });
+const cardsBox = el("input", { attrs: { type: "checkbox" } });
 const motionBox = el("div", { class: "st-motion" });
 const formatLine = h("div", "st-muted st-format");
 const renderBtn = button("st-render", "Render video", () => render());
@@ -616,6 +618,7 @@ function buildSettings() {
   musicSel.addEventListener("change", () => { S.music = musicSel.value; save(); });
   labelsBox.addEventListener("change", () => { S.labels = labelsBox.checked; save(); drawPreview(); });
   metricsBox.addEventListener("change", () => { S.metrics = metricsBox.checked; save(); drawPreview(); });
+  cardsBox.addEventListener("change", () => { S.useCards = cardsBox.checked; ui.editCard = null; changed(); });
   motionBox.replaceChildren(
     h("span", "st-strong", "Moving results"),
     h("span", "st-muted st-small", "Videos play their clip, 3D models turn on a turntable, games and web pages play as a screen recording."),
@@ -630,6 +633,7 @@ function buildSettings() {
     el("div", { class: "st-checks" }, [
       el("label", { class: "st-check" }, [labelsBox, "Label each result with model and effort"]),
       el("label", { class: "st-check" }, [metricsBox, "Add time and cost"]),
+      el("label", { class: "st-check" }, [cardsBox, "Include the intro and outro cards"]),
     ]),
     formatLine, renderBtn, renderHint,
   );
@@ -642,6 +646,7 @@ function drawSettings() {
   musicSel.value = S.music;
   labelsBox.checked = S.labels;
   metricsBox.checked = S.metrics;
+  cardsBox.checked = S.useCards;
   motionBox.hidden = !(PLAN?.slots || []).some((s) => s && s.type !== "image");
   const total = clock(PLAN?.total || 0);
   formatLine.replaceChildren("Format ", h("b", null, tpl().format), " · Length ", h("b", null, total));
