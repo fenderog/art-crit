@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<link rel="icon" href="data:," />
+<title>Surfing Pelican</title>
+<style>
+  :root {
+    color-scheme: light;
+    --ink: #10303a;
+    --panel: #fffdf5;
+    --accent: #0e7c86;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%;
+    font-family: "Avenir Next", "Trebuchet MS", Verdana, sans-serif;
+    color: var(--ink);
+    background: #bfe8ef;
+    overflow: hidden;
+  }
+  #app { position: fixed; inset: 0; }
+  canvas { display: block; touch-action: none; }
+  .card {
+    position: fixed; left: 16px; top: 16px; z-index: 3;
+    background: var(--panel); border: 2px solid var(--ink);
+    padding: 10px 14px; max-width: 320px;
+  }
+  .card h1 { margin: 0 0 4px; font-size: 22px; line-height: 1.1; letter-spacing: 0; }
+  .card p { margin: 0; font-size: 13px; line-height: 1.45; }
+  .toolbar {
+    position: fixed; left: 16px; bottom: 16px; z-index: 3;
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  }
+  .toolbar button {
+    font: inherit; font-size: 13px; font-weight: 700;
+    color: #fff; background: var(--accent); border: 2px solid var(--ink);
+    padding: 8px 11px; cursor: pointer;
+  }
+  .toolbar button[aria-pressed="true"] { background: #b6501f; }
+  .hint {
+    position: fixed; right: 16px; bottom: 16px; z-index: 3;
+    font-size: 12px; background: var(--panel); border: 2px solid var(--ink);
+    padding: 6px 9px;
+  }
+  #error {
+    position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    z-index: 10; background: #ffe1d6; border: 2px solid #8a2b0a;
+    color: #5f1e06; padding: 14px 16px; max-width: min(560px, 90vw);
+    font-size: 13px; white-space: pre-wrap; display: none;
+  }
+  @media (max-width: 620px) {
+    .card { max-width: calc(100vw - 32px); }
+    .hint { display: none; }
+  }
+</style>
+</head>
+<body>
+  <main id="app" aria-label="Animated 3D scene of a pelican surfing a wave">
+    <div class="card">
+      <h1>Surfing Pelican</h1>
+      <p>One very determined pelican, riding the shore break on a striped board. Drag to look around. Scroll or pinch to zoom.</p>
+    </div>
+    <div class="toolbar" role="group" aria-label="Camera views">
+      <button type="button" data-view="hero" aria-pressed="true">Hero</button>
+      <button type="button" data-view="side" aria-pressed="false">Side</button>
+      <button type="button" data-view="top" aria-pressed="false">Top</button>
+      <button type="button" data-view="follow" aria-pressed="false">Follow</button>
+    </div>
+    <p class="hint">Drag: orbit &middot; Scroll / pinch: zoom</p>
+    <div id="error" role="alert" aria-live="assertive"></div>
+  </main>
+  <script type="module" src="main.js"></script>
+</body>
+</html>

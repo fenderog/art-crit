@@ -1,0 +1,23 @@
+{
+  "console": [
+    "warn: [.WebGL-0x11400511e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "warn: [.WebGL-0x11400511e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "warn: [.WebGL-0x11400511e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+    "warn: [.WebGL-0x11400511e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+  ],
+  "errors": [],
+  "failed": [],
+  "checks": {
+    "webgl": {
+      "hasCanvas": true,
+      "w": 1280,
+      "h": 800,
+      "ctx": true
+    },
+    "motionDiffers": true,
+    "drag": true,
+    "buttonsDiffer": true,
+    "keys": true,
+    "phoneNoHScroll": true
+  }
+}
